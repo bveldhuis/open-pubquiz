@@ -7,7 +7,12 @@ export enum EventType {
   QUESTION_ENDED = 'question_ended',
   ROUND_STARTED = 'round_started',
   ROUND_ENDED = 'round_ended',
-  SESSION_ENDED = 'session_ended'
+  SESSION_ENDED = 'session_ended',
+  START_QUESTION = 'start_question',
+  END_QUESTION = 'end_question',
+  SHOW_LEADERBOARD = 'show_leaderboard',
+  SHOW_REVIEW = 'show_review',
+  NEXT_ROUND = 'next_round'
 }
 
 @Entity('session_events')

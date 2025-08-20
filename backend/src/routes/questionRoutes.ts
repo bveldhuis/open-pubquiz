@@ -50,8 +50,11 @@ router.post('/', async (req, res) => {
 
     // Create question
     const questionRepository = AppDataSource.getRepository(Question);
+    const questionId = uuidv4();
+    console.log(`📝 Creating question with ID: ${questionId}`);
+    
     const question = questionRepository.create({
-      id: uuidv4(),
+      id: questionId,
       quiz_session_id: session.id,
       round_number: roundNumber,
       question_number: questionNumber,
@@ -66,6 +69,7 @@ router.post('/', async (req, res) => {
     });
 
     await questionRepository.save(question);
+    console.log(`✅ Question created successfully: ${questionId}`);
 
     return res.status(201).json({ question });
   } catch (error) {
@@ -99,6 +103,9 @@ router.get('/session/:sessionCode', async (req, res) => {
       order: { round_number: 'ASC', question_number: 'ASC' }
     });
 
+    console.log(`📋 Found ${questions.length} questions for session ${sessionCode}`);
+    questions.forEach(q => console.log(`  - Question ${q.id}: ${q.question_text.substring(0, 50)}...`));
+    
     return res.json({ questions });
   } catch (error) {
     console.error('Error fetching questions:', error);
@@ -110,6 +117,7 @@ router.get('/session/:sessionCode', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`🔍 Looking for question with ID: ${id}`);
 
     const questionRepository = AppDataSource.getRepository(Question);
     const question = await questionRepository.findOne({
@@ -118,9 +126,11 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!question) {
+      console.log(`❌ Question not found: ${id}`);
       return res.status(404).json({ error: 'Question not found' });
     }
 
+    console.log(`✅ Question found: ${id}`);
     return res.json({ question });
   } catch (error) {
     console.error('Error fetching question:', error);
@@ -224,11 +234,15 @@ router.post('/bulk', async (req, res) => {
       } = questionData;
 
       if (!roundNumber || !questionNumber || !type || !questionText) {
+        console.log(`⚠️ Skipping invalid question:`, questionData);
         continue; // Skip invalid questions
       }
 
+      const questionId = uuidv4();
+      console.log(`📝 Creating bulk question with ID: ${questionId}`);
+      
       const question = questionRepository.create({
-        id: uuidv4(),
+        id: questionId,
         quiz_session_id: session.id,
         round_number: roundNumber,
         question_number: questionNumber,
@@ -243,6 +257,7 @@ router.post('/bulk', async (req, res) => {
       });
 
       await questionRepository.save(question);
+      console.log(`✅ Bulk question created successfully: ${questionId}`);
       createdQuestions.push(question);
     }
 

@@ -90,11 +90,11 @@ export class QuizService {
 
   // Session management
   createSession(request: CreateSessionRequest): Observable<{ session: QuizSession }> {
-    return this.http.post<{ session: QuizSession }>(`${this.apiUrl}/quiz`, request);
+    return this.http.post<{ session: QuizSession }>(`${this.apiUrl}/api/quiz`, request);
   }
 
   getSession(code: string): Observable<{ session: QuizSession }> {
-    return this.http.get<{ session: QuizSession }>(`${this.apiUrl}/quiz/${code}`);
+    return this.http.get<{ session: QuizSession }>(`${this.apiUrl}/api/quiz/${code}`);
   }
 
   getSessionStatus(code: string): Observable<{
@@ -108,53 +108,53 @@ export class QuizService {
       currentRound: number;
       currentQuestionId?: string;
       teamCount: number;
-    }>(`${this.apiUrl}/quiz/${code}/status`);
+    }>(`${this.apiUrl}/api/quiz/${code}/status`);
   }
 
   updateSessionStatus(code: string, status: string): Observable<{ success: boolean; status: string }> {
-    return this.http.patch<{ success: boolean; status: string }>(`${this.apiUrl}/quiz/${code}/status`, { status });
+    return this.http.patch<{ success: boolean; status: string }>(`${this.apiUrl}/api/quiz/${code}/status`, { status });
   }
 
   endSession(code: string): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/quiz/${code}/end`, {});
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/api/quiz/${code}/end`, {});
   }
 
   getLeaderboard(code: string): Observable<{ teams: Team[] }> {
-    return this.http.get<{ teams: Team[] }>(`${this.apiUrl}/quiz/${code}/leaderboard`);
+    return this.http.get<{ teams: Team[] }>(`${this.apiUrl}/api/quiz/${code}/leaderboard`);
   }
 
   getSessionEvents(code: string): Observable<{ events: any[] }> {
-    return this.http.get<{ events: any[] }>(`${this.apiUrl}/quiz/${code}/events`);
+    return this.http.get<{ events: any[] }>(`${this.apiUrl}/api/quiz/${code}/events`);
   }
 
   // Team management
   joinSession(request: JoinSessionRequest): Observable<{ team: Team }> {
-    return this.http.post<{ team: Team }>(`${this.apiUrl}/teams/join`, request);
+    return this.http.post<{ team: Team }>(`${this.apiUrl}/api/teams/join`, request);
   }
 
   getTeam(id: string): Observable<{ team: Team }> {
-    return this.http.get<{ team: Team }>(`${this.apiUrl}/teams/${id}`);
+    return this.http.get<{ team: Team }>(`${this.apiUrl}/api/teams/${id}`);
   }
 
   updateTeamPoints(id: string, points: number): Observable<{ success: boolean; totalPoints: number }> {
-    return this.http.patch<{ success: boolean; totalPoints: number }>(`${this.apiUrl}/teams/${id}/points`, { points });
+    return this.http.patch<{ success: boolean; totalPoints: number }>(`${this.apiUrl}/api/teams/${id}/points`, { points });
   }
 
   getTeamsForSession(sessionCode: string): Observable<{ teams: Team[] }> {
-    return this.http.get<{ teams: Team[] }>(`${this.apiUrl}/teams/session/${sessionCode}`);
+    return this.http.get<{ teams: Team[] }>(`${this.apiUrl}/api/teams/session/${sessionCode}`);
   }
 
   removeTeam(id: string): Observable<{ success: boolean }> {
-    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/teams/${id}`);
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/api/teams/${id}`);
   }
 
   updateTeamActivity(id: string): Observable<{ success: boolean }> {
-    return this.http.patch<{ success: boolean }>(`${this.apiUrl}/teams/${id}/activity`, {});
+    return this.http.patch<{ success: boolean }>(`${this.apiUrl}/api/teams/${id}/activity`, {});
   }
 
   // Question management
   createQuestion(request: any): Observable<{ question: Question }> {
-    return this.http.post<{ question: Question }>(`${this.apiUrl}/questions`, request);
+    return this.http.post<{ question: Question }>(`${this.apiUrl}/api/questions`, request);
   }
 
   getQuestionsForSession(sessionCode: string, round?: number): Observable<{ questions: Question[] }> {
@@ -162,47 +162,47 @@ export class QuizService {
     if (round !== undefined) {
       params = { round: round.toString() };
     }
-    return this.http.get<{ questions: Question[] }>(`${this.apiUrl}/questions/session/${sessionCode}`, { params });
+    return this.http.get<{ questions: Question[] }>(`${this.apiUrl}/api/questions/session/${sessionCode}`, { params });
   }
 
   getQuestion(id: string): Observable<{ question: Question }> {
-    return this.http.get<{ question: Question }>(`${this.apiUrl}/questions/${id}`);
+    return this.http.get<{ question: Question }>(`${this.apiUrl}/api/questions/${id}`);
   }
 
   updateQuestion(id: string, request: any): Observable<{ question: Question }> {
-    return this.http.put<{ question: Question }>(`${this.apiUrl}/questions/${id}`, request);
+    return this.http.put<{ question: Question }>(`${this.apiUrl}/api/questions/${id}`, request);
   }
 
   deleteQuestion(id: string): Observable<{ success: boolean }> {
-    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/questions/${id}`);
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/api/questions/${id}`);
   }
 
   createQuestionsBulk(request: { sessionCode: string; questions: any[] }): Observable<{ questions: Question[] }> {
-    return this.http.post<{ questions: Question[] }>(`${this.apiUrl}/questions/bulk`, request);
+    return this.http.post<{ questions: Question[] }>(`${this.apiUrl}/api/questions/bulk`, request);
   }
 
   // Answer management
   submitAnswer(request: SubmitAnswerRequest): Observable<{ answer: Answer }> {
-    return this.http.post<{ answer: Answer }>(`${this.apiUrl}/answers`, request);
+    return this.http.post<{ answer: Answer }>(`${this.apiUrl}/api/answers`, request);
   }
 
   getAnswersForQuestion(questionId: string): Observable<{ answers: Answer[] }> {
-    return this.http.get<{ answers: Answer[] }>(`${this.apiUrl}/answers/question/${questionId}`);
+    return this.http.get<{ answers: Answer[] }>(`${this.apiUrl}/api/answers/question/${questionId}`);
   }
 
   getAnswersForTeam(teamId: string): Observable<{ answers: Answer[] }> {
-    return this.http.get<{ answers: Answer[] }>(`${this.apiUrl}/answers/team/${teamId}`);
+    return this.http.get<{ answers: Answer[] }>(`${this.apiUrl}/api/answers/team/${teamId}`);
   }
 
   scoreAnswer(id: string, request: ScoreAnswerRequest): Observable<{ success: boolean }> {
-    return this.http.patch<{ success: boolean }>(`${this.apiUrl}/answers/${id}/score`, request);
+    return this.http.patch<{ success: boolean }>(`${this.apiUrl}/api/answers/${id}/score`, request);
   }
 
   getAnswer(id: string): Observable<{ answer: Answer }> {
-    return this.http.get<{ answer: Answer }>(`${this.apiUrl}/answers/${id}`);
+    return this.http.get<{ answer: Answer }>(`${this.apiUrl}/api/answers/${id}`);
   }
 
   deleteAnswer(id: string): Observable<{ success: boolean }> {
-    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/answers/${id}`);
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/api/answers/${id}`);
   }
 }

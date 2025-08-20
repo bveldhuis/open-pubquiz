@@ -57,8 +57,63 @@ router.post('/', async (req, res) => {
 
     // Auto-score multiple choice questions
     if (question.type === QuestionType.MULTIPLE_CHOICE && question.correct_answer) {
+      console.log('🔍 Multiple choice scoring:');
+      console.log('  - Submitted answer:', `"${answerText}"`);
+      console.log('  - Correct answer:', `"${question.correct_answer}"`);
+      console.log('  - Submitted length:', answerText.length);
+      console.log('  - Correct length:', question.correct_answer.length);
+      console.log('  - Submitted char codes:', Array.from(answerText).map(c => c.charCodeAt(0)));
+      console.log('  - Correct char codes:', Array.from(question.correct_answer).map(c => c.charCodeAt(0)));
+      console.log('  - Submitted (normalized):', `"${answerText.toLowerCase().trim()}"`);
+      console.log('  - Correct (normalized):', `"${question.correct_answer.toLowerCase().trim()}"`);
+      
       isCorrect = answerText.toLowerCase().trim() === question.correct_answer.toLowerCase().trim();
       pointsAwarded = isCorrect ? question.points : 0;
+      
+      console.log('  - Result:', isCorrect ? 'CORRECT' : 'INCORRECT');
+      console.log('  - Points awarded:', pointsAwarded);
+    }
+    
+    // Auto-score sequence questions
+    if (question.type === QuestionType.SEQUENCE && question.sequence_items && Array.isArray(answer)) {
+      console.log('🔍 Sequence scoring:');
+      console.log('  - Correct sequence:', question.sequence_items);
+      console.log('  - Submitted sequence:', answer);
+      
+      const correctSequence = question.sequence_items;
+      const submittedSequence = answer;
+      
+      // Check if all items are in correct order
+      let correctCount = 0;
+      for (let i = 0; i < Math.min(correctSequence.length, submittedSequence.length); i++) {
+        if (correctSequence[i] === submittedSequence[i]) {
+          correctCount++;
+        }
+      }
+      
+      console.log('  - Correct items:', correctCount, 'out of', correctSequence.length);
+      
+      // Full points if all correct, 1 point if only 1 wrong, 0 points otherwise
+      if (correctCount === correctSequence.length) {
+        isCorrect = true;
+        pointsAwarded = question.points;
+        console.log('  - Result: PERFECT (all correct)');
+      } else if (correctCount === correctSequence.length - 1) {
+        isCorrect = true;
+        pointsAwarded = 1;
+        console.log('  - Result: PARTIAL (1 wrong)');
+      } else {
+        isCorrect = false;
+        pointsAwarded = 0;
+        console.log('  - Result: INCORRECT');
+      }
+      
+      console.log('  - Points awarded:', pointsAwarded);
+    }
+    
+    // Open text questions are not auto-scored (isCorrect remains null)
+    if (question.type === QuestionType.OPEN_TEXT) {
+      console.log('🔍 Open text question - manual scoring required');
     }
 
     // Create answer

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface JoinSessionData {
@@ -25,6 +25,18 @@ export interface TeamJoinedEvent {
   teamId: string;
   teamName: string;
   sessionStatus: string;
+}
+
+export interface TeamJoinedSessionEvent {
+  teamId: string;
+  teamName: string;
+}
+
+export interface ExistingTeamsEvent {
+  teams: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 export interface QuestionStartedEvent {
@@ -65,6 +77,8 @@ export class SocketService {
 
   // Event subjects
   private teamJoinedSubject = new Subject<TeamJoinedEvent>();
+  private teamJoinedSessionSubject = new Subject<TeamJoinedSessionEvent>();
+  private existingTeamsSubject = new Subject<ExistingTeamsEvent>();
   private questionStartedSubject = new Subject<QuestionStartedEvent>();
   private questionEndedSubject = new Subject<void>();
   private leaderboardUpdatedSubject = new Subject<LeaderboardUpdatedEvent>();
@@ -72,9 +86,12 @@ export class SocketService {
   private answerReceivedSubject = new Subject<AnswerReceivedEvent>();
   private roundStartedSubject = new Subject<RoundStartedEvent>();
   private errorSubject = new Subject<{ message: string }>();
+  private connectionStatusSubject = new BehaviorSubject<boolean>(false);
 
   // Observables
   public teamJoined$ = this.teamJoinedSubject.asObservable();
+  public teamJoinedSession$ = this.teamJoinedSessionSubject.asObservable();
+  public existingTeams$ = this.existingTeamsSubject.asObservable();
   public questionStarted$ = this.questionStartedSubject.asObservable();
   public questionEnded$ = this.questionEndedSubject.asObservable();
   public leaderboardUpdated$ = this.leaderboardUpdatedSubject.asObservable();
@@ -82,6 +99,7 @@ export class SocketService {
   public answerReceived$ = this.answerReceivedSubject.asObservable();
   public roundStarted$ = this.roundStartedSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
+  public connectionStatus$ = this.connectionStatusSubject.asObservable();
 
   constructor() {}
 
@@ -97,11 +115,13 @@ export class SocketService {
     this.socket.on('connect', () => {
       console.log('🔌 Connected to Socket.IO server');
       this.connected = true;
+      this.connectionStatusSubject.next(true);
     });
 
     this.socket.on('disconnect', () => {
       console.log('🔌 Disconnected from Socket.IO server');
       this.connected = false;
+      this.connectionStatusSubject.next(false);
     });
 
     this.socket.on('team_joined', (data: TeamJoinedEvent) => {
@@ -109,8 +129,19 @@ export class SocketService {
       this.teamJoinedSubject.next(data);
     });
 
+    this.socket.on('team_joined_session', (data: TeamJoinedSessionEvent) => {
+      console.log('👥 Team joined session:', data);
+      this.teamJoinedSessionSubject.next(data);
+    });
+
+    this.socket.on('existing_teams', (data: ExistingTeamsEvent) => {
+      console.log('📋 Existing teams received:', data);
+      this.existingTeamsSubject.next(data);
+    });
+
     this.socket.on('question_started', (data: QuestionStartedEvent) => {
       console.log('❓ Question started:', data);
+      console.log('❓ Emitting to questionStartedSubject');
       this.questionStartedSubject.next(data);
     });
 
@@ -160,6 +191,13 @@ export class SocketService {
     }
   }
 
+  joinRoom(sessionCode: string): void {
+    if (this.socket) {
+      console.log('🔗 Joining room:', sessionCode);
+      this.socket.emit('join_room', { sessionCode });
+    }
+  }
+
   submitAnswer(data: SubmitAnswerData): void {
     if (this.socket) {
       console.log('📝 Submitting answer:', data);
@@ -171,6 +209,8 @@ export class SocketService {
     if (this.socket) {
       console.log('🎮 Presenter action:', data);
       this.socket.emit('presenter_action', data);
+    } else {
+      console.error('❌ Socket not connected, cannot send presenter action');
     }
   }
 

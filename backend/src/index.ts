@@ -9,7 +9,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { AppDataSource } from './config/database';
 import { setupSocketHandlers } from './socket/socketHandlers';
-import { quizRoutes } from './routes/quizRoutes';
+import quizRoutes from './routes/quizRoutes';
 import { teamRoutes } from './routes/teamRoutes';
 import { questionRoutes } from './routes/questionRoutes';
 import { answerRoutes } from './routes/answerRoutes';
@@ -74,7 +74,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(err.status || 500).json({
     error: {
       message: err.message || 'Internal server error',
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+      ...(process.env.NODE_ENV === 'development' && err instanceof Error && { stack: err.stack })
     }
   });
 });

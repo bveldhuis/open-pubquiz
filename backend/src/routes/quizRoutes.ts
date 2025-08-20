@@ -1,102 +1,64 @@
 import { Router } from 'express';
 import { AppDataSource } from '../config/database';
 import { QuizSession, QuizSessionStatus } from '../entities/QuizSession';
-import { Question, QuestionType } from '../entities/Question';
-import { SessionEvent, EventType } from '../entities/SessionEvent';
-import { v4 as uuidv4 } from 'uuid';
-import QRCode from 'qrcode';
+import { Question } from '../entities/Question';
+import { Team } from '../entities/Team';
+import { Answer } from '../entities/Answer';
 
 const router = Router();
 
-// Generate unique session code
-function generateSessionCode(): string {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
-// Create new quiz session
+// Create session
 router.post('/', async (req, res) => {
   try {
     const { name } = req.body;
-
+    
     if (!name) {
       return res.status(400).json({ error: 'Session name is required' });
     }
 
-    // Generate unique session code
-    let sessionCode: string;
-    let existingSession;
     const sessionRepository = AppDataSource.getRepository(QuizSession);
     
+    // Generate unique session code
+    const generateCode = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = '';
+      for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    };
+
+    let sessionCode;
+    let existingSession;
     do {
-      sessionCode = generateSessionCode();
+      sessionCode = generateCode();
       existingSession = await sessionRepository.findOne({ where: { code: sessionCode } });
     } while (existingSession);
 
-    // Create session
     const session = sessionRepository.create({
-      id: uuidv4(),
-      code: sessionCode,
       name,
-      status: QuizSessionStatus.WAITING
+      code: sessionCode,
+      status: QuizSessionStatus.WAITING,
+      current_round: 1
     });
 
     await sessionRepository.save(session);
 
-    // Log session creation event
-    const eventRepository = AppDataSource.getRepository(SessionEvent);
-    await eventRepository.save({
-      quiz_session_id: session.id,
-      event_type: EventType.SESSION_CREATED,
-      event_data: { sessionName: name }
-    });
-
-    // Generate QR code
-    const qrCodeDataUrl = await QRCode.toDataURL(`${process.env.FRONTEND_URL || 'http://localhost:4200'}/join?code=${sessionCode}`);
-
-    return res.status(201).json({
-      session: {
-        id: session.id,
-        code: session.code,
-        name: session.name,
-        status: session.status,
-        qrCode: qrCodeDataUrl
-      }
-    });
+    res.json({ session });
   } catch (error) {
-    console.error('Error creating quiz session:', error);
-    return res.status(500).json({ error: 'Failed to create quiz session' });
+    console.error('Error creating session:', error);
+    res.status(500).json({ error: 'Failed to create session' });
   }
+  return;
 });
 
-// Get session by code
+// Get session
 router.get('/:code', async (req, res) => {
   try {
     const { code } = req.params;
-
+    
     const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = await sessionRepository.findOne({
-      where: { code },
-      relations: ['teams', 'questions']
-    });
-
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-
-    return res.json({ session });
-  } catch (error) {
-    console.error('Error fetching session:', error);
-    return res.status(500).json({ error: 'Failed to fetch session' });
-  }
-});
-
-// Get session status
-router.get('/:code/status', async (req, res) => {
-  try {
-    const { code } = req.params;
-
-    const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = await sessionRepository.findOne({
+    const session = await sessionRepository.findOne({ 
       where: { code },
       relations: ['teams']
     });
@@ -105,16 +67,40 @@ router.get('/:code/status', async (req, res) => {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    return res.json({
+    res.json({ session });
+  } catch (error) {
+    console.error('Error getting session:', error);
+    res.status(500).json({ error: 'Failed to get session' });
+  }
+  return;
+});
+
+// Get session status
+router.get('/:code/status', async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({ 
+      where: { code },
+      relations: ['teams']
+    });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    res.json({
       status: session.status,
       currentRound: session.current_round,
       currentQuestionId: session.current_question_id,
       teamCount: session.teams.length
     });
   } catch (error) {
-    console.error('Error fetching session status:', error);
-    return res.status(500).json({ error: 'Failed to fetch session status' });
+    console.error('Error getting session status:', error);
+    res.status(500).json({ error: 'Failed to get session status' });
   }
+  return;
 });
 
 // Update session status
@@ -122,11 +108,7 @@ router.patch('/:code/status', async (req, res) => {
   try {
     const { code } = req.params;
     const { status } = req.body;
-
-    if (!Object.values(QuizSessionStatus).includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
-    }
-
+    
     const sessionRepository = AppDataSource.getRepository(QuizSession);
     const session = await sessionRepository.findOne({ where: { code } });
 
@@ -134,20 +116,156 @@ router.patch('/:code/status', async (req, res) => {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    await sessionRepository.update(session.id, { status });
+    session.status = status as QuizSessionStatus;
+    await sessionRepository.save(session);
 
-    return res.json({ success: true, status });
+    res.json({ success: true, status: session.status });
   } catch (error) {
     console.error('Error updating session status:', error);
-    return res.status(500).json({ error: 'Failed to update session status' });
+    res.status(500).json({ error: 'Failed to update session status' });
   }
+  return;
+});
+
+// Start question
+router.post('/:code/start-question', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const { questionId } = req.body;
+    
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({ where: { code } });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Verify question exists and belongs to this session
+    const questionRepository = AppDataSource.getRepository(Question);
+    const question = await questionRepository.findOne({ 
+      where: { id: questionId, quiz_session_id: session.id }
+    });
+
+    if (!question) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    session.current_question_id = questionId;
+    session.status = QuizSessionStatus.ACTIVE;
+    await sessionRepository.save(session);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error starting question:', error);
+    res.status(500).json({ error: 'Failed to start question' });
+  }
+  return;
+});
+
+// End question
+router.post('/:code/end-question', async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({ where: { code } });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    session.status = QuizSessionStatus.PAUSED;
+    await sessionRepository.save(session);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error ending question:', error);
+    res.status(500).json({ error: 'Failed to end question' });
+  }
+  return;
+});
+
+// Show review
+router.post('/:code/show-review', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const { questionId } = req.body;
+    
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({ where: { code } });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Verify question exists and belongs to this session
+    const questionRepository = AppDataSource.getRepository(Question);
+    const question = await questionRepository.findOne({ 
+      where: { id: questionId, quiz_session_id: session.id }
+    });
+
+    if (!question) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error showing review:', error);
+    res.status(500).json({ error: 'Failed to show review' });
+  }
+  return;
+});
+
+// Show leaderboard
+router.post('/:code/show-leaderboard', async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({ where: { code } });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error showing leaderboard:', error);
+    res.status(500).json({ error: 'Failed to show leaderboard' });
+  }
+  return;
+});
+
+// Next round
+router.post('/:code/next-round', async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({ where: { code } });
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    session.current_round = session.current_round + 1;
+    session.current_question_id = null;
+    session.status = QuizSessionStatus.WAITING;
+    await sessionRepository.save(session);
+
+    res.json({ success: true, currentRound: session.current_round });
+  } catch (error) {
+    console.error('Error starting next round:', error);
+    res.status(500).json({ error: 'Failed to start next round' });
+  }
+  return;
 });
 
 // End session
 router.post('/:code/end', async (req, res) => {
   try {
     const { code } = req.params;
-
+    
     const sessionRepository = AppDataSource.getRepository(QuizSession);
     const session = await sessionRepository.findOne({ where: { code } });
 
@@ -155,52 +273,48 @@ router.post('/:code/end', async (req, res) => {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    await sessionRepository.update(session.id, { status: QuizSessionStatus.FINISHED });
+    session.status = QuizSessionStatus.FINISHED;
+    await sessionRepository.save(session);
 
-    // Log session end event
-    const eventRepository = AppDataSource.getRepository(SessionEvent);
-    await eventRepository.save({
-      quiz_session_id: session.id,
-      event_type: EventType.SESSION_ENDED
-    });
-
-    return res.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
     console.error('Error ending session:', error);
-    return res.status(500).json({ error: 'Failed to end session' });
+    res.status(500).json({ error: 'Failed to end session' });
   }
+  return;
 });
 
-// Get session leaderboard
+// Get leaderboard
 router.get('/:code/leaderboard', async (req, res) => {
   try {
     const { code } = req.params;
-
+    
     const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = await sessionRepository.findOne({
-      where: { code },
-      relations: ['teams']
-    });
+    const session = await sessionRepository.findOne({ where: { code } });
 
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    // Sort teams by points
-    const teams = session.teams.sort((a, b) => b.total_points - a.total_points);
+    const teamRepository = AppDataSource.getRepository(Team);
+    const teams = await teamRepository.find({
+      where: { quiz_session_id: session.id },
+      order: { total_points: 'DESC' }
+    });
 
-    return res.json({ teams });
+    res.json({ teams });
   } catch (error) {
-    console.error('Error fetching leaderboard:', error);
-    return res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    console.error('Error getting leaderboard:', error);
+    res.status(500).json({ error: 'Failed to get leaderboard' });
   }
+  return;
 });
 
 // Get session events
 router.get('/:code/events', async (req, res) => {
   try {
     const { code } = req.params;
-
+    
     const sessionRepository = AppDataSource.getRepository(QuizSession);
     const session = await sessionRepository.findOne({ where: { code } });
 
@@ -208,18 +322,13 @@ router.get('/:code/events', async (req, res) => {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    const eventRepository = AppDataSource.getRepository(SessionEvent);
-    const events = await eventRepository.find({
-      where: { quiz_session_id: session.id },
-      order: { created_at: 'DESC' },
-      take: 50
-    });
-
-    return res.json({ events });
+    // This would return session events if implemented
+    res.json({ events: [] });
   } catch (error) {
-    console.error('Error fetching session events:', error);
-    return res.status(500).json({ error: 'Failed to fetch session events' });
+    console.error('Error getting session events:', error);
+    res.status(500).json({ error: 'Failed to get session events' });
   }
+  return;
 });
 
-export { router as quizRoutes };
+export default router;

@@ -48,9 +48,13 @@ import { TimerComponent } from './components/timer/timer.component';
 import { SequenceQuestionComponent } from './components/sequence-question/sequence-question.component';
 import { ReviewComponent } from './components/review/review.component';
 import { QrCodeComponent } from './components/qr-code/qr-code.component';
+import { QuestionDisplayComponent } from './components/question-display/question-display.component';
+import { AnswerReviewComponent } from './components/answer-review/answer-review.component';
+import { ParticipantQuestionComponent } from './components/participant-question/participant-question.component';
 
 // Services
 import { QuizService } from './services/quiz.service';
+import { QuizManagementService } from './services/quiz-management.service';
 import { SocketService } from './services/socket.service';
 import { AuthService } from './services/auth.service';
 
@@ -74,7 +78,10 @@ const routes: Routes = [
     TimerComponent,
     SequenceQuestionComponent,
     ReviewComponent,
-    QrCodeComponent
+    QrCodeComponent,
+    QuestionDisplayComponent,
+    AnswerReviewComponent,
+    ParticipantQuestionComponent
   ],
   imports: [
     BrowserModule,
@@ -116,6 +123,7 @@ const routes: Routes = [
   ],
   providers: [
     QuizService,
+    QuizManagementService,
     SocketService,
     AuthService
   ],
