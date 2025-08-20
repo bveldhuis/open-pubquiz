@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: pubquiz-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: pubquiz_root_password
+      MYSQL_DATABASE: pubquiz
+      MYSQL_USER: pubquiz_user
+      MYSQL_PASSWORD: pubquiz_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - pubquiz-network
+
+  # Backend API Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pubquiz-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: pubquiz_user
+      DB_PASSWORD: pubquiz_password
+      DB_DATABASE: pubquiz
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+    networks:
+      - pubquiz-network
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  # Frontend Angular App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pubquiz-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - pubquiz-network
+
+volumes:
+  mysql_data:
+
+networks:
+  pubquiz-network:
+    driver: bridge
