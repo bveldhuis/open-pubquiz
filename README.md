@@ -42,6 +42,7 @@ docker-compose up -d
 3. Access the application:
 - Frontend: http://localhost:4200
 - Backend API: http://localhost:3000
+- Health Check: http://localhost:3000/health
 
 ### Development Setup
 
@@ -95,6 +96,7 @@ npm start
 open-pubquiz/
 ├── frontend/          # Angular PWA application
 ├── backend/           # Node.js Express server
+│   └── HEALTH_ENDPOINT.md # Health endpoint documentation
 ├── docker-compose.yml # Docker orchestration
 └── README.md         # This file
 ```

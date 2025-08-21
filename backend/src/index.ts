@@ -13,6 +13,7 @@ import quizRoutes from './routes/quizRoutes';
 import { teamRoutes } from './routes/teamRoutes';
 import { questionRoutes } from './routes/questionRoutes';
 import { answerRoutes } from './routes/answerRoutes';
+import { checkDatabaseHealth } from './utils/databaseHealth';
 
 // Load environment variables
 dotenv.config();
@@ -51,12 +52,36 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const dbHealth = await checkDatabaseHealth();
+    
+    const overallStatus = dbHealth.connected && dbHealth.migrationsUpToDate ? 'OK' : 'DEGRADED';
+    const statusCode = dbHealth.connected ? 200 : 503;
+    
+    res.status(statusCode).json({ 
+      status: overallStatus,
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: {
+        connected: dbHealth.connected,
+        migrationsUpToDate: dbHealth.migrationsUpToDate,
+        ...(dbHealth.error && { error: dbHealth.error }),
+        ...(dbHealth.migrationDetails && { migrationDetails: dbHealth.migrationDetails })
+      }
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'ERROR',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: {
+        connected: false,
+        migrationsUpToDate: false,
+        error: error instanceof Error ? error.message : 'Unknown error during health check'
+      }
+    });
+  }
 });
 
 // API routes

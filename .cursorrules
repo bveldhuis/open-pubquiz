@@ -1,0 +1,34 @@
+{
+  "rules": [
+    {
+      "description": "General Best Practices",
+      "pattern": ".*",
+      "replacement": "Always write clean, maintainable, and well-documented code. Use meaningful names, follow consistent formatting, and include automated tests. Handle errors and edge cases properly. Apply appropriate design patterns and language idioms."
+    },
+    {
+      "description": "KISS Principle",
+      "pattern": ".*",
+      "replacement": "Favor the simplest solution that meets requirements. Avoid unnecessary abstractions, complex rule engines, or over-optimization. Code should be easy for new developers to understand quickly."
+    },
+    {
+      "description": "DRY Principle",
+      "pattern": ".*",
+      "replacement": "Do not duplicate logic. Extract shared functionality into reusable functions, utilities, or modules. Centralize configuration and constants. Follow the Rule of Three before abstracting."
+    },
+    {
+      "description": "Composition over Inheritance",
+      "pattern": ".*",
+      "replacement": "Favor object composition over deep inheritance hierarchies. Use interfaces and dependency injection. Extend functionality via decorators or mixins rather than base classes."
+    },
+    {
+      "description": "Separation of Concerns",
+      "pattern": ".*",
+      "replacement": "Divide functionality into distinct, testable modules with clear boundaries (data, business, presentation, service). Use well-defined interfaces for communication."
+    },
+    {
+      "description": "Single Responsibility Principle",
+      "pattern": ".*",
+      "replacement": "Each class, module, or function should have only one responsibility and one reason to change. Avoid 'god' classes and split out unrelated logic."
+    }
+  ]
+}

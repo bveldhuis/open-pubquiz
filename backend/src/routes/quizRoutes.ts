@@ -4,6 +4,7 @@ import { QuizSession, QuizSessionStatus } from '../entities/QuizSession';
 import { Question } from '../entities/Question';
 import { Team } from '../entities/Team';
 import { Answer } from '../entities/Answer';
+import { SessionEvent } from '../entities/SessionEvent';
 
 const router = Router();
 
@@ -314,6 +315,7 @@ router.get('/:code/leaderboard', async (req, res) => {
 router.get('/:code/events', async (req, res) => {
   try {
     const { code } = req.params;
+    const { limit = 50, offset = 0, eventType } = req.query;
     
     const sessionRepository = AppDataSource.getRepository(QuizSession);
     const session = await sessionRepository.findOne({ where: { code } });
@@ -322,8 +324,33 @@ router.get('/:code/events', async (req, res) => {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    // This would return session events if implemented
-    res.json({ events: [] });
+    const eventRepository = AppDataSource.getRepository(SessionEvent);
+    let whereClause: any = { quiz_session_id: session.id };
+    
+    // Filter by event type if specified
+    if (eventType) {
+      whereClause.event_type = eventType;
+    }
+
+    const events = await eventRepository.find({
+      where: whereClause,
+      order: { created_at: 'DESC' },
+      take: parseInt(limit as string),
+      skip: parseInt(offset as string),
+      relations: ['team', 'question']
+    });
+
+    const totalCount = await eventRepository.count({ where: whereClause });
+
+    res.json({ 
+      events,
+      pagination: {
+        total: totalCount,
+        limit: parseInt(limit as string),
+        offset: parseInt(offset as string),
+        hasMore: totalCount > parseInt(offset as string) + events.length
+      }
+    });
   } catch (error) {
     console.error('Error getting session events:', error);
     res.status(500).json({ error: 'Failed to get session events' });

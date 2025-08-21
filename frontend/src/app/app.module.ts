@@ -42,15 +42,25 @@ import { HomeComponent } from './components/home/home.component';
 import { PresenterComponent } from './components/presenter/presenter.component';
 import { ParticipantComponent } from './components/participant/participant.component';
 import { JoinComponent } from './components/join/join.component';
-import { QuestionComponent } from './components/question/question.component';
 import { LeaderboardComponent } from './components/leaderboard/leaderboard.component';
-import { TimerComponent } from './components/timer/timer.component';
-import { SequenceQuestionComponent } from './components/sequence-question/sequence-question.component';
+import { AnswerReviewComponent } from './components/answer-review/answer-review.component';
+
+// New Optimized Question Components
+import { BaseQuestionComponent } from './components/question/base/base-question.component';
+import { QuestionTimerComponent } from './components/question/base/question-timer.component';
+import { QuestionHeaderComponent } from './components/question/base/question-header.component';
+import { QuestionContentComponent } from './components/question/display/question-content.component';
+import { QuestionDisplayComponent } from './components/question/display/question-display.component';
+import { QuestionAnswerComponent } from './components/question/answer/question-answer.component';
+import { PresenterControlsComponent } from './components/question/controls/presenter-controls.component';
+import { AnswerControlsComponent } from './components/question/controls/answer-controls.component';
+import { MultipleChoiceComponent } from './components/question/types/multiple-choice.component';
+import { OpenTextComponent } from './components/question/types/open-text.component';
+import { SequenceComponent } from './components/question/types/sequence.component';
+
+// Legacy Components (to be implemented/updated)
 import { ReviewComponent } from './components/review/review.component';
 import { QrCodeComponent } from './components/qr-code/qr-code.component';
-import { QuestionDisplayComponent } from './components/question-display/question-display.component';
-import { AnswerReviewComponent } from './components/answer-review/answer-review.component';
-import { ParticipantQuestionComponent } from './components/participant-question/participant-question.component';
 
 // Services
 import { QuizService } from './services/quiz.service';
@@ -73,15 +83,24 @@ const routes: Routes = [
     PresenterComponent,
     ParticipantComponent,
     JoinComponent,
-    QuestionComponent,
     LeaderboardComponent,
-    TimerComponent,
-    SequenceQuestionComponent,
-    ReviewComponent,
-    QrCodeComponent,
-    QuestionDisplayComponent,
     AnswerReviewComponent,
-    ParticipantQuestionComponent
+
+    // New Optimized Question Components
+    QuestionTimerComponent,
+    QuestionHeaderComponent,
+    QuestionContentComponent,
+    QuestionDisplayComponent,
+    QuestionAnswerComponent,
+    PresenterControlsComponent,
+    AnswerControlsComponent,
+    MultipleChoiceComponent,
+    OpenTextComponent,
+    SequenceComponent,
+
+    // Legacy Components (to be implemented/updated)
+    ReviewComponent,
+    QrCodeComponent
   ],
   imports: [
     BrowserModule,

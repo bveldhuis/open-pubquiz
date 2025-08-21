@@ -12,7 +12,8 @@
     "migration:run": "npm run typeorm migration:run -- -d src/config/database.ts",
     "migration:revert": "npm run typeorm migration:revert -- -d src/config/database.ts",
     "seed": "ts-node src/database/seed.ts",
-    "create-tables": "ts-node src/database/createTables.ts"
+    "create-tables": "ts-node src/database/createTables.ts",
+    "test:health": "node test-health.js"
   },
   "keywords": [
     "pubquiz",

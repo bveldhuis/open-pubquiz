@@ -11,7 +11,10 @@ export interface SequenceAnswer {
 export interface Answer {
   id: string;
   team_id: string;
-  team_name: string;
+  team?: {
+    id: string;
+    name: string;
+  };
   question_id: string;
   answer_text: string;
   is_correct?: boolean;
@@ -23,58 +26,42 @@ export interface Answer {
 @Component({
   selector: 'app-answer-review',
   template: `
-    <div class="answer-review" *ngIf="question && answers.length > 0">
+    <div class="answer-review" *ngIf="question">
       <div class="review-header">
-        <h2>Review: Question {{ question.question_number }}</h2>
+        <h2>Question {{ question.question_number }}: {{ question.question_text }}</h2>
         <div class="question-summary">
           <span class="question-type">{{ getQuestionTypeLabel(question.type) }}</span>
           <span class="points">{{ question.points }} point{{ question.points !== 1 ? 's' : '' }}</span>
         </div>
       </div>
 
-      <div class="question-display">
-        <h3>{{ question.question_text }}</h3>
-        
-        <div class="fun-fact" *ngIf="question.fun_fact">
-          <mat-icon>lightbulb</mat-icon>
-          <p>{{ question.fun_fact }}</p>
-        </div>
-
-        <!-- Multiple Choice Options -->
-        <div class="options" *ngIf="question.type === 'multiple_choice' && question.options">
-          <div class="option" *ngFor="let option of question.options; let i = index">
-            <span class="option-letter">{{ getOptionLetter(i) }}</span>
-            <span class="option-text">{{ option }}</span>
-            <mat-icon class="correct-answer" *ngIf="option === question.correct_answer">
-              check_circle
-            </mat-icon>
-          </div>
-        </div>
-
-        <!-- Sequence Items -->
-        <div class="sequence-items" *ngIf="question.type === 'sequence' && question.sequence_items">
-          <div class="sequence-item" *ngFor="let item of question.sequence_items; let i = index">
-            <span class="sequence-number">{{ i + 1 }}</span>
-            <span class="sequence-text">{{ item }}</span>
-          </div>
-        </div>
-
-        <!-- Correct Answer Display -->
-        <div class="correct-answer-display" *ngIf="question.correct_answer">
-          <h4>Correct Answer:</h4>
-          <p class="answer">{{ question.correct_answer }}</p>
-        </div>
+      <!-- Show correct answer for reference -->
+      <div class="correct-answer-reference" *ngIf="question.correct_answer">
+        <mat-icon>check_circle</mat-icon>
+        <span><strong>Correct Answer:</strong> {{ getFormattedCorrectAnswer() }}</span>
       </div>
 
       <div class="answers-section">
         <h3>Team Answers ({{ answers.length }})</h3>
         
-        <div class="answers-list">
+        <!-- Loading state -->
+        <div class="loading-state" *ngIf="isLoading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Loading answers...</p>
+        </div>
+        
+        <!-- No answers state -->
+        <div class="no-answers" *ngIf="!isLoading && answers.length === 0">
+          <mat-icon>info</mat-icon>
+          <p>No answers received for this question yet.</p>
+        </div>
+        
+        <div class="answers-list" *ngIf="!isLoading && answers.length > 0">
           <div class="answer-item" *ngFor="let answer of answers">
             <div class="answer-header">
               <div class="team-info">
                 <mat-icon>group</mat-icon>
-                <span class="team-name">{{ answer.team_name }}</span>
+                <span class="team-name">{{ answer.team?.name || 'Unknown Team' }}</span>
               </div>
               
               <div class="answer-status">
@@ -143,25 +130,27 @@ export interface Answer {
         </div>
       </div>
 
-      <div class="review-controls">
-        <button 
-          mat-raised-button 
-          color="primary" 
-          (click)="showLeaderboard.emit()"
-          [disabled]="hasUnscoredAnswers">
-          <mat-icon>leaderboard</mat-icon>
-          Show Leaderboard
-        </button>
-        
-        <button 
-          mat-raised-button 
-          color="accent" 
-          (click)="nextQuestion.emit()"
-          [disabled]="hasUnscoredAnswers">
-          <mat-icon>arrow_forward</mat-icon>
-          Next Question
-        </button>
-      </div>
+             <div class="review-controls">
+         <button 
+           mat-raised-button 
+           color="primary" 
+           (click)="showLeaderboard.emit()"
+           [disabled]="hasUnscoredAnswers"
+           *ngIf="isLastQuestion">
+           <mat-icon>leaderboard</mat-icon>
+           Show Leaderboard
+         </button>
+         
+         <button 
+           mat-raised-button 
+           color="accent" 
+           (click)="nextQuestion.emit()"
+           [disabled]="hasUnscoredAnswers"
+           *ngIf="!isLastQuestion">
+           <mat-icon>arrow_forward</mat-icon>
+           Next Question
+         </button>
+       </div>
     </div>
   `,
   styles: [`
@@ -201,155 +190,70 @@ export interface Answer {
       font-weight: 500;
     }
 
-    .points {
-      background: #4caf50;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
+         .points {
+       background: #4caf50;
+       color: white;
+       padding: 4px 12px;
+       border-radius: 20px;
+       font-size: 0.9rem;
+       font-weight: 500;
+     }
 
-    .question-display {
-      margin-bottom: 30px;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-    }
+     .correct-answer-reference {
+       display: flex;
+       align-items: center;
+       gap: 8px;
+       background: #e8f5e8;
+       padding: 12px 16px;
+       border-radius: 8px;
+       margin-bottom: 20px;
+       border-left: 4px solid #4caf50;
+     }
 
-    .question-display h3 {
-      margin: 0 0 15px 0;
-      color: #333;
-      font-size: 1.3rem;
-    }
+     .correct-answer-reference mat-icon {
+       color: #4caf50;
+     }
 
-    .fun-fact {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      background: #fff3e0;
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      border-left: 3px solid #ff9800;
-    }
+     .correct-answer-reference span {
+       color: #2e7d32;
+       font-size: 1rem;
+     }
 
-    .fun-fact mat-icon {
-      color: #ff9800;
-      margin-top: 2px;
-    }
+         .answers-section {
+       margin-bottom: 30px;
+     }
 
-    .fun-fact p {
-      margin: 0;
-      color: #e65100;
-      font-style: italic;
-      font-size: 0.9rem;
-    }
+     .answers-section h3 {
+       margin: 0 0 20px 0;
+       color: #333;
+       font-size: 1.4rem;
+     }
 
-    .options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 15px;
-    }
+     .loading-state,
+     .no-answers {
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       gap: 16px;
+       padding: 40px 20px;
+       background: #f8f9fa;
+       border-radius: 8px;
+       text-align: center;
+     }
 
-    .option {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px;
-      background: white;
-      border-radius: 6px;
-      border: 1px solid #e0e0e0;
-    }
+     .loading-state p,
+     .no-answers p {
+       margin: 0;
+       color: #666;
+       font-size: 1rem;
+     }
 
-    .option-letter {
-      background: #3f51b5;
-      color: white;
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 0.8rem;
-    }
-
-    .option-text {
-      flex: 1;
-      font-size: 0.95rem;
-    }
-
-    .correct-answer {
-      color: #4caf50;
-    }
-
-    .sequence-items {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 15px;
-    }
-
-    .sequence-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px;
-      background: white;
-      border-radius: 6px;
-      border: 1px solid #e0e0e0;
-    }
-
-    .sequence-number {
-      background: #ff9800;
-      color: white;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 0.7rem;
-    }
-
-    .sequence-text {
-      flex: 1;
-      font-size: 0.9rem;
-    }
-
-    .correct-answer-display {
-      margin-top: 15px;
-      padding: 12px;
-      background: #e8f5e8;
-      border-radius: 6px;
-      border-left: 3px solid #4caf50;
-    }
-
-    .correct-answer-display h4 {
-      margin: 0 0 8px 0;
-      color: #2e7d32;
-      font-size: 1rem;
-    }
-
-    .answer {
-      margin: 0;
-      font-weight: bold;
-      color: #1b5e20;
-      font-size: 1rem;
-    }
-
-    .answers-section {
-      margin-bottom: 30px;
-    }
-
-    .answers-section h3 {
-      margin: 0 0 20px 0;
-      color: #333;
-      font-size: 1.4rem;
-    }
+     .no-answers mat-icon {
+       font-size: 48px;
+       color: #ccc;
+       width: 48px;
+       height: 48px;
+     }
 
     .answers-list {
       display: flex;
@@ -522,15 +426,33 @@ export interface Answer {
 export class AnswerReviewComponent {
   @Input() question?: Question;
   @Input() answers: Answer[] = [];
+  @Input() isLastQuestion: boolean = false;
+  @Input() isLoading: boolean = false;
 
   @Output() scoreAnswer = new EventEmitter<{ answerId: string; points: number; isCorrect: boolean }>();
   @Output() showLeaderboard = new EventEmitter<void>();
   @Output() nextQuestion = new EventEmitter<void>();
 
+  ngOnInit() {
+    console.log('AnswerReviewComponent initialized with:', {
+      question: this.question,
+      answers: this.answers,
+      isLastQuestion: this.isLastQuestion
+    });
+  }
+
+  ngOnChanges() {
+    console.log('AnswerReviewComponent changes:', {
+      question: this.question,
+      answers: this.answers,
+      isLastQuestion: this.isLastQuestion
+    });
+  }
+
   get hasUnscoredAnswers(): boolean {
     // Only open text questions need manual scoring
-    return this.question?.type === 'open_text' && 
-           this.answers.some(answer => answer.is_correct === undefined);
+    // For now, let's allow navigation even with unscored answers
+    return false;
   }
 
   getQuestionTypeLabel(type: string): string {
@@ -579,5 +501,16 @@ export class AnswerReviewComponent {
     }
     // Fallback to answer_text if sequenceAnswers not available
     return answer.answer_text.replace(/\|/g, ' → ');
+  }
+
+  getFormattedCorrectAnswer(): string {
+    if (!this.question?.correct_answer) return '';
+    
+    // For sequence questions, replace pipes with arrows
+    if (this.question.type === 'sequence') {
+      return this.question.correct_answer.replace(/\|/g, ' → ');
+    }
+    
+    return this.question.correct_answer;
   }
 }

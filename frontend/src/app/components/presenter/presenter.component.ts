@@ -55,14 +55,12 @@ import { Subscription, interval } from 'rxjs';
             </div>
             
             <div class="qr-section">
-              <h3>QR Code for Participants</h3>
-              <div class="qr-code" *ngIf="currentSession.qrCode">
-                <img [src]="currentSession.qrCode" alt="QR Code" class="qr-image">
-              </div>
-              <p class="qr-instructions">
-                Participants can scan this QR code or go to: 
-                <strong>{{ getJoinUrl() }}</strong>
-              </p>
+              <app-qr-code 
+                [sessionCode]="currentSession.code"
+                [sessionName]="currentSession.name"
+                (qrGenerated)="onQrGenerated($event)"
+                (error)="onQrError($event)">
+              </app-qr-code>
             </div>
 
             <div class="session-stats">
@@ -105,47 +103,111 @@ import { Subscription, interval } from 'rxjs';
              </button>
            </div>
 
-           <!-- Quiz Management Section -->
-           <div class="quiz-management" *ngIf="questions.length > 0">
-             <h3>Quiz Management</h3>
-             
-             <!-- Questions List -->
-             <div class="questions-list">
-               <div class="question-item" *ngFor="let question of questions">
-                 <app-question-display
-                   [question]="question"
-                   [isActive]="isQuestionActive && currentQuestion?.id === question.id"
-                   [showCorrectAnswer]="showReview"
-                   [submissionsReceived]="submissionsReceived"
-                   [totalTeams]="teams.length"
-                   [canStart]="!isQuestionActive"
-                   [hasAnswers]="currentAnswers.length > 0"
-                   (startQuestion)="startQuestion($event)"
-                   (endQuestion)="endQuestion()"
-                   (showReview)="showQuestionReview($event)">
-                 </app-question-display>
+                       <!-- Quiz Management Section -->
+            <div class="quiz-management" *ngIf="questions.length > 0">
+                             <div class="quiz-header" *ngIf="!showReview && !showLeaderboard">
+                <h3>Round {{ currentSession.current_round }} - Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}</h3>
+                <div class="quiz-status">
+                  <span class="status-badge" [class]="getQuizStatusClass()">
+                    {{ getQuizStatusText() }}
+                  </span>
+                </div>
+              </div>
+
+                             <!-- Current Question Display -->
+                               <div class="current-question" *ngIf="currentQuestion && !showReview && !showLeaderboard">
+                                   <app-question-display
+                    [question]="currentQuestion"
+                    [isActive]="isQuestionActive"
+                    [showCorrectAnswer]="showReview"
+                    [submissionsReceived]="submissionsReceived"
+                    [totalTeams]="teams.length"
+                    [canStart]="false"
+                    [hasAnswers]="currentAnswers.length > 0"
+                    [timeRemaining]="timeRemaining"
+                    [totalTime]="currentQuestion.time_limit || 60"
+                    [showControls]="true"
+                    [isLastQuestion]="currentQuestionIndex === questions.length - 1"
+                    (startQuestion)="startQuestion()"
+                    (endQuestion)="endQuestion()"
+                    (showReview)="showQuestionReview()"
+                    (endRound)="endRound()"
+                    (onTimeUp)="onTimeUp()"
+                    (onTimeChanged)="onTimeChanged($event)">
+                  </app-question-display>
                </div>
-             </div>
 
-             <!-- Review Section -->
-             <div class="review-section" *ngIf="showReview && currentQuestion">
-               <app-answer-review
-                 [question]="currentQuestion"
-                 [answers]="currentAnswers"
-                 (scoreAnswer)="scoreAnswer($event.answerId, $event.points, $event.isCorrect)"
-                 (showLeaderboard)="showLeaderboardView()"
-                 (nextQuestion)="nextRound()">
-               </app-answer-review>
-             </div>
+              <!-- Question Navigation -->
+              <div class="question-navigation" *ngIf="!isQuestionActive && !showReview && !showLeaderboard">
+                <div class="nav-buttons">
+                  <button 
+                    mat-stroked-button 
+                    (click)="previousQuestion()" 
+                    [disabled]="currentQuestionIndex === 0">
+                    <mat-icon>arrow_back</mat-icon>
+                    Previous Question
+                  </button>
+                  
+                  <button 
+                    mat-raised-button 
+                    color="primary" 
+                    (click)="startQuestion()"
+                    [disabled]="!currentQuestion">
+                    <mat-icon>play_arrow</mat-icon>
+                    Start Question
+                  </button>
+                  
+                  <button 
+                    mat-stroked-button 
+                    (click)="nextQuestion()" 
+                    [disabled]="currentQuestionIndex === questions.length - 1"
+                    *ngIf="currentQuestionIndex < questions.length - 1">
+                    Next Question
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                  
+                  <button 
+                    mat-raised-button 
+                    color="accent" 
+                    (click)="endRound()"
+                    *ngIf="currentQuestionIndex === questions.length - 1">
+                    <mat-icon>flag</mat-icon>
+                    End Round & Review
+                  </button>
+                </div>
+              </div>
 
-             <!-- Leaderboard Section -->
-             <div class="leaderboard-section" *ngIf="showLeaderboard">
-               <app-leaderboard
-                 [teams]="teams"
-                 [currentRound]="currentSession.current_round">
-               </app-leaderboard>
-             </div>
-           </div>
+              <!-- Review Section -->
+              <div class="review-section" *ngIf="showReview && currentQuestion">
+                <app-answer-review
+                  [question]="currentQuestion"
+                  [answers]="currentAnswers"
+                  [isLastQuestion]="currentQuestionIndex === questions.length - 1"
+                  [isLoading]="isLoadingAnswers"
+                  (scoreAnswer)="scoreAnswer($event.answerId, $event.points, $event.isCorrect)"
+                  (nextQuestion)="nextReviewQuestion()"
+                  (showLeaderboard)="showLeaderboardView()">
+                </app-answer-review>
+              </div>
+
+              <!-- Leaderboard Section -->
+              <div class="leaderboard-section" *ngIf="showLeaderboard">
+                <app-leaderboard
+                  [teams]="teams"
+                  [currentRound]="currentSession.current_round">
+                </app-leaderboard>
+                
+                <div class="leaderboard-actions">
+                  <button 
+                    mat-raised-button 
+                    color="primary" 
+                    (click)="startNextRound()">
+                    <mat-icon>play_arrow</mat-icon>
+                    Start Next Round
+                  </button>
+                </div>
+              </div>
+            </div>
         </div>
       </div>
     </div>
@@ -233,27 +295,7 @@ import { Subscription, interval } from 'rxjs';
     }
 
     .qr-section {
-      text-align: center;
       margin-bottom: 30px;
-    }
-
-    .qr-section h3 {
-      margin-bottom: 20px;
-      color: #333;
-    }
-
-    .qr-code {
-      margin-bottom: 20px;
-    }
-
-    .qr-image {
-      max-width: 200px;
-      height: auto;
-    }
-
-    .qr-instructions {
-      color: #666;
-      font-size: 0.9rem;
     }
 
     .session-stats {
@@ -383,10 +425,93 @@ import { Subscription, interval } from 'rxjs';
        margin-bottom: 20px;
      }
 
-     .review-section,
-     .leaderboard-section {
-       margin-top: 30px;
-     }
+           .review-section,
+      .leaderboard-section {
+        margin-top: 30px;
+      }
+
+      .quiz-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+
+      .quiz-header h3 {
+        margin: 0;
+        color: #333;
+      }
+
+      .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+      }
+
+      .status-badge.waiting {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .status-badge.active {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .status-badge.review {
+        background: #cce5ff;
+        color: #004085;
+      }
+
+      .status-badge.leaderboard {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .question-navigation {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+
+      .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .nav-buttons button {
+        flex: 1;
+        padding: 12px 20px;
+        font-size: 1rem;
+      }
+
+      .end-round-section {
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      .end-round-section button {
+        padding: 16px 32px;
+        font-size: 1.1rem;
+      }
+
+      .leaderboard-actions {
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      .leaderboard-actions button {
+        padding: 16px 32px;
+        font-size: 1.1rem;
+      }
 
     @media (max-width: 768px) {
       .presenter-content {
@@ -410,6 +535,20 @@ import { Subscription, interval } from 'rxjs';
       .action-buttons button {
         width: 100%;
       }
+
+      .nav-buttons {
+        flex-direction: column;
+      }
+
+      .nav-buttons button {
+        width: 100%;
+      }
+
+      .quiz-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
     }
   `]
 })
@@ -423,12 +562,14 @@ export class PresenterComponent implements OnInit, OnDestroy {
   // Quiz state
   questions: Question[] = [];
   currentQuestion?: Question;
+  currentQuestionIndex = 0;
   isQuestionActive = false;
   timeRemaining = 0;
   submissionsReceived = 0;
   showReview = false;
   showLeaderboard = false;
   currentAnswers: any[] = [];
+  isLoadingAnswers = false;
   
   private subscriptions: Subscription[] = [];
   private timerSubscription?: Subscription;
@@ -584,13 +725,19 @@ export class PresenterComponent implements OnInit, OnDestroy {
     });
   }
 
-  getJoinUrl(): string {
-    return `${window.location.origin}/join?code=${this.currentSession?.code}`;
-  }
+
 
   // Quiz Management Methods
   loadSampleQuestions(): void {
     if (!this.currentSession) return;
+
+    // Check if questions already exist for this round
+    if (this.questions.length > 0) {
+      this.snackBar.open('Questions already loaded for this round!', 'Close', {
+        duration: 3000
+      });
+      return;
+    }
 
     const roundNumber = this.currentSession.current_round || 1;
     const sampleQuestions = this.quizManagementService.getSampleQuestions(roundNumber);
@@ -634,6 +781,16 @@ export class PresenterComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (response) => {
         this.questions = response.questions;
+        // Set the first question as current
+        if (this.questions.length > 0) {
+          this.currentQuestionIndex = 0;
+          this.currentQuestion = this.questions[0];
+          this.currentAnswers = [];
+          this.submissionsReceived = 0;
+          this.showReview = false;
+          this.showLeaderboard = false;
+          this.isQuestionActive = false;
+        }
         console.log('Loaded questions:', this.questions);
       },
       error: (error) => {
@@ -645,12 +802,12 @@ export class PresenterComponent implements OnInit, OnDestroy {
     });
   }
 
-  startQuestion(questionId: string): void {
-    if (!this.currentSession) return;
+  startQuestion(): void {
+    if (!this.currentSession || !this.currentQuestion) return;
 
+    const questionId = this.currentQuestion.id;
     this.quizManagementService.startQuestion(this.currentSession.code, questionId).subscribe({
       next: () => {
-        this.currentQuestion = this.questions.find(q => q.id === questionId);
         this.isQuestionActive = true;
         this.timeRemaining = this.currentQuestion?.time_limit || 0;
         this.submissionsReceived = 0;
@@ -702,27 +859,15 @@ export class PresenterComponent implements OnInit, OnDestroy {
     });
   }
 
-  showQuestionReview(questionId: string): void {
-    if (!this.currentSession) return;
+  showQuestionReview(): void {
+    if (!this.currentSession || !this.currentQuestion) return;
 
-    // Load answers for the question
-    this.quizManagementService.getAnswersForQuestion(questionId).subscribe({
-      next: (response) => {
-        this.currentAnswers = response.answers;
-        this.showReview = true;
-        this.showLeaderboard = false;
-        this.currentQuestion = this.questions.find(q => q.id === questionId);
-        
-        this.snackBar.open('Review mode activated', 'Close', {
-          duration: 2000
-        });
-      },
-      error: (error) => {
-        console.error('Error loading answers:', error);
-        this.snackBar.open('Failed to load answers', 'Close', {
-          duration: 5000
-        });
-      }
+    this.loadAnswersForCurrentQuestion();
+    this.showReview = true;
+    this.showLeaderboard = false;
+    
+    this.snackBar.open('Review mode activated', 'Close', {
+      duration: 2000
     });
   }
 
@@ -816,6 +961,151 @@ export class PresenterComponent implements OnInit, OnDestroy {
       this.timerSubscription.unsubscribe();
       this.timerSubscription = undefined;
     }
+  }
+
+  onTimeUp(): void {
+    console.log('Time is up!');
+    this.endQuestion();
+  }
+
+  onTimeChanged(timeRemaining: number): void {
+    this.timeRemaining = timeRemaining;
+  }
+
+  onQrGenerated(joinUrl: string): void {
+    console.log('QR code generated:', joinUrl);
+    this.snackBar.open('QR code generated successfully!', 'Close', {
+      duration: 2000
+    });
+  }
+
+  onQrError(error: string): void {
+    console.error('QR code error:', error);
+    this.snackBar.open(`QR code error: ${error}`, 'Close', {
+      duration: 5000
+    });
+  }
+
+  // Question Navigation Methods
+  nextQuestion(): void {
+    if (this.currentQuestionIndex < this.questions.length - 1) {
+      this.currentQuestionIndex++;
+      this.currentQuestion = this.questions[this.currentQuestionIndex];
+      this.currentAnswers = [];
+      this.submissionsReceived = 0;
+    }
+  }
+
+  previousQuestion(): void {
+    if (this.currentQuestionIndex > 0) {
+      this.currentQuestionIndex--;
+      this.currentQuestion = this.questions[this.currentQuestionIndex];
+      this.currentAnswers = [];
+      this.submissionsReceived = 0;
+    }
+  }
+
+  endRound(): void {
+    // Start review mode from the first question
+    this.currentQuestionIndex = 0;
+    this.currentQuestion = this.questions[0];
+    this.showReview = true;
+    this.showLeaderboard = false;
+    this.isQuestionActive = false;
+    this.stopTimer();
+    
+    // Load answers for the first question
+    this.loadAnswersForCurrentQuestion();
+    
+    this.snackBar.open('Round ended. Starting answer review...', 'Close', {
+      duration: 3000
+    });
+  }
+
+  nextReviewQuestion(): void {
+    console.log('nextReviewQuestion called. Current index:', this.currentQuestionIndex, 'Total questions:', this.questions.length);
+    if (this.currentQuestionIndex < this.questions.length - 1) {
+      this.currentQuestionIndex++;
+      this.currentQuestion = this.questions[this.currentQuestionIndex];
+      this.loadAnswersForCurrentQuestion();
+      console.log('Moved to next question. New index:', this.currentQuestionIndex);
+    } else {
+      // Last question reviewed, show leaderboard
+      console.log('Last question reviewed, showing leaderboard');
+      this.showLeaderboardView();
+    }
+  }
+
+  startNextRound(): void {
+    if (!this.currentSession) return;
+
+    this.quizManagementService.nextRound(this.currentSession.code).subscribe({
+      next: () => {
+        this.showReview = false;
+        this.showLeaderboard = false;
+        this.currentQuestionIndex = 0;
+        this.currentQuestion = undefined;
+        this.isQuestionActive = false;
+        this.currentAnswers = [];
+        this.questions = []; // Clear questions to force reload
+        
+        // Update session info
+        this.currentSession!.current_round = (this.currentSession!.current_round || 1) + 1;
+        
+        // Load questions for the new round
+        this.loadQuestionsForCurrentRound();
+        
+        // Use Socket.IO to start next round
+        this.socketService.nextRound(this.currentSession!.code);
+        
+        this.snackBar.open('Next round started!', 'Close', {
+          duration: 3000
+        });
+      },
+      error: (error) => {
+        console.error('Error starting next round:', error);
+        this.snackBar.open('Failed to start next round', 'Close', {
+          duration: 5000
+        });
+      }
+    });
+  }
+
+  private loadAnswersForCurrentQuestion(): void {
+    if (!this.currentQuestion) return;
+
+    this.isLoadingAnswers = true;
+    this.quizManagementService.getAnswersForQuestion(this.currentQuestion.id).subscribe({
+      next: (response) => {
+        try {
+          console.log('Answers response:', response);
+          this.currentAnswers = response.answers || [];
+        } catch (error) {
+          console.error('Error parsing answers response:', error);
+          this.currentAnswers = [];
+        }
+        this.isLoadingAnswers = false;
+      },
+      error: (error) => {
+        console.error('Error loading answers:', error);
+        this.currentAnswers = [];
+        this.isLoadingAnswers = false;
+      }
+    });
+  }
+
+  getQuizStatusClass(): string {
+    if (this.isQuestionActive) return 'active';
+    if (this.showReview) return 'review';
+    if (this.showLeaderboard) return 'leaderboard';
+    return 'waiting';
+  }
+
+  getQuizStatusText(): string {
+    if (this.isQuestionActive) return 'Question Active';
+    if (this.showReview) return 'Reviewing Answers';
+    if (this.showLeaderboard) return 'Showing Leaderboard';
+    return 'Waiting';
   }
 
   ngOnDestroy(): void {

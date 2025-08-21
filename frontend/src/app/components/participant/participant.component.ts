@@ -22,13 +22,17 @@ import { Subscription, interval } from 'rxjs';
         </div>
 
         <!-- Question Display -->
-        <app-participant-question
+        <app-question-answer
           *ngIf="isQuestionActive && currentQuestion"
           [question]="currentQuestion"
           [isActive]="isQuestionActive"
+          [isAnswerSubmitted]="answerSubmitted"
           [timeRemaining]="timeRemaining"
-          (answerSubmitted)="onAnswerSubmitted($event)">
-        </app-participant-question>
+          [totalTime]="currentQuestion.time_limit || 60"
+          (answerSubmitted)="onAnswerSubmitted($event)"
+          (onTimeUp)="onTimeUp()"
+          (onTimeChanged)="onTimeChanged($event)">
+        </app-question-answer>
 
         <div class="connection-status">
           <mat-icon [class]="isConnected ? 'connected' : 'disconnected'">
@@ -257,5 +261,15 @@ export class ParticipantComponent implements OnInit, OnDestroy {
       this.timerSubscription.unsubscribe();
       this.timerSubscription = undefined;
     }
+  }
+
+  onTimeUp(): void {
+    console.log('Time is up!');
+    this.isQuestionActive = false;
+    this.stopTimer();
+  }
+
+  onTimeChanged(timeRemaining: number): void {
+    this.timeRemaining = timeRemaining;
   }
 }

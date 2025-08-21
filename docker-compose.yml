@@ -43,6 +43,12 @@ services:
       - pubquiz-network
     volumes:
       - ./backend/uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (res) => { let data = ''; res.on('data', chunk => data += chunk); res.on('end', () => { try { const health = JSON.parse(data); process.exit(health.status === 'OK' ? 0 : 1); } catch (e) { process.exit(1); } }); }).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Frontend Angular App
   frontend:
@@ -54,7 +60,8 @@ services:
     ports:
       - "4200:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - pubquiz-network
 
