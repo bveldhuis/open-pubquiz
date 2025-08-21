@@ -30,7 +30,7 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}/frontend:latest
+          tags: ghcr.io/${{ github.repository_owner }}/open-pubquiz-frontend:latest
 
       # Build and push backend image
       - name: Build and push backend
@@ -39,7 +39,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}/backend:latest
+          tags: ghcr.io/${{ github.repository_owner }}/open-pubquiz-backend:latest
 
       # (Optional) Build with docker-compose for validation
       - name: Build using docker-compose
