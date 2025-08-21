@@ -3,6 +3,7 @@ import { QuizSession, QuizSessionStatus } from '../entities/QuizSession';
 import { SessionEvent, EventType } from '../entities/SessionEvent';
 import { ISessionService, JoinSessionResult } from './interfaces/ISessionService';
 import { ITeamService } from './interfaces/ITeamService';
+import { LessThan } from 'typeorm';
 
 export class SessionService implements ISessionService {
   private sessionRepository = AppDataSource.getRepository(QuizSession);
@@ -178,7 +179,7 @@ export class SessionService implements ISessionService {
     const inactiveSessions = await this.sessionRepository.find({
       where: {
         status: QuizSessionStatus.WAITING,
-        updated_at: inactiveThreshold
+        updated_at: LessThan(inactiveThreshold)
       }
     });
 
@@ -229,7 +230,7 @@ export class SessionService implements ISessionService {
     const inactiveSessions = await this.sessionRepository.count({
       where: {
         status: QuizSessionStatus.WAITING,
-        updated_at: inactiveThreshold
+        updated_at: LessThan(inactiveThreshold)
       }
     });
 

@@ -33,10 +33,6 @@
     - [ ] Integration tests
 
 ### Documentation
-26. **API Documentation**
-    - [ ] OpenAPI/Swagger specification
-    - [ ] Interactive API docs
-    - [ ] Error code documentation
 
 27. **User Documentation**
     - [ ] User manual

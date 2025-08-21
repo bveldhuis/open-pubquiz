@@ -8,6 +8,94 @@ const sessionService = serviceFactory.createSessionService(serviceFactory.create
 const teamService = serviceFactory.createTeamService();
 const questionService = serviceFactory.createQuestionService(sessionService);
 
+/**
+ * @swagger
+ * /questions:
+ *   post:
+ *     summary: Create a new question
+ *     tags: [Questions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sessionCode
+ *               - roundNumber
+ *               - questionNumber
+ *               - type
+ *               - questionText
+ *             properties:
+ *               sessionCode:
+ *                 type: string
+ *                 pattern: '^[A-Z0-9]{6}$'
+ *                 description: 6-character session code
+ *                 example: "ABC123"
+ *               roundNumber:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Round number
+ *                 example: 1
+ *               questionNumber:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Question number within the round
+ *                 example: 1
+ *               type:
+ *                 type: string
+ *                 enum: [MULTIPLE_CHOICE, OPEN_TEXT, SEQUENCE]
+ *                 description: Question type
+ *                 example: "MULTIPLE_CHOICE"
+ *               questionText:
+ *                 type: string
+ *                 description: The question text
+ *                 example: "What is the capital of France?"
+ *               funFact:
+ *                 type: string
+ *                 description: Optional fun fact about the answer
+ *                 example: "Paris has been the capital since 987 CE"
+ *               timeLimit:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Time limit in seconds
+ *                 example: 30
+ *               points:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Points awarded for correct answer
+ *                 example: 10
+ *               options:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Multiple choice options (required for MULTIPLE_CHOICE type)
+ *                 example: ["London", "Paris", "Berlin", "Madrid"]
+ *               correctAnswer:
+ *                 type: string
+ *                 description: Correct answer text
+ *                 example: "Paris"
+ *               sequenceItems:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Sequence items to order (required for SEQUENCE type)
+ *                 example: ["First", "Second", "Third", "Fourth"]
+ *     responses:
+ *       201:
+ *         description: Question created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 question:
+ *                   $ref: '#/components/schemas/Question'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Create question
 router.post('/', async (req, res) => {
   try {
@@ -63,6 +151,43 @@ router.post('/', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /questions/session/{sessionCode}:
+ *   get:
+ *     summary: Get questions for a session
+ *     tags: [Questions]
+ *     parameters:
+ *       - in: path
+ *         name: sessionCode
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[A-Z0-9]{6}$'
+ *         description: 6-character session code
+ *         example: "ABC123"
+ *       - in: query
+ *         name: round
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Filter questions by round number
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Questions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 questions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Question'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get questions for session
 router.get('/session/:sessionCode', async (req, res) => {
   try {
@@ -78,6 +203,36 @@ router.get('/session/:sessionCode', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /questions/{id}:
+ *   get:
+ *     summary: Get question by ID
+ *     tags: [Questions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Question ID
+ *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       200:
+ *         description: Question retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 question:
+ *                   $ref: '#/components/schemas/Question'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get question by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -96,6 +251,69 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /questions/{id}:
+ *   put:
+ *     summary: Update question by ID
+ *     tags: [Questions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Question ID
+ *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               questionText:
+ *                 type: string
+ *                 description: Updated question text
+ *               funFact:
+ *                 type: string
+ *                 description: Updated fun fact
+ *               timeLimit:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Updated time limit in seconds
+ *               points:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Updated points value
+ *               options:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Updated multiple choice options
+ *               correctAnswer:
+ *                 type: string
+ *                 description: Updated correct answer
+ *               sequenceItems:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Updated sequence items
+ *     responses:
+ *       200:
+ *         description: Question updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Update question
 router.put('/:id', async (req, res) => {
   try {
@@ -111,6 +329,35 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /questions/{id}:
+ *   delete:
+ *     summary: Delete question by ID
+ *     tags: [Questions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Question ID
+ *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       200:
+ *         description: Question deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Delete question
 router.delete('/:id', async (req, res) => {
   try {
@@ -125,6 +372,98 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /questions/bulk:
+ *   post:
+ *     summary: Create multiple questions at once
+ *     tags: [Questions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sessionCode
+ *               - questions
+ *             properties:
+ *               sessionCode:
+ *                 type: string
+ *                 pattern: '^[A-Z0-9]{6}$'
+ *                 description: 6-character session code
+ *                 example: "ABC123"
+ *               questions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - roundNumber
+ *                     - questionNumber
+ *                     - type
+ *                     - questionText
+ *                   properties:
+ *                     roundNumber:
+ *                       type: integer
+ *                       minimum: 1
+ *                       description: Round number
+ *                       example: 1
+ *                     questionNumber:
+ *                       type: integer
+ *                       minimum: 1
+ *                       description: Question number within the round
+ *                       example: 1
+ *                     type:
+ *                       type: string
+ *                       enum: [MULTIPLE_CHOICE, OPEN_TEXT, SEQUENCE]
+ *                       description: Question type
+ *                       example: "MULTIPLE_CHOICE"
+ *                     questionText:
+ *                       type: string
+ *                       description: The question text
+ *                       example: "What is the capital of France?"
+ *                     funFact:
+ *                       type: string
+ *                       description: Optional fun fact about the answer
+ *                     timeLimit:
+ *                       type: integer
+ *                       minimum: 1
+ *                       description: Time limit in seconds
+ *                     points:
+ *                       type: integer
+ *                       minimum: 1
+ *                       description: Points awarded for correct answer
+ *                       example: 10
+ *                     options:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Multiple choice options
+ *                     correctAnswer:
+ *                       type: string
+ *                       description: Correct answer text
+ *                     sequenceItems:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: Sequence items to order
+ *     responses:
+ *       201:
+ *         description: Questions created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 questions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Question'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Bulk create questions
 router.post('/bulk', async (req, res) => {
   try {

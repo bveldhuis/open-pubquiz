@@ -8,6 +8,81 @@ const teamService = serviceFactory.createTeamService();
 const questionService = serviceFactory.createQuestionService(sessionService);
 const answerService = serviceFactory.createAnswerService(questionService, teamService);
 
+/**
+ * @swagger
+ * /answers:
+ *   post:
+ *     summary: Submit an answer for a question
+ *     tags: [Answers]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionId
+ *               - teamId
+ *               - answer
+ *             properties:
+ *               questionId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: ID of the question being answered
+ *                 example: "123e4567-e89b-12d3-a456-426614174000"
+ *               teamId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: ID of the team submitting the answer
+ *                 example: "456e7890-e89b-12d3-a456-426614174000"
+ *               answer:
+ *                 oneOf:
+ *                   - type: string
+ *                     description: Text answer for open text questions
+ *                     example: "Paris"
+ *                   - type: integer
+ *                     description: Option index for multiple choice questions (0-based)
+ *                     example: 1
+ *                   - type: array
+ *                     items:
+ *                       type: integer
+ *                     description: Sequence order for sequence questions
+ *                     example: [2, 0, 1, 3]
+ *     responses:
+ *       201:
+ *         description: Answer submitted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 answer:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                     questionId:
+ *                       type: string
+ *                       format: uuid
+ *                     teamId:
+ *                       type: string
+ *                       format: uuid
+ *                     answerText:
+ *                       type: string
+ *                     isCorrect:
+ *                       type: boolean
+ *                     pointsAwarded:
+ *                       type: integer
+ *                       minimum: 0
+ *                     submittedAt:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Submit answer
 router.post('/', async (req, res) => {
   try {
@@ -36,6 +111,36 @@ router.post('/', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /answers/question/{questionId}:
+ *   get:
+ *     summary: Get all answers for a specific question
+ *     tags: [Answers]
+ *     parameters:
+ *       - in: path
+ *         name: questionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Question ID
+ *         example: "123e4567-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       200:
+ *         description: Answers retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 answers:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Answer'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get answers for question
 router.get('/question/:questionId', async (req, res) => {
   try {
@@ -50,6 +155,36 @@ router.get('/question/:questionId', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /answers/team/{teamId}:
+ *   get:
+ *     summary: Get all answers for a specific team
+ *     tags: [Answers]
+ *     parameters:
+ *       - in: path
+ *         name: teamId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Team ID
+ *         example: "456e7890-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       200:
+ *         description: Team answers retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 answers:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Answer'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get answers for team
 router.get('/team/:teamId', async (req, res) => {
   try {
@@ -64,6 +199,36 @@ router.get('/team/:teamId', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /answers/{id}:
+ *   get:
+ *     summary: Get answer by ID
+ *     tags: [Answers]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Answer ID
+ *         example: "789e0123-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       200:
+ *         description: Answer retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 answer:
+ *                   $ref: '#/components/schemas/Answer'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Get answer by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -82,6 +247,56 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /answers/{id}/score:
+ *   patch:
+ *     summary: Manually score an answer
+ *     tags: [Answers]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Answer ID
+ *         example: "789e0123-e89b-12d3-a456-426614174000"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - points
+ *               - isCorrect
+ *             properties:
+ *               points:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Points to award for this answer
+ *                 example: 10
+ *               isCorrect:
+ *                 type: boolean
+ *                 description: Whether the answer is correct
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Answer scored successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Score answer manually
 router.patch('/:id/score', async (req, res) => {
   try {
@@ -101,6 +316,35 @@ router.patch('/:id/score', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /answers/{id}:
+ *   delete:
+ *     summary: Delete answer by ID
+ *     tags: [Answers]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Answer ID
+ *         example: "789e0123-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       200:
+ *         description: Answer deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // Delete answer
 router.delete('/:id', async (req, res) => {
   try {

@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 import { AppDataSource } from './config/database';
 import { setupSocketHandlers } from './socket/socketHandlers';
 import quizRoutes from './routes/quizRoutes';
@@ -15,6 +16,7 @@ import { questionRoutes } from './routes/questionRoutes';
 import { answerRoutes } from './routes/answerRoutes';
 import { ServiceFactory } from './services/ServiceFactory';
 import { checkDatabaseHealth } from './utils/databaseHealth';
+import { specs } from './config/swagger';
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +57,76 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [System]
+ *     description: Check the health status of the application and database
+ *     responses:
+ *       200:
+ *         description: Application is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [OK, DEGRADED]
+ *                   example: "OK"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-01-15T10:30:00.000Z"
+ *                 uptime:
+ *                   type: number
+ *                   description: Application uptime in seconds
+ *                   example: 3600
+ *                 database:
+ *                   type: object
+ *                   properties:
+ *                     connected:
+ *                       type: boolean
+ *                       example: true
+ *                     migrationsUpToDate:
+ *                       type: boolean
+ *                       example: true
+ *                     error:
+ *                       type: string
+ *                       nullable: true
+ *                     migrationDetails:
+ *                       type: object
+ *                       nullable: true
+ *       503:
+ *         description: Application is unhealthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [ERROR]
+ *                   example: "ERROR"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 uptime:
+ *                   type: number
+ *                 database:
+ *                   type: object
+ *                   properties:
+ *                     connected:
+ *                       type: boolean
+ *                       example: false
+ *                     migrationsUpToDate:
+ *                       type: boolean
+ *                       example: false
+ *                     error:
+ *                       type: string
+ */
 // Health check endpoint
 app.get('/health', async (req, res) => {
   try {
@@ -87,6 +159,19 @@ app.get('/health', async (req, res) => {
     });
   }
 });
+
+// API Documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Open Pub Quiz API Documentation',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    docExpansion: 'list',
+    filter: true,
+    showRequestHeaders: true,
+    tryItOutEnabled: true
+  }
+}));
 
 // API routes
 app.use('/api/quiz', quizRoutes);

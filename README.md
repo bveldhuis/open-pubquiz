@@ -26,6 +26,13 @@ A self-hosted pub quiz web application with real-time updates, multiple question
 - Docker and Docker Compose
 - Node.js 18+ (for development)
 
+### API Documentation
+The Open Pub Quiz API is fully documented with:
+- **Interactive Swagger UI**: Available at `/api/docs` when the server is running
+- **Comprehensive Documentation**: See [API_DOCUMENTATION.md](backend/API_DOCUMENTATION.md)
+- **Error Codes Reference**: See [API_ERROR_CODES.md](backend/API_ERROR_CODES.md)
+- **Health Check**: Available at `/health` endpoint
+
 ### Running with Docker
 
 1. Clone the repository:
