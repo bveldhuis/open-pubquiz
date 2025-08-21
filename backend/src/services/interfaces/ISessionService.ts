@@ -30,4 +30,11 @@ export interface ISessionService {
     eventType?: EventType;
   }): Promise<{ events: SessionEvent[]; total: number }>;
   joinSession(sessionCode: string, teamName: string): Promise<JoinSessionResult>;
+  cleanupInactiveSessions(inactiveHours?: number): Promise<{ ended: number; total: number }>;
+  getCleanupStats(): Promise<{
+    totalSessions: number;
+    activeSessions: number;
+    finishedSessions: number;
+    inactiveSessions: number;
+  }>;
 }

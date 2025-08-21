@@ -719,10 +719,18 @@ export class PresenterComponent implements OnInit, OnDestroy {
     if (!this.currentSession) return;
 
     this.quizService.endSession(this.currentSession.code).subscribe({
-      next: () => {
+      next: (response) => {
         this.snackBar.open('Session ended successfully', 'Close', {
           duration: 3000
         });
+        
+        // Show final leaderboard
+        if (response.teams) {
+          this.leaderboardTeams = response.teams;
+          this.showLeaderboard = true;
+          this.showReview = false;
+        }
+        
         this.currentSession = null;
         this.createForm.reset();
       },
@@ -1074,7 +1082,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
     if (!this.currentSession) return;
 
     this.quizManagementService.nextRound(this.currentSession.code).subscribe({
-      next: () => {
+      next: (response) => {
         this.showReview = false;
         this.showLeaderboard = false;
         this.currentQuestionIndex = 0;
@@ -1083,14 +1091,13 @@ export class PresenterComponent implements OnInit, OnDestroy {
         this.currentAnswers = [];
         this.questions = []; // Clear questions to force reload
         
-        // Update session info
-        this.currentSession!.current_round = (this.currentSession!.current_round || 1) + 1;
+        // Update session info with the actual round from backend
+        if (response.currentRound) {
+          this.currentSession!.current_round = response.currentRound;
+        }
         
         // Load questions for the new round
         this.loadQuestionsForCurrentRound();
-        
-        // Use Socket.IO to start next round
-        this.socketService.nextRound(this.currentSession!.code);
         
         this.snackBar.open('Next round started!', 'Close', {
           duration: 3000

@@ -18,7 +18,6 @@
     - [ ] Numerical questions
 
 19. **Scoring System**
-    - [ ] Partial credit for sequence questions
     - [ ] Bonus points for speed
 
 ## 🛠 Infrastructure & DevOps

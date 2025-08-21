@@ -14,7 +14,7 @@ export interface IQuestionService {
     correctAnswer?: string;
     sequenceItems?: string[];
   }): Promise<Question>;
-  getQuestionsForSession(sessionCode: string): Promise<Question[]>;
+  getQuestionsForSession(sessionCode: string, round?: number): Promise<Question[]>;
   getQuestionById(questionId: string): Promise<Question | null>;
   getQuestionByIdOrThrow(questionId: string): Promise<Question>;
   updateQuestion(questionId: string, updateData: Partial<Question>): Promise<void>;

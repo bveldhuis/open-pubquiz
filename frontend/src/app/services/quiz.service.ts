@@ -115,8 +115,8 @@ export class QuizService {
     return this.http.patch<{ success: boolean; status: string }>(`${this.apiUrl}/api/quiz/${code}/status`, { status });
   }
 
-  endSession(code: string): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/api/quiz/${code}/end`, {});
+  endSession(code: string): Observable<{ success: boolean; teams?: any[] }> {
+    return this.http.post<{ success: boolean; teams?: any[] }>(`${this.apiUrl}/api/quiz/${code}/end`, {});
   }
 
   getLeaderboard(code: string): Observable<{ teams: Team[] }> {

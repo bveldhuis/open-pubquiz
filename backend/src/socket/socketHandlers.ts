@@ -104,7 +104,11 @@ export function setupSocketHandlers(io: Server) {
         console.log(`👥 Team ${teamName} joined session ${sessionCode}`);
       } catch (error) {
         console.error('Error joining session:', error);
-        socket.emit('error', { message: 'Failed to join session' });
+        if (error instanceof Error && error.message === 'Cannot join an ended session') {
+          socket.emit('session_ended_error', { message: 'This session has ended and cannot accept new participants' });
+        } else {
+          socket.emit('error', { message: 'Failed to join session' });
+        }
       }
     });
 

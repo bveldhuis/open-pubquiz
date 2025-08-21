@@ -106,8 +106,8 @@ export class QuizManagementService {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/api/quiz/${sessionCode}/show-leaderboard`, {});
   }
 
-  nextRound(sessionCode: string): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/api/quiz/${sessionCode}/next-round`, {});
+  nextRound(sessionCode: string): Observable<{ success: boolean; currentRound?: number }> {
+    return this.http.post<{ success: boolean; currentRound?: number }>(`${this.apiUrl}/api/quiz/${sessionCode}/next-round`, {});
   }
 
   // Answer Management

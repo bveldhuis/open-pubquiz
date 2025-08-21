@@ -16,14 +16,31 @@ import { Subscription, interval } from 'rxjs';
           <p class="session-info">Session: {{ sessionCode }}</p>
         </div>
 
-        <div class="status-card" *ngIf="!isQuestionActive">
+        <div class="status-card" *ngIf="!isQuestionActive && !sessionEnded">
           <h2>Waiting for questions...</h2>
           <p>Your presenter will start the quiz soon.</p>
         </div>
 
+        <!-- Session Ended View -->
+        <div class="session-ended-card" *ngIf="sessionEnded">
+          <h2>🎉 Quiz Session Ended!</h2>
+          <p>Thank you for participating in the quiz!</p>
+          
+          <div class="final-leaderboard" *ngIf="finalLeaderboard.length > 0">
+            <h3>🏆 Final Results</h3>
+            <div class="leaderboard-list">
+              <div class="leaderboard-item" *ngFor="let team of finalLeaderboard; let i = index">
+                <div class="rank">{{ i + 1 }}</div>
+                <div class="team-name">{{ team.name }}</div>
+                <div class="points">{{ team.total_points }} pts</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Question Display -->
         <app-question-answer
-          *ngIf="isQuestionActive && currentQuestion"
+          *ngIf="isQuestionActive && currentQuestion && !sessionEnded"
           [question]="currentQuestion"
           [isActive]="isQuestionActive"
           [isAnswerSubmitted]="answerSubmitted"
@@ -104,6 +121,71 @@ import { Subscription, interval } from 'rxjs';
       color: #f44336;
     }
 
+    .session-ended-card {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .session-ended-card h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 2rem;
+    }
+
+    .session-ended-card p {
+      color: #666;
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+    }
+
+    .final-leaderboard {
+      margin-top: 30px;
+    }
+
+    .final-leaderboard h3 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #4caf50;
+    }
+
+    .rank {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #4caf50;
+      min-width: 40px;
+    }
+
+    .team-name {
+      flex: 1;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .points {
+      font-weight: bold;
+      color: #4caf50;
+      font-size: 1.1rem;
+    }
+
     @media (max-width: 768px) {
       .participant-content {
         padding: 10px;
@@ -129,6 +211,10 @@ export class ParticipantComponent implements OnInit, OnDestroy {
   isQuestionActive = false;
   timeRemaining = 0;
   answerSubmitted = false;
+  
+  // Session ended state
+  sessionEnded = false;
+  finalLeaderboard: any[] = [];
   
   private subscriptions: Subscription[] = [];
   private timerSubscription?: Subscription;
@@ -214,6 +300,26 @@ export class ParticipantComponent implements OnInit, OnDestroy {
         this.snackBar.open('Question ended!', 'Close', {
           duration: 2000
         });
+      }),
+
+      this.socketService.sessionEnded$.subscribe(event => {
+        console.log('🏁 Session ended event received:', event);
+        this.sessionEnded = true;
+        this.isQuestionActive = false;
+        this.stopTimer();
+        this.finalLeaderboard = event.teams;
+        this.snackBar.open('Quiz session has ended!', 'Close', {
+          duration: 5000
+        });
+      }),
+
+      this.socketService.sessionEndedError$.subscribe(event => {
+        console.log('🚫 Session ended error received:', event);
+        this.snackBar.open(event.message, 'Close', {
+          duration: 5000
+        });
+        // Redirect to join page
+        this.router.navigate(['/join']);
       })
     );
     }

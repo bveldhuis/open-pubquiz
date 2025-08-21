@@ -67,8 +67,9 @@ router.post('/', async (req, res) => {
 router.get('/session/:sessionCode', async (req, res) => {
   try {
     const { sessionCode } = req.params;
+    const { round } = req.query;
 
-    const questions = await questionService.getQuestionsForSession(sessionCode);
+    const questions = await questionService.getQuestionsForSession(sessionCode, round ? parseInt(round as string) : undefined);
 
     return res.json({ questions });
   } catch (error) {

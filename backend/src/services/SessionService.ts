@@ -145,6 +145,11 @@ export class SessionService implements ISessionService {
   async joinSession(sessionCode: string, teamName: string): Promise<JoinSessionResult> {
     const session = await this.getSessionByCodeOrThrow(sessionCode, ['teams']);
     
+    // Check if session is ended
+    if (session.status === QuizSessionStatus.FINISHED) {
+      throw new Error('Cannot join an ended session');
+    }
+    
     // Check if team name already exists in this session
     const existingTeam = session.teams.find(team => team.name === teamName);
     let team: any;
@@ -159,5 +164,80 @@ export class SessionService implements ISessionService {
     }
 
     return { team, session, isNewTeam };
+  }
+
+  /**
+   * Find and end inactive sessions
+   * Sessions are considered inactive if they haven't been updated for more than the specified hours
+   */
+  async cleanupInactiveSessions(inactiveHours: number = 4): Promise<{ ended: number; total: number }> {
+    const inactiveThreshold = new Date();
+    inactiveThreshold.setHours(inactiveThreshold.getHours() - inactiveHours);
+
+    // Find all active sessions that haven't been updated recently
+    const inactiveSessions = await this.sessionRepository.find({
+      where: {
+        status: QuizSessionStatus.WAITING,
+        updated_at: inactiveThreshold
+      }
+    });
+
+    let endedCount = 0;
+    for (const session of inactiveSessions) {
+      try {
+        // End the session
+        await this.sessionRepository.update(session.id, { 
+          status: QuizSessionStatus.FINISHED 
+        });
+
+        // Log the cleanup event
+        await this.logEvent(session.id, EventType.SESSION_ENDED, {
+          reason: 'automatic_cleanup',
+          inactiveHours: inactiveHours,
+          lastActivity: session.updated_at
+        });
+
+        endedCount++;
+        console.log(`🧹 Automatically ended inactive session: ${session.code} (${session.name})`);
+      } catch (error) {
+        console.error(`❌ Error ending inactive session ${session.code}:`, error);
+      }
+    }
+
+    return { ended: endedCount, total: inactiveSessions.length };
+  }
+
+  /**
+   * Get statistics about session cleanup
+   */
+  async getCleanupStats(): Promise<{
+    totalSessions: number;
+    activeSessions: number;
+    finishedSessions: number;
+    inactiveSessions: number;
+  }> {
+    const [totalSessions, activeSessions, finishedSessions] = await Promise.all([
+      this.sessionRepository.count(),
+      this.sessionRepository.count({ where: { status: QuizSessionStatus.WAITING } }),
+      this.sessionRepository.count({ where: { status: QuizSessionStatus.FINISHED } })
+    ]);
+
+    // Calculate inactive sessions (not updated in last 4 hours)
+    const inactiveThreshold = new Date();
+    inactiveThreshold.setHours(inactiveThreshold.getHours() - 4);
+    
+    const inactiveSessions = await this.sessionRepository.count({
+      where: {
+        status: QuizSessionStatus.WAITING,
+        updated_at: inactiveThreshold
+      }
+    });
+
+    return {
+      totalSessions,
+      activeSessions,
+      finishedSessions,
+      inactiveSessions
+    };
   }
 }

@@ -68,6 +68,14 @@ export interface RoundStartedEvent {
   roundNumber: number;
 }
 
+export interface SessionEndedEvent {
+  teams: any[];
+}
+
+export interface SessionEndedErrorEvent {
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -85,6 +93,8 @@ export class SocketService {
   private reviewAnswersSubject = new Subject<ReviewAnswersEvent>();
   private answerReceivedSubject = new Subject<AnswerReceivedEvent>();
   private roundStartedSubject = new Subject<RoundStartedEvent>();
+  private sessionEndedSubject = new Subject<SessionEndedEvent>();
+  private sessionEndedErrorSubject = new Subject<SessionEndedErrorEvent>();
   private errorSubject = new Subject<{ message: string }>();
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
 
@@ -98,6 +108,8 @@ export class SocketService {
   public reviewAnswers$ = this.reviewAnswersSubject.asObservable();
   public answerReceived$ = this.answerReceivedSubject.asObservable();
   public roundStarted$ = this.roundStartedSubject.asObservable();
+  public sessionEnded$ = this.sessionEndedSubject.asObservable();
+  public sessionEndedError$ = this.sessionEndedErrorSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
   public connectionStatus$ = this.connectionStatusSubject.asObservable();
 
@@ -173,6 +185,16 @@ export class SocketService {
     this.socket.on('error', (data: { message: string }) => {
       console.error('❌ Socket error:', data);
       this.errorSubject.next(data);
+    });
+
+    this.socket.on('session_ended', (data: SessionEndedEvent) => {
+      console.log('🏁 Session ended:', data);
+      this.sessionEndedSubject.next(data);
+    });
+
+    this.socket.on('session_ended_error', (data: SessionEndedErrorEvent) => {
+      console.error('🚫 Session ended error:', data);
+      this.sessionEndedErrorSubject.next(data);
     });
   }
 

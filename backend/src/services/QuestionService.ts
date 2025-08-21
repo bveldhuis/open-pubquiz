@@ -47,10 +47,16 @@ export class QuestionService implements IQuestionService {
   /**
    * Get questions for a session
    */
-  async getQuestionsForSession(sessionCode: string): Promise<Question[]> {
+  async getQuestionsForSession(sessionCode: string, round?: number): Promise<Question[]> {
     const session = await this.sessionService.getSessionByCodeOrThrow(sessionCode);
+    
+    const whereClause: any = { quiz_session_id: session.id };
+    if (round !== undefined) {
+      whereClause.round_number = round;
+    }
+    
     return await this.questionRepository.find({
-      where: { quiz_session_id: session.id },
+      where: whereClause,
       order: { round_number: 'ASC', question_number: 'ASC' }
     });
   }

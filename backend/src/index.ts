@@ -13,6 +13,7 @@ import quizRoutes from './routes/quizRoutes';
 import { teamRoutes } from './routes/teamRoutes';
 import { questionRoutes } from './routes/questionRoutes';
 import { answerRoutes } from './routes/answerRoutes';
+import { ServiceFactory } from './services/ServiceFactory';
 import { checkDatabaseHealth } from './utils/databaseHealth';
 
 // Load environment variables
@@ -26,6 +27,9 @@ const io = new Server(server, {
     methods: ['GET', 'POST']
   }
 });
+
+// Make Socket.IO instance available to routes
+app.set('io', io);
 
 const PORT = process.env.PORT || 3000;
 
@@ -93,6 +97,30 @@ app.use('/api/answers', answerRoutes);
 // Socket.IO setup
 setupSocketHandlers(io);
 
+// Initialize cleanup service
+let cleanupService: any = null;
+
+async function initializeCleanupService() {
+  try {
+    const serviceFactory = ServiceFactory.getInstance();
+    const sessionService = serviceFactory.createSessionService(serviceFactory.createTeamService());
+    
+    // Create cleanup service with configuration from environment variables
+    cleanupService = serviceFactory.createCleanupService(sessionService, {
+      enabled: process.env.CLEANUP_ENABLED !== 'false', // enabled by default
+      intervalMinutes: parseInt(process.env.CLEANUP_INTERVAL_MINUTES || '60'), // every hour by default
+      inactiveHours: parseInt(process.env.CLEANUP_INACTIVE_HOURS || '4'), // 4 hours by default
+      logCleanup: process.env.CLEANUP_LOG !== 'false' // log by default
+    });
+
+    // Start the cleanup service
+    cleanupService.start();
+    console.log('✅ Cleanup service initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize cleanup service:', error);
+  }
+}
+
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
@@ -112,16 +140,24 @@ app.use('*', (req, res) => {
 // Initialize database and start server
 async function startServer() {
   try {
+    console.log('🚀 Starting Open Pub Quiz Backend...');
+    
     // Initialize database connection
+    console.log('📊 Connecting to database...');
     await AppDataSource.initialize();
     console.log('✅ Database connection established');
 
-    // Start server
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      console.log(`🔌 Socket.IO server ready`);
+    // Initialize cleanup service
+    await initializeCleanupService();
+
+    // Start HTTP server
+    const port = process.env.PORT || 3000;
+    server.listen(port, () => {
+      console.log(`✅ Server running on port ${port}`);
+      console.log(`🌐 Health check: http://localhost:${port}/health`);
+      console.log(`📊 API documentation: http://localhost:${port}/api/`);
     });
+
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
@@ -131,25 +167,43 @@ async function startServer() {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('🛑 SIGTERM received, shutting down gracefully');
+  
+  // Stop cleanup service
+  if (cleanupService) {
+    cleanupService.stop();
+    console.log('✅ Cleanup service stopped');
+  }
+  
   server.close(() => {
     console.log('✅ HTTP server closed');
   });
+  
   if (AppDataSource.isInitialized) {
     await AppDataSource.destroy();
     console.log('✅ Database connection closed');
   }
+  
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('🛑 SIGINT received, shutting down gracefully');
+  
+  // Stop cleanup service
+  if (cleanupService) {
+    cleanupService.stop();
+    console.log('✅ Cleanup service stopped');
+  }
+  
   server.close(() => {
     console.log('✅ HTTP server closed');
   });
+  
   if (AppDataSource.isInitialized) {
     await AppDataSource.destroy();
     console.log('✅ Database connection closed');
   }
+  
   process.exit(0);
 });
 

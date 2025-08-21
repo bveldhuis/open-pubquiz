@@ -157,6 +157,14 @@ router.post('/:code/next-round', async (req, res) => {
     
     const newRound = await sessionService.startNextRound(code);
 
+    // Notify all clients in the session about the round change
+    const io = req.app.get('io');
+    if (io) {
+      io.to(code).emit('round_started', {
+        roundNumber: newRound
+      });
+    }
+
     res.json({ success: true, currentRound: newRound });
   } catch (error) {
     console.error('Error starting next round:', error);
@@ -172,7 +180,18 @@ router.post('/:code/end', async (req, res) => {
     
     await sessionService.endSession(code);
 
-    res.json({ success: true });
+    // Get final leaderboard
+    const teams = await teamService.getLeaderboard(code);
+
+    // Notify all clients in the session about the session ending
+    const io = req.app.get('io');
+    if (io) {
+      io.to(code).emit('session_ended', {
+        teams: teams
+      });
+    }
+
+    res.json({ success: true, teams });
   } catch (error) {
     console.error('Error ending session:', error);
     res.status(500).json({ error: 'Failed to end session' });
@@ -217,6 +236,30 @@ router.get('/:code/events', async (req, res) => {
   } catch (error) {
     console.error('Error getting session events:', error);
     res.status(500).json({ error: 'Failed to get session events' });
+  }
+  return;
+});
+
+// Cleanup routes
+router.get('/cleanup/stats', async (req, res) => {
+  try {
+    const stats = await sessionService.getCleanupStats();
+    res.json({ stats });
+  } catch (error) {
+    console.error('Error getting cleanup stats:', error);
+    res.status(500).json({ error: 'Failed to get cleanup stats' });
+  }
+  return;
+});
+
+router.post('/cleanup/run', async (req, res) => {
+  try {
+    const { inactiveHours = 4 } = req.body;
+    const result = await sessionService.cleanupInactiveSessions(inactiveHours);
+    res.json({ success: true, result });
+  } catch (error) {
+    console.error('Error running cleanup:', error);
+    res.status(500).json({ error: 'Failed to run cleanup' });
   }
   return;
 });
