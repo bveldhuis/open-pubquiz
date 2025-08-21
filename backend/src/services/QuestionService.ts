@@ -24,6 +24,9 @@ export class QuestionService implements IQuestionService {
     options?: string[];
     correctAnswer?: string;
     sequenceItems?: string[];
+    mediaUrl?: string;
+    numericalAnswer?: number;
+    numericalTolerance?: number;
   }): Promise<Question> {
     const session = await this.sessionService.getSessionByCodeOrThrow(questionData.sessionCode);
     
@@ -38,7 +41,10 @@ export class QuestionService implements IQuestionService {
       points: questionData.points || 1,
       options: questionData.type === QuestionType.MULTIPLE_CHOICE ? questionData.options : null,
       correct_answer: questionData.correctAnswer || null,
-      sequence_items: questionData.type === QuestionType.SEQUENCE ? questionData.sequenceItems : null
+      sequence_items: questionData.type === QuestionType.SEQUENCE ? questionData.sequenceItems : null,
+      media_url: [QuestionType.IMAGE, QuestionType.AUDIO, QuestionType.VIDEO].includes(questionData.type) ? questionData.mediaUrl : null,
+      numerical_answer: questionData.type === QuestionType.NUMERICAL ? questionData.numericalAnswer : null,
+      numerical_tolerance: questionData.type === QuestionType.NUMERICAL ? questionData.numericalTolerance : null
     });
 
     return await this.questionRepository.save(question);

@@ -41,6 +41,51 @@ import { Question } from '../../../models/question.model';
         [isAnswerSubmitted]="isAnswerSubmitted"
         (sequenceReordered)="sequenceReordered.emit($event)">
       </app-sequence>
+
+      <!-- True/False -->
+      <app-true-false 
+        *ngIf="question?.type === 'true_false'"
+        [question]="question"
+        [isDisabled]="!isInteractive || isAnswerSubmitted"
+        [showCorrectAnswer]="showCorrectAnswer"
+        (answerSelected)="answerSelected.emit($event)">
+      </app-true-false>
+
+      <!-- Numerical -->
+      <app-numerical 
+        *ngIf="question?.type === 'numerical'"
+        [question]="question"
+        [isDisabled]="!isInteractive || isAnswerSubmitted"
+        (answerChange)="answerChanged.emit($event)">
+      </app-numerical>
+
+      <!-- Image -->
+      <app-image 
+        *ngIf="question?.type === 'image'"
+        [question]="question"
+        [isDisabled]="!isInteractive || isAnswerSubmitted"
+        (answerChange)="answerChanged.emit($event)">
+      </app-image>
+
+      <!-- Audio -->
+      <app-audio 
+        *ngIf="question?.type === 'audio'"
+        [question]="question"
+        [isDisabled]="!isInteractive || isAnswerSubmitted"
+        [isPresenter]="isPresenter"
+        [isActive]="isActive"
+        (answerChange)="answerChanged.emit($event)">
+      </app-audio>
+
+      <!-- Video -->
+      <app-video 
+        *ngIf="question?.type === 'video'"
+        [question]="question"
+        [isDisabled]="!isInteractive || isAnswerSubmitted"
+        [isPresenter]="isPresenter"
+        [isActive]="isActive"
+        (answerChange)="answerChanged.emit($event)">
+      </app-video>
     </div>
   `,
   styles: [`
@@ -126,6 +171,8 @@ export class QuestionContentComponent {
   @Input() showCorrectAnswer = false;
   @Input() isAnswerSubmitted = false;
   @Input() showPreview = false;
+  @Input() isPresenter = false;
+  @Input() isActive = false;
   
   @Output() answerSelected = new EventEmitter<string>();
   @Output() answerChanged = new EventEmitter<string>();

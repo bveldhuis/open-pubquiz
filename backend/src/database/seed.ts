@@ -10,18 +10,29 @@ async function seedDatabase() {
     await AppDataSource.initialize();
     console.log('✅ Database connection established');
 
-    // Create a sample quiz session
+    // Check if sample session already exists
     const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = sessionRepository.create({
-      id: uuidv4(),
-      code: 'SAMPLE',
-      name: 'Sample Pub Quiz',
-      status: QuizSessionStatus.WAITING,
-      current_round: 1
-    });
+    let session = await sessionRepository.findOne({ where: { code: 'SAMPLE' } });
+    
+    if (session) {
+      console.log('🔄 Sample session already exists, clearing old questions...');
+      // Delete existing questions for this session
+      const questionRepository = AppDataSource.getRepository(Question);
+      await questionRepository.delete({ quiz_session_id: session.id });
+      console.log('✅ Cleared existing questions');
+    } else {
+      // Create a new sample quiz session
+      session = sessionRepository.create({
+        id: uuidv4(),
+        code: 'SAMPLE',
+        name: 'Sample Pub Quiz',
+        status: QuizSessionStatus.WAITING,
+        current_round: 1
+      });
 
-    await sessionRepository.save(session);
-    console.log('✅ Created sample quiz session');
+      await sessionRepository.save(session);
+      console.log('✅ Created sample quiz session');
+    }
 
     // Create sample questions
     const questionRepository = AppDataSource.getRepository(Question);
@@ -123,6 +134,96 @@ async function seedDatabase() {
         timeLimit: 60,
         points: 3,
         sequenceItems: ['Episode I: The Phantom Menace', 'Episode II: Attack of the Clones', 'Episode III: Revenge of the Sith', 'Episode IV: A New Hope', 'Episode V: The Empire Strikes Back', 'Episode VI: Return of the Jedi']
+      },
+
+      // Round 4 - New Question Types Demo
+      {
+        roundNumber: 4,
+        questionNumber: 1,
+        type: QuestionType.TRUE_FALSE,
+        questionText: 'The Great Wall of China is visible from space with the naked eye.',
+        funFact: 'This is actually false! The Great Wall is not visible from space without aid, contrary to popular belief.',
+        timeLimit: 20,
+        points: 1,
+        correctAnswer: 'false'
+      },
+      {
+        roundNumber: 4,
+        questionNumber: 2,
+        type: QuestionType.NUMERICAL,
+        questionText: 'What is the value of π (pi) to 2 decimal places?',
+        funFact: 'π is an irrational number, meaning it has infinite decimal places with no repeating pattern.',
+        timeLimit: 30,
+        points: 2,
+        numericalAnswer: 3.14,
+        numericalTolerance: 0.01
+      },
+      {
+        roundNumber: 4,
+        questionNumber: 3,
+        type: QuestionType.IMAGE,
+        questionText: 'What landmark is shown in this image?',
+        funFact: 'This iconic tower was built for the 1889 World\'s Fair in Paris and stands 330 meters tall.',
+        timeLimit: 45,
+        points: 2,
+        mediaUrl: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=500&h=400&fit=crop',
+        correctAnswer: 'Eiffel Tower'
+      },
+      {
+        roundNumber: 4,
+        questionNumber: 4,
+        type: QuestionType.AUDIO,
+        questionText: 'Name the composer of this famous classical piece.',
+        funFact: 'This piece is "Eine kleine Nachtmusik" composed in 1787, one of Mozart\'s most recognizable works.',
+        timeLimit: 60,
+        points: 3,
+        mediaUrl: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+        correctAnswer: 'Mozart'
+      },
+      {
+        roundNumber: 4,
+        questionNumber: 5,
+        type: QuestionType.VIDEO,
+        questionText: 'In which city does this famous scene take place?',
+        funFact: 'This location has been featured in countless movies and is one of the most filmed places in the world.',
+        timeLimit: 45,
+        points: 2,
+        mediaUrl: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4',
+        correctAnswer: 'New York'
+      },
+
+      // Round 5 - Mixed Advanced Questions
+      {
+        roundNumber: 5,
+        questionNumber: 1,
+        type: QuestionType.NUMERICAL,
+        questionText: 'What is the speed of light in vacuum? (Answer in km/s)',
+        funFact: 'The speed of light in a vacuum is exactly 299,792.458 km/s, one of the fundamental constants of physics.',
+        timeLimit: 45,
+        points: 3,
+        numericalAnswer: 299792.458,
+        numericalTolerance: 1000
+      },
+      {
+        roundNumber: 5,
+        questionNumber: 2,
+        type: QuestionType.TRUE_FALSE,
+        questionText: 'Bananas are berries, but strawberries are not.',
+        funFact: 'Botanically speaking, berries must have seeds inside their flesh. Bananas qualify, but strawberries have seeds on the outside!',
+        timeLimit: 25,
+        points: 2,
+        correctAnswer: 'true'
+      },
+      {
+        roundNumber: 5,
+        questionNumber: 3,
+        type: QuestionType.MULTIPLE_CHOICE,
+        questionText: 'Which programming language was originally called "Oak"?',
+        funFact: 'Java was initially called Oak but had to be renamed due to trademark issues with Oak Technology.',
+        timeLimit: 30,
+        points: 2,
+        options: ['Python', 'Java', 'C++', 'JavaScript'],
+        correctAnswer: 'Java'
       }
     ];
 
@@ -139,7 +240,10 @@ async function seedDatabase() {
         points: questionData.points,
         options: questionData.options || null,
         correct_answer: questionData.correctAnswer || null,
-        sequence_items: questionData.sequenceItems || null
+        sequence_items: questionData.sequenceItems || null,
+        media_url: (questionData as any).mediaUrl || null,
+        numerical_answer: (questionData as any).numericalAnswer || null,
+        numerical_tolerance: (questionData as any).numericalTolerance || null
       });
 
       await questionRepository.save(question);

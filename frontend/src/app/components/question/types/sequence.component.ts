@@ -13,7 +13,7 @@ import { Question } from '../../../models/question.model';
       <div class="sequence-items">
         <div 
           class="sequence-item" 
-          *ngFor="let item of shuffledItems; let i = index"
+          *ngFor="let item of displayItems; let i = index"
           [draggable]="isInteractive && !isAnswerSubmitted"
           (dragstart)="onDragStart($event, i)"
           (dragover)="onDragOver($event)"
@@ -239,6 +239,16 @@ export class SequenceComponent implements OnInit {
     }
   }
 
+  // Get the items to display - show correct order during review, shuffled order during interaction
+  get displayItems(): string[] {
+    if (this.showCorrectAnswer && this.question?.sequence_items) {
+      // During review, show the correct sequence order
+      return [...this.question.sequence_items];
+    }
+    // During interaction, show the shuffled items
+    return this.shuffledItems;
+  }
+
   onDragStart(event: DragEvent, index: number) {
     if (!this.isInteractive || this.isAnswerSubmitted) return;
     
@@ -291,7 +301,14 @@ export class SequenceComponent implements OnInit {
 
   isCorrectPosition(index: number, item: string): boolean {
     if (!this.question?.sequence_items) return false;
-    return this.question.sequence_items[index] === item;
+    
+    if (this.showCorrectAnswer) {
+      // During review, check if the item is in the correct position in the original sequence
+      return this.question.sequence_items[index] === item;
+    } else {
+      // During interaction, check if the item is in the correct position in the shuffled sequence
+      return this.question.sequence_items[index] === item;
+    }
   }
 
   getFeedbackMessage(): string {

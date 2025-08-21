@@ -22,6 +22,8 @@ import { BaseQuestionComponent } from '../base/base-question.component';
         [selectedAnswer]="selectedAnswer"
         [shuffledSequenceItems]="shuffledSequenceItems"
         [isAnswerSubmitted]="isAnswerSubmitted"
+        [isPresenter]="false"
+        [isActive]="isActive"
         (answerSelected)="onAnswerSelected($event)"
         (answerChanged)="onAnswerChanged($event)"
         (answerValid)="onAnswerValid($event)"
@@ -114,10 +116,21 @@ export class QuestionAnswerComponent extends BaseQuestionComponent implements On
         this.canSubmit = !!this.selectedAnswer;
         break;
       case 'open_text':
-        this.canSubmit = !!this.selectedAnswer && this.selectedAnswer.trim().length > 0;
+        this.canSubmit = !!this.selectedAnswer && String(this.selectedAnswer).trim().length > 0;
         break;
       case 'sequence':
         this.canSubmit = this.shuffledSequenceItems.length > 0;
+        break;
+      case 'true_false':
+        this.canSubmit = !!this.selectedAnswer;
+        break;
+      case 'numerical':
+        this.canSubmit = !!this.selectedAnswer && String(this.selectedAnswer).trim().length > 0;
+        break;
+      case 'image':
+      case 'audio':
+      case 'video':
+        this.canSubmit = !!this.selectedAnswer && String(this.selectedAnswer).trim().length > 0;
         break;
       default:
         this.canSubmit = false;
@@ -135,7 +148,12 @@ export class QuestionAnswerComponent extends BaseQuestionComponent implements On
     switch (this.question?.type) {
       case 'multiple_choice':
       case 'open_text':
-        return this.selectedAnswer || '';
+      case 'true_false':
+      case 'numerical':
+      case 'image':
+      case 'audio':
+      case 'video':
+        return String(this.selectedAnswer || '');
       case 'sequence':
         return this.shuffledSequenceItems;
       default:

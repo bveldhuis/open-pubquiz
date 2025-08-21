@@ -36,7 +36,7 @@ export interface Answer {
       </div>
 
       <!-- Show correct answer for reference -->
-      <div class="correct-answer-reference" *ngIf="question.correct_answer">
+      <div class="correct-answer-reference" *ngIf="question.correct_answer || (question.type === 'numerical' && question.numerical_answer !== null) || (question.type === 'sequence' && question.sequence_items)">
         <mat-icon>check_circle</mat-icon>
         <span><strong>Correct Answer:</strong> {{ getFormattedCorrectAnswer() }}</span>
       </div>
@@ -153,26 +153,10 @@ export interface Answer {
               </div>
 
               <!-- Auto-scored questions with manual override option -->
-              <div class="auto-scored" *ngIf="question.type === 'multiple_choice'">
+              <div class="auto-scored" *ngIf="isAutoScoredQuestion()">
                 <span class="auto-label">Auto-scored</span>
                 <span class="result" [class.correct]="answer.is_correct" [class.incorrect]="answer.is_correct === false">
-                  {{ answer.is_correct ? 'Correct' : 'Incorrect' }}
-                </span>
-                <button 
-                  mat-stroked-button 
-                  color="accent" 
-                  (click)="startManualScore(answer)"
-                  class="override-btn">
-                  <mat-icon>edit</mat-icon>
-                  Override Score
-                </button>
-              </div>
-
-              <!-- Sequence questions with manual override option -->
-              <div class="auto-scored" *ngIf="question.type === 'sequence'">
-                <span class="auto-label">Auto-scored</span>
-                <span class="result" [class.correct]="answer.is_correct" [class.incorrect]="answer.is_correct === false">
-                  {{ getSequenceResultText(answer) }}
+                  {{ getAutoScoreResultText(answer) }}
                 </span>
                 <button 
                   mat-stroked-button 
@@ -583,7 +567,12 @@ export class AnswerReviewComponent {
     const labels = {
       'multiple_choice': 'Multiple Choice',
       'open_text': 'Open Text',
-      'sequence': 'Sequence'
+      'sequence': 'Sequence',
+      'true_false': 'True/False',
+      'numerical': 'Numerical',
+      'image': 'Image',
+      'audio': 'Audio',
+      'video': 'Video'
     };
     return labels[type as keyof typeof labels] || type;
   }
@@ -658,13 +647,52 @@ export class AnswerReviewComponent {
   }
 
   getFormattedCorrectAnswer(): string {
-    if (!this.question?.correct_answer) return '';
-    
-    // For sequence questions, replace pipes with arrows
-    if (this.question.type === 'sequence') {
-      return this.question.correct_answer.replace(/\|/g, ' → ');
+    // For numerical questions, show the answer with tolerance
+    if (this.question?.type === 'numerical') {
+      if (this.question.numerical_answer !== null && this.question.numerical_answer !== undefined) {
+        let result = `${this.question.numerical_answer}`;
+        if (this.question.numerical_tolerance !== null && this.question.numerical_tolerance !== undefined) {
+          result += ` (±${this.question.numerical_tolerance})`;
+        }
+        return result;
+      }
+      // Fallback to correct_answer if numerical_answer is not available
+      return this.question.correct_answer || '';
     }
     
-    return this.question.correct_answer;
+    // For sequence questions, replace pipes with arrows
+    if (this.question?.type === 'sequence') {
+      return this.question.correct_answer?.replace(/\|/g, ' → ') || '';
+    }
+    
+    // For other question types, return correct_answer
+    return this.question?.correct_answer || '';
+  }
+
+  isAutoScoredQuestion(): boolean {
+    return this.question?.type === 'multiple_choice' || 
+           this.question?.type === 'sequence' ||
+           this.question?.type === 'true_false' ||
+           this.question?.type === 'numerical' ||
+           this.question?.type === 'image' ||
+           this.question?.type === 'audio' ||
+           this.question?.type === 'video' ||
+           this.question?.type === 'open_text';
+  }
+
+  getAutoScoreResultText(answer: Answer): string {
+    if (answer.is_correct === null || answer.is_correct === undefined) {
+      return 'Not scored';
+    }
+    
+    if (this.question?.type === 'sequence') {
+      return this.getSequenceResultText(answer);
+    }
+    
+    if (answer.is_correct) {
+      return 'Correct';
+    } else {
+      return 'Incorrect';
+    }
   }
 }

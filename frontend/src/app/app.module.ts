@@ -57,6 +57,11 @@ import { AnswerControlsComponent } from './components/question/controls/answer-c
 import { MultipleChoiceComponent } from './components/question/types/multiple-choice.component';
 import { OpenTextComponent } from './components/question/types/open-text.component';
 import { SequenceComponent } from './components/question/types/sequence.component';
+import { TrueFalseComponent } from './components/question/types/true-false.component';
+import { NumericalComponent } from './components/question/types/numerical.component';
+import { ImageComponent } from './components/question/types/image.component';
+import { AudioComponent } from './components/question/types/audio.component';
+import { VideoComponent } from './components/question/types/video.component';
 
 // Legacy Components (to be implemented/updated)
 import { ReviewComponent } from './components/review/review.component';
@@ -97,6 +102,11 @@ const routes: Routes = [
     MultipleChoiceComponent,
     OpenTextComponent,
     SequenceComponent,
+    TrueFalseComponent,
+    NumericalComponent,
+    ImageComponent,
+    AudioComponent,
+    VideoComponent,
 
     // Legacy Components (to be implemented/updated)
     ReviewComponent,

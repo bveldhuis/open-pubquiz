@@ -5,7 +5,12 @@ import { Answer } from './Answer';
 export enum QuestionType {
   MULTIPLE_CHOICE = 'multiple_choice',
   OPEN_TEXT = 'open_text',
-  SEQUENCE = 'sequence'
+  SEQUENCE = 'sequence',
+  TRUE_FALSE = 'true_false',
+  NUMERICAL = 'numerical',
+  IMAGE = 'image',
+  AUDIO = 'audio',
+  VIDEO = 'video'
 }
 
 @Entity('questions')
@@ -50,6 +55,15 @@ export class Question {
 
   @Column({ type: 'json', nullable: true })
   sequence_items!: string[] | null; // for sequence questions
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  media_url!: string | null; // for image, audio, video questions
+
+  @Column({ type: 'decimal', precision: 15, scale: 4, nullable: true })
+  numerical_answer!: number | null; // for numerical questions
+
+  @Column({ type: 'decimal', precision: 15, scale: 4, nullable: true })
+  numerical_tolerance!: number | null; // tolerance for numerical questions (e.g., ±0.5)
 
   @CreateDateColumn()
   created_at!: Date;

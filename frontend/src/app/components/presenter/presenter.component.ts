@@ -194,10 +194,10 @@ import { Subscription, interval } from 'rxjs';
               <div class="leaderboard-section" *ngIf="showLeaderboard">
                 <app-leaderboard
                   [teams]="leaderboardTeams"
-                  [currentRound]="currentSession.current_round">
+                  [currentRound]="currentSession.current_round || 1">
                 </app-leaderboard>
                 
-                <div class="leaderboard-actions">
+                <div class="leaderboard-actions" *ngIf="currentSession">
                   <button 
                     mat-raised-button 
                     color="primary" 
@@ -208,6 +208,27 @@ import { Subscription, interval } from 'rxjs';
                 </div>
               </div>
             </div>
+        </div>
+
+        <!-- Final Leaderboard (shown after session ends) -->
+        <div class="final-leaderboard-section" *ngIf="showLeaderboard && !currentSession">
+          <div class="final-leaderboard-card">
+            <h2>🏆 Final Results</h2>
+            <app-leaderboard
+              [teams]="leaderboardTeams"
+              [currentRound]="1">
+            </app-leaderboard>
+            
+            <div class="final-leaderboard-actions">
+              <button 
+                mat-raised-button 
+                color="primary" 
+                (click)="createNewSession()">
+                <mat-icon>add</mat-icon>
+                Create New Session
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -513,6 +534,33 @@ import { Subscription, interval } from 'rxjs';
         font-size: 1.1rem;
       }
 
+      .final-leaderboard-section {
+        margin-top: 30px;
+      }
+
+      .final-leaderboard-card {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        text-align: center;
+      }
+
+      .final-leaderboard-card h2 {
+        margin-bottom: 30px;
+        color: #333;
+        font-size: 2rem;
+      }
+
+      .final-leaderboard-actions {
+        margin-top: 30px;
+      }
+
+      .final-leaderboard-actions button {
+        padding: 16px 32px;
+        font-size: 1.1rem;
+      }
+
     @media (max-width: 768px) {
       .presenter-content {
         padding: 10px;
@@ -724,15 +772,17 @@ export class PresenterComponent implements OnInit, OnDestroy {
           duration: 3000
         });
         
-        // Show final leaderboard
+        // Show final leaderboard and keep it displayed
         if (response.teams) {
           this.leaderboardTeams = response.teams;
           this.showLeaderboard = true;
           this.showReview = false;
+          this.isQuestionActive = false;
+          
+          // Clear current session but keep leaderboard visible
+          this.currentSession = null;
+          this.createForm.reset();
         }
-        
-        this.currentSession = null;
-        this.createForm.reset();
       },
       error: (error) => {
         this.snackBar.open('Failed to end session', 'Close', {
@@ -742,7 +792,11 @@ export class PresenterComponent implements OnInit, OnDestroy {
     });
   }
 
-
+  createNewSession(): void {
+    this.showLeaderboard = false;
+    this.leaderboardTeams = [];
+    this.createForm.reset();
+  }
 
   // Quiz Management Methods
   loadSampleQuestions(): void {
@@ -772,7 +826,10 @@ export class PresenterComponent implements OnInit, OnDestroy {
         points: question.points,
         options: question.options,
         correctAnswer: question.correct_answer,
-        sequenceItems: question.sequence_items
+        sequenceItems: question.sequence_items,
+        mediaUrl: question.media_url,
+        numericalAnswer: question.numerical_answer,
+        numericalTolerance: question.numerical_tolerance
       }).toPromise();
     });
 

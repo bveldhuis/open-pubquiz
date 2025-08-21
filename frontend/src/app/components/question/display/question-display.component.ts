@@ -40,6 +40,8 @@ import { BaseQuestionComponent } from '../base/base-question.component';
         [question]="question"
         [showCorrectAnswer]="showCorrectAnswer"
         [isInteractive]="false"
+        [isPresenter]="true"
+        [isActive]="isActive"
         [@questionAnimation]="isActive ? 'show' : 'hide'">
       </app-question-content>
       

@@ -13,6 +13,9 @@ export interface IQuestionService {
     options?: string[];
     correctAnswer?: string;
     sequenceItems?: string[];
+    mediaUrl?: string;
+    numericalAnswer?: number;
+    numericalTolerance?: number;
   }): Promise<Question>;
   getQuestionsForSession(sessionCode: string, round?: number): Promise<Question[]>;
   getQuestionById(questionId: string): Promise<Question | null>;

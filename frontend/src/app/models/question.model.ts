@@ -1,7 +1,7 @@
 export interface Question {
   id: string;
   question_text: string;
-  type: 'multiple_choice' | 'open_text' | 'sequence';
+  type: 'multiple_choice' | 'open_text' | 'sequence' | 'true_false' | 'numerical' | 'image' | 'audio' | 'video';
   points: number;
   question_number: number;
   time_limit?: number;
@@ -13,6 +13,13 @@ export interface Question {
   
   // Sequence specific
   sequence_items?: string[];
+  
+  // Media specific (image, audio, video)
+  media_url?: string;
+  
+  // Numerical specific
+  numerical_answer?: number;
+  numerical_tolerance?: number;
   
   // Metadata
   created_at?: string;

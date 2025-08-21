@@ -81,7 +81,7 @@ const options: swaggerJsdoc.Options = {
             question_number: { type: 'integer', minimum: 1 },
             type: { 
               type: 'string', 
-              enum: ['MULTIPLE_CHOICE', 'OPEN_TEXT', 'SEQUENCE'],
+              enum: ['MULTIPLE_CHOICE', 'OPEN_TEXT', 'SEQUENCE', 'TRUE_FALSE', 'NUMERICAL', 'IMAGE', 'AUDIO', 'VIDEO'],
               description: 'Question type'
             },
             question_text: { type: 'string' },
@@ -91,13 +91,31 @@ const options: swaggerJsdoc.Options = {
             options: { 
               type: 'array', 
               items: { type: 'string' },
-              nullable: true
+              nullable: true,
+              description: 'Options for multiple choice questions'
             },
             correct_answer: { type: 'string', nullable: true },
             sequence_items: { 
               type: 'array', 
               items: { type: 'string' },
-              nullable: true
+              nullable: true,
+              description: 'Items to sequence for sequence questions'
+            },
+            media_url: { 
+              type: 'string', 
+              format: 'uri',
+              nullable: true,
+              description: 'URL for media content (image, audio, video)'
+            },
+            numerical_answer: { 
+              type: 'number', 
+              nullable: true,
+              description: 'Correct numerical answer for numerical questions'
+            },
+            numerical_tolerance: { 
+              type: 'number', 
+              nullable: true,
+              description: 'Allowed tolerance for numerical answers'
             },
             created_at: { type: 'string', format: 'date-time' },
             updated_at: { type: 'string', format: 'date-time' }

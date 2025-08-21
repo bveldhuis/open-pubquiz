@@ -42,11 +42,11 @@ const questionService = serviceFactory.createQuestionService(sessionService);
  *                 minimum: 1
  *                 description: Question number within the round
  *                 example: 1
- *               type:
- *                 type: string
- *                 enum: [MULTIPLE_CHOICE, OPEN_TEXT, SEQUENCE]
- *                 description: Question type
- *                 example: "MULTIPLE_CHOICE"
+               *               type:
+              *                 type: string
+              *                 enum: [MULTIPLE_CHOICE, OPEN_TEXT, SEQUENCE, TRUE_FALSE, NUMERICAL, IMAGE, AUDIO, VIDEO]
+              *                 description: Question type
+              *                 example: "MULTIPLE_CHOICE"
  *               questionText:
  *                 type: string
  *                 description: The question text
@@ -75,12 +75,25 @@ const questionService = serviceFactory.createQuestionService(sessionService);
  *                 type: string
  *                 description: Correct answer text
  *                 example: "Paris"
- *               sequenceItems:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Sequence items to order (required for SEQUENCE type)
- *                 example: ["First", "Second", "Third", "Fourth"]
+               *               sequenceItems:
+              *                 type: array
+              *                 items:
+              *                   type: string
+              *                 description: Sequence items to order (required for SEQUENCE type)
+              *                 example: ["First", "Second", "Third", "Fourth"]
+              *               mediaUrl:
+              *                 type: string
+              *                 format: uri
+              *                 description: URL for media content (required for IMAGE, AUDIO, VIDEO types)
+              *                 example: "https://example.com/image.jpg"
+              *               numericalAnswer:
+              *                 type: number
+              *                 description: Correct numerical answer (required for NUMERICAL type)
+              *                 example: 3.14159
+              *               numericalTolerance:
+              *                 type: number
+              *                 description: Tolerance for numerical answers (optional)
+              *                 example: 0.01
  *     responses:
  *       201:
  *         description: Question created successfully
@@ -110,7 +123,10 @@ router.post('/', async (req, res) => {
       points,
       options,
       correctAnswer,
-      sequenceItems
+      sequenceItems,
+      mediaUrl,
+      numericalAnswer,
+      numericalTolerance
     } = req.body;
 
     if (!sessionCode || !roundNumber || !questionNumber || !type || !questionText) {
@@ -130,6 +146,18 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Sequence questions require at least 2 items' });
     }
 
+    if (type === QuestionType.TRUE_FALSE && !correctAnswer) {
+      return res.status(400).json({ error: 'True/false questions require a correct answer (true or false)' });
+    }
+
+    if (type === QuestionType.NUMERICAL && numericalAnswer === undefined) {
+      return res.status(400).json({ error: 'Numerical questions require a numerical answer' });
+    }
+
+    if ([QuestionType.IMAGE, QuestionType.AUDIO, QuestionType.VIDEO].includes(type) && !mediaUrl) {
+      return res.status(400).json({ error: 'Media questions require a media URL' });
+    }
+
     const question = await questionService.createQuestion({
       sessionCode,
       roundNumber,
@@ -141,7 +169,10 @@ router.post('/', async (req, res) => {
       points,
       options,
       correctAnswer,
-      sequenceItems
+      sequenceItems,
+      mediaUrl,
+      numericalAnswer,
+      numericalTolerance
     });
 
     return res.status(201).json({ question });

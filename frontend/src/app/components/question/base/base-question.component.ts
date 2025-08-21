@@ -19,6 +19,16 @@ export abstract class BaseQuestionComponent {
         return 'Open Text';
       case 'sequence':
         return 'Sequence';
+      case 'true_false':
+        return 'True/False';
+      case 'numerical':
+        return 'Numerical';
+      case 'image':
+        return 'Image';
+      case 'audio':
+        return 'Audio';
+      case 'video':
+        return 'Video';
       default:
         return 'Unknown';
     }
