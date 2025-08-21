@@ -1,0 +1,145 @@
+import { AppDataSource } from '../config/database';
+import { Team } from '../entities/Team';
+import { QuizSession } from '../entities/QuizSession';
+import { Answer } from '../entities/Answer';
+import { ITeamService } from './interfaces/ITeamService';
+import { TeamWithStats } from './interfaces/ISessionService';
+
+export class TeamService implements ITeamService {
+  private teamRepository = AppDataSource.getRepository(Team);
+  private answerRepository = AppDataSource.getRepository(Answer);
+
+  /**
+   * Create a new team
+   */
+  async createTeam(sessionCode: string, teamName: string): Promise<Team> {
+    // Get session directly from database to avoid circular dependency
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({
+      where: { code: sessionCode }
+    });
+
+    if (!session) {
+      throw new Error('Session not found');
+    }
+    
+    // Check if team name already exists
+    const existingTeam = await this.teamRepository.findOne({
+      where: { quiz_session_id: session.id, name: teamName }
+    });
+
+    if (existingTeam) {
+      throw new Error('Team name already exists in this session');
+    }
+
+    const team = this.teamRepository.create({
+      quiz_session_id: session.id,
+      name: teamName,
+      total_points: 0
+    });
+
+    return await this.teamRepository.save(team);
+  }
+
+  /**
+   * Get team by ID
+   */
+  async getTeamById(teamId: string): Promise<Team | null> {
+    return await this.teamRepository.findOne({ where: { id: teamId } });
+  }
+
+  /**
+   * Get team by ID or throw error
+   */
+  async getTeamByIdOrThrow(teamId: string): Promise<Team> {
+    const team = await this.getTeamById(teamId);
+    if (!team) {
+      throw new Error('Team not found');
+    }
+    return team;
+  }
+
+  /**
+   * Update team points
+   */
+  async updateTeamPoints(teamId: string, points: number): Promise<void> {
+    await this.teamRepository.update(teamId, { total_points: points });
+  }
+
+  /**
+   * Delete team
+   */
+  async deleteTeam(teamId: string): Promise<void> {
+    await this.teamRepository.delete(teamId);
+  }
+
+  /**
+   * Update team activity
+   */
+  async updateTeamActivity(teamId: string): Promise<void> {
+    await this.teamRepository.update(teamId, { last_activity: new Date() });
+  }
+
+  /**
+   * Get leaderboard for a session
+   */
+  async getLeaderboard(sessionCode: string): Promise<TeamWithStats[]> {
+    // Get session directly from database to avoid circular dependency
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({
+      where: { code: sessionCode }
+    });
+
+    if (!session) {
+      throw new Error('Session not found');
+    }
+    
+    // Get teams with their answers
+    const teams = await this.teamRepository.find({
+      where: { quiz_session_id: session.id },
+      relations: ['answers'],
+      order: { total_points: 'DESC' }
+    });
+
+    // Calculate statistics for each team
+    const teamsWithStats = await Promise.all(teams.map(async (team) => {
+      const answers = await this.answerRepository.find({
+        where: { team_id: team.id }
+      });
+
+      const answers_submitted = answers.length;
+      const correct_answers = answers.filter(answer => answer.is_correct === true).length;
+
+      return {
+        id: team.id,
+        name: team.name,
+        total_points: team.total_points,
+        answers_submitted,
+        correct_answers
+      };
+    }));
+
+    return teamsWithStats;
+  }
+
+  /**
+   * Get existing teams for a session
+   */
+  async getExistingTeams(sessionCode: string): Promise<{ id: string; name: string }[]> {
+    // Get session directly from database to avoid circular dependency
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const session = await sessionRepository.findOne({
+      where: { code: sessionCode },
+      relations: ['teams']
+    });
+
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    return session.teams.map((team: any) => ({
+      id: team.id,
+      name: team.name
+    }));
+  }
+}

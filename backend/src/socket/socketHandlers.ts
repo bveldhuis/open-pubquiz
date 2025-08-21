@@ -1,11 +1,6 @@
 import { Server, Socket } from 'socket.io';
-import { AppDataSource } from '../config/database';
-import { QuizSession, QuizSessionStatus } from '../entities/QuizSession';
-import { Question, QuestionType } from '../entities/Question';
-import { Team } from '../entities/Team';
-import { Answer } from '../entities/Answer';
-import { SequenceAnswer } from '../entities/SequenceAnswer';
-import { SessionEvent, EventType } from '../entities/SessionEvent';
+import { EventType } from '../entities/SessionEvent';
+import { ServiceFactory } from '../services/ServiceFactory';
 
 interface JoinSessionData {
   sessionCode: string;
@@ -26,6 +21,12 @@ interface PresenterAction {
 }
 
 export function setupSocketHandlers(io: Server) {
+  const serviceFactory = ServiceFactory.getInstance();
+  const sessionService = serviceFactory.createSessionService(serviceFactory.createTeamService());
+  const teamService = serviceFactory.createTeamService();
+  const questionService = serviceFactory.createQuestionService(sessionService);
+  const answerService = serviceFactory.createAnswerService(questionService, teamService);
+  
   io.on('connection', (socket: Socket) => {
     console.log(`🔌 Client connected: ${socket.id}`);
 
@@ -38,24 +39,15 @@ export function setupSocketHandlers(io: Server) {
         console.log(`🎮 Presenter joined room: ${sessionCode}`);
         
         // Send existing teams to the presenter
-        const sessionRepository = AppDataSource.getRepository(QuizSession);
-        const session = await sessionRepository.findOne({ 
-          where: { code: sessionCode },
-          relations: ['teams']
-        });
+        const teams = await teamService.getExistingTeams(sessionCode);
         
-        if (session && session.teams.length > 0) {
-          console.log(`📋 Sending ${session.teams.length} existing teams to presenter`);
-          socket.emit('existing_teams', {
-            teams: session.teams.map(team => ({
-              id: team.id,
-              name: team.name
-            }))
-          });
+        if (teams.length > 0) {
+          console.log(`📋 Sending ${teams.length} existing teams to presenter`);
+          socket.emit('existing_teams', { teams });
           
           // Also emit individual team_joined_session events for each existing team
           // This ensures the presenter gets notifications for all teams
-          for (const team of session.teams) {
+          for (const team of teams) {
             console.log(`📢 Emitting team_joined_session event for existing team ${team.name}`);
             socket.emit('team_joined_session', {
               teamId: team.id,
@@ -73,33 +65,13 @@ export function setupSocketHandlers(io: Server) {
       try {
         const { sessionCode, teamName } = data;
         
-        // Find session
-        const sessionRepository = AppDataSource.getRepository(QuizSession);
-        const session = await sessionRepository.findOne({ 
-          where: { code: sessionCode },
-          relations: ['teams']
-        });
+        // Join session using service
+        const result = await sessionService.joinSession(sessionCode, teamName);
+        const { team, session, isNewTeam } = result;
 
-        if (!session) {
-          socket.emit('error', { message: 'Session not found' });
-          return;
-        }
-
-        // Check if team name already exists in this session
-        const existingTeam = session.teams.find(team => team.name === teamName);
-        let team: Team;
-
-        if (!existingTeam) {
-          // Create new team only if it doesn't exist
-          const teamRepository = AppDataSource.getRepository(Team);
-          team = teamRepository.create({
-            quiz_session_id: session.id,
-            name: teamName
-          });
-          await teamRepository.save(team);
+        if (isNewTeam) {
           console.log(`👥 New team ${teamName} created and joined session ${sessionCode}`);
         } else {
-          team = existingTeam;
           console.log(`👥 Existing team ${teamName} rejoined session ${sessionCode}`);
         }
 
@@ -142,18 +114,9 @@ export function setupSocketHandlers(io: Server) {
         const { sessionCode, teamId, questionId, answer } = data;
 
         // Validate session and team
-        const sessionRepository = AppDataSource.getRepository(QuizSession);
-        const session = await sessionRepository.findOne({ 
-          where: { code: sessionCode },
-          relations: ['teams']
-        });
-
-        if (!session) {
-          socket.emit('error', { message: 'Session not found' });
-          return;
-        }
-
-        const team = session.teams.find(t => t.id === teamId);
+        const session = await sessionService.getSessionByCodeOrThrow(sessionCode, ['teams']);
+        const team = session.teams.find((t: any) => t.id === teamId);
+        
         if (!team) {
           socket.emit('error', { message: 'Team not found' });
           return;
@@ -165,131 +128,8 @@ export function setupSocketHandlers(io: Server) {
           return;
         }
 
-        // Check if answer already exists
-        const answerRepository = AppDataSource.getRepository(Answer);
-        const existingAnswer = await answerRepository.findOne({
-          where: { question_id: questionId, team_id: teamId }
-        });
-
-        if (existingAnswer) {
-          socket.emit('error', { message: 'Answer already submitted' });
-          return;
-        }
-
-        // Get question details for scoring
-        const questionRepository = AppDataSource.getRepository(Question);
-        const question = await questionRepository.findOne({ where: { id: questionId } });
-        
-        if (!question) {
-          socket.emit('error', { message: 'Question not found' });
-          return;
-        }
-
-        // Process answer based on question type
-        let answerText: string;
-        let isCorrect: boolean | null = null;
-        let pointsAwarded = 0;
-
-        if (question.type === QuestionType.SEQUENCE && Array.isArray(answer)) {
-          answerText = answer.join('|');
-        } else if (typeof answer === 'string') {
-          answerText = answer;
-        } else {
-          socket.emit('error', { message: 'Invalid answer format' });
-          return;
-        }
-
-        // Auto-score multiple choice questions
-        if (question.type === QuestionType.MULTIPLE_CHOICE && question.correct_answer) {
-          console.log('🔍 Multiple choice scoring:');
-          console.log('  - Submitted answer:', `"${answerText}"`);
-          console.log('  - Correct answer:', `"${question.correct_answer}"`);
-          console.log('  - Submitted length:', answerText.length);
-          console.log('  - Correct length:', question.correct_answer.length);
-          console.log('  - Submitted char codes:', Array.from(answerText).map(c => c.charCodeAt(0)));
-          console.log('  - Correct char codes:', Array.from(question.correct_answer).map(c => c.charCodeAt(0)));
-          console.log('  - Submitted (normalized):', `"${answerText.toLowerCase().trim()}"`);
-          console.log('  - Correct (normalized):', `"${question.correct_answer.toLowerCase().trim()}"`);
-          
-          isCorrect = answerText.toLowerCase().trim() === question.correct_answer.toLowerCase().trim();
-          pointsAwarded = isCorrect ? question.points : 0;
-          
-          console.log('  - Result:', isCorrect ? 'CORRECT' : 'INCORRECT');
-          console.log('  - Points awarded:', pointsAwarded);
-        }
-        
-        // Auto-score sequence questions
-        if (question.type === QuestionType.SEQUENCE && question.sequence_items && Array.isArray(answer)) {
-          console.log('🔍 Sequence scoring:');
-          console.log('  - Correct sequence:', question.sequence_items);
-          console.log('  - Submitted sequence:', answer);
-          
-          const correctSequence = question.sequence_items;
-          const submittedSequence = answer;
-          
-          // Check if all items are in correct order
-          let correctCount = 0;
-          for (let i = 0; i < Math.min(correctSequence.length, submittedSequence.length); i++) {
-            if (correctSequence[i] === submittedSequence[i]) {
-              correctCount++;
-            }
-          }
-          
-          console.log('  - Correct items:', correctCount, 'out of', correctSequence.length);
-          
-          // Full points if all correct, 1 point if only 1 wrong, 0 points otherwise
-          if (correctCount === correctSequence.length) {
-            isCorrect = true;
-            pointsAwarded = question.points;
-            console.log('  - Result: PERFECT (all correct)');
-          } else if (correctCount === correctSequence.length - 1) {
-            isCorrect = true;
-            pointsAwarded = 1;
-            console.log('  - Result: PARTIAL (1 wrong)');
-          } else {
-            isCorrect = false;
-            pointsAwarded = 0;
-            console.log('  - Result: INCORRECT');
-          }
-          
-          console.log('  - Points awarded:', pointsAwarded);
-        }
-        
-        // Open text questions are not auto-scored (isCorrect remains null)
-        if (question.type === QuestionType.OPEN_TEXT) {
-          console.log('🔍 Open text question - manual scoring required');
-        }
-
-        // Create answer
-        const newAnswer = answerRepository.create({
-          question_id: questionId,
-          team_id: teamId,
-          answer_text: answerText,
-          is_correct: isCorrect,
-          points_awarded: pointsAwarded
-        });
-        await answerRepository.save(newAnswer);
-
-        // Create sequence answers if needed
-        if (question.type === QuestionType.SEQUENCE && Array.isArray(answer)) {
-          const sequenceAnswerRepository = AppDataSource.getRepository(SequenceAnswer);
-          for (let i = 0; i < answer.length; i++) {
-            const sequenceAnswer = sequenceAnswerRepository.create({
-              answer_id: newAnswer.id,
-              item_text: answer[i],
-              position: i
-            });
-            await sequenceAnswerRepository.save(sequenceAnswer);
-          }
-        }
-
-        // Update team points if auto-scored
-        if (isCorrect !== null) {
-          const teamRepository = AppDataSource.getRepository(Team);
-          await teamRepository.update(teamId, {
-            total_points: team.total_points + pointsAwarded
-          });
-        }
+        // Submit answer using service
+        const result = await answerService.submitAnswer(questionId, teamId, answer);
 
         // Emit answer submitted
         socket.emit('answer_submitted', { 
@@ -300,11 +140,11 @@ export function setupSocketHandlers(io: Server) {
         // Notify presenter
         socket.to(sessionCode).emit('answer_received', {
           teamId,
-          teamName: team.name,
+          teamName: result.team.name,
           questionId
         });
 
-        console.log(`📝 Answer submitted by ${team.name} for question ${questionId}`);
+        console.log(`📝 Answer submitted by ${result.team.name} for question ${questionId}`);
       } catch (error) {
         console.error('Error submitting answer:', error);
         socket.emit('error', { message: 'Failed to submit answer' });
@@ -317,26 +157,8 @@ export function setupSocketHandlers(io: Server) {
         console.log('🎮 Received presenter action:', data);
         const { sessionCode, action, questionId } = data;
 
-        // Check database connection
-        if (!AppDataSource.isInitialized) {
-          console.error('❌ Database not initialized');
-          socket.emit('error', { message: 'Database connection error' });
-          return;
-        }
-
-        console.log(`✅ Database connection status: ${AppDataSource.isInitialized}`);
-
-        const sessionRepository = AppDataSource.getRepository(QuizSession);
-        const session = await sessionRepository.findOne({ 
-          where: { code: sessionCode }
-        });
-
-        if (!session) {
-          console.error(`❌ Session not found: ${sessionCode}`);
-          socket.emit('error', { message: 'Session not found' });
-          return;
-        }
-
+        // Get session
+        const session = await sessionService.getSessionByCodeOrThrow(sessionCode);
         console.log(`✅ Session found: ${session.id}`);
 
         // Map action to EventType enum
@@ -358,13 +180,7 @@ export function setupSocketHandlers(io: Server) {
         };
 
         // Log event
-        const eventRepository = AppDataSource.getRepository(SessionEvent);
-        await eventRepository.save({
-          quiz_session_id: session.id,
-          event_type: actionToEventType(action),
-          event_data: { questionId }
-        });
-
+        await sessionService.logEvent(session.id, actionToEventType(action), { questionId });
         console.log(`✅ Event logged: ${action}`);
 
         // Handle different actions
@@ -373,33 +189,11 @@ export function setupSocketHandlers(io: Server) {
             if (questionId) {
               console.log(`🎯 Starting question: ${questionId}`);
               
-              await sessionRepository.update(session.id, {
-                current_question_id: questionId,
-                status: QuizSessionStatus.ACTIVE
-              });
+              const question = await questionService.startQuestion(sessionCode, questionId);
               console.log(`✅ Session updated with question: ${questionId}`);
-              
-              // Get question details
-              const questionRepository = AppDataSource.getRepository(Question);
-              
-              // First, let's check if the question exists
-              const questionCount = await questionRepository.count({
-                where: { id: questionId }
-              });
-              console.log(`🔍 Question count for ID ${questionId}: ${questionCount}`);
-              
-              const question = await questionRepository.findOne({
-                where: { id: questionId }
-              });
-
-              if (!question) {
-                console.error(`❌ Question not found: ${questionId}`);
-                socket.emit('error', { message: 'Question not found' });
-                return;
-              }
-
               console.log(`✅ Question found:`, question);
               console.log(`📢 Emitting question_started to room ${sessionCode}:`, { question, timeLimit: question?.time_limit });
+              
               io.to(sessionCode).emit('question_started', {
                 question,
                 timeLimit: question?.time_limit
@@ -408,34 +202,22 @@ export function setupSocketHandlers(io: Server) {
             break;
 
           case 'end_question':
-            await sessionRepository.update(session.id, {
-              status: QuizSessionStatus.PAUSED
-            });
-            
+            await questionService.endQuestion(sessionCode);
             io.to(sessionCode).emit('question_ended');
             break;
 
           case 'show_leaderboard':
-            const teamRepository = AppDataSource.getRepository(Team);
-            const teams = await teamRepository.find({
-              where: { quiz_session_id: session.id },
-              order: { total_points: 'DESC' }
-            });
-            
+            const teams = await teamService.getLeaderboard(sessionCode);
             io.to(sessionCode).emit('leaderboard_updated', { teams });
             break;
 
           case 'show_review':
             if (questionId) {
-              const answerRepository = AppDataSource.getRepository(Answer);
-              const answers = await answerRepository.find({
-                where: { question_id: questionId },
-                relations: ['team']
-              });
+              const answers = await answerService.getAnswersForQuestion(questionId);
               
               io.to(sessionCode).emit('review_answers', {
                 questionId,
-                answers: answers.map(a => ({
+                answers: answers.map((a: any) => ({
                   teamName: a.team.name,
                   answer: a.answer_text,
                   isCorrect: a.is_correct,
@@ -446,14 +228,10 @@ export function setupSocketHandlers(io: Server) {
             break;
 
           case 'next_round':
-            await sessionRepository.update(session.id, {
-              current_round: session.current_round + 1,
-              current_question_id: null,
-              status: QuizSessionStatus.WAITING
-            });
+            const newRound = await sessionService.startNextRound(sessionCode);
             
             io.to(sessionCode).emit('round_started', {
-              roundNumber: session.current_round + 1
+              roundNumber: newRound
             });
             break;
         }

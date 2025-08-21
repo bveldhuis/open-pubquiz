@@ -41,17 +41,17 @@ export interface Team {
             <div class="team-stats">
               <span class="stat">
                 <mat-icon>star</mat-icon>
-                {{ team.total_points }} pts
+                {{ team.total_points || 0 }} pts
               </span>
               <span class="stat">
                 <mat-icon>quiz</mat-icon>
-                {{ team.correct_answers }}/{{ team.answers_submitted }} correct
+                {{ team.correct_answers || 0 }}/{{ team.answers_submitted || 0 }} correct
               </span>
             </div>
           </div>
 
           <div class="points-display">
-            <span class="points">{{ team.total_points }}</span>
+            <span class="points">{{ team.total_points || 0 }}</span>
             <span class="points-label">points</span>
           </div>
         </div>
@@ -328,17 +328,18 @@ export class LeaderboardComponent {
   @Input() currentRound?: number;
 
   get sortedTeams(): Team[] {
-    return [...this.teams].sort((a, b) => b.total_points - a.total_points);
+    return [...this.teams].sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
   }
 
   get averageScore(): number {
     if (this.teams.length === 0) return 0;
-    const total = this.teams.reduce((sum, team) => sum + team.total_points, 0);
+    const total = this.teams.reduce((sum, team) => sum + (team.total_points || 0), 0);
     return total / this.teams.length;
   }
 
   get highestScore(): number {
     if (this.teams.length === 0) return 0;
-    return Math.max(...this.teams.map(team => team.total_points));
+    const scores = this.teams.map(team => team.total_points || 0);
+    return Math.max(...scores);
   }
 }

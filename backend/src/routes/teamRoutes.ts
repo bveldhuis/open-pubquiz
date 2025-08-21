@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { AppDataSource } from '../config/database';
-import { Team } from '../entities/Team';
-import { QuizSession } from '../entities/QuizSession';
-import { v4 as uuidv4 } from 'uuid';
+import { ServiceFactory } from '../services/ServiceFactory';
 
 const router = Router();
+const serviceFactory = ServiceFactory.getInstance();
+const sessionService = serviceFactory.createSessionService(serviceFactory.createTeamService());
+const teamService = serviceFactory.createTeamService();
 
 // Join session as team
 router.post('/join', async (req, res) => {
@@ -15,40 +15,14 @@ router.post('/join', async (req, res) => {
       return res.status(400).json({ error: 'Session code and team name are required' });
     }
 
-    // Find session
-    const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = await sessionRepository.findOne({
-      where: { code: sessionCode },
-      relations: ['teams']
-    });
-
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-
-    // Check if team name already exists
-    const existingTeam = session.teams.find(team => team.name === teamName);
-    if (existingTeam) {
-      return res.status(409).json({ error: 'Team name already exists in this session' });
-    }
-
-    // Create new team
-    const teamRepository = AppDataSource.getRepository(Team);
-    const team = teamRepository.create({
-      id: uuidv4(),
-      quiz_session_id: session.id,
-      name: teamName,
-      total_points: 0
-    });
-
-    await teamRepository.save(team);
+    const result = await sessionService.joinSession(sessionCode, teamName);
 
     return res.status(201).json({
       team: {
-        id: team.id,
-        name: team.name,
-        totalPoints: team.total_points,
-        joinedAt: team.joined_at
+        id: result.team.id,
+        name: result.team.name,
+        totalPoints: result.team.total_points,
+        joinedAt: result.team.joined_at
       }
     });
   } catch (error) {
@@ -62,11 +36,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const teamRepository = AppDataSource.getRepository(Team);
-    const team = await teamRepository.findOne({
-      where: { id },
-      relations: ['quizSession', 'answers']
-    });
+    const team = await teamService.getTeamById(id);
 
     if (!team) {
       return res.status(404).json({ error: 'Team not found' });
@@ -89,14 +59,7 @@ router.patch('/:id/points', async (req, res) => {
       return res.status(400).json({ error: 'Points must be a number' });
     }
 
-    const teamRepository = AppDataSource.getRepository(Team);
-    const team = await teamRepository.findOne({ where: { id } });
-
-    if (!team) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
-
-    await teamRepository.update(id, { total_points: points });
+    await teamService.updateTeamPoints(id, points);
 
     return res.json({ success: true, totalPoints: points });
   } catch (error) {
@@ -110,18 +73,14 @@ router.get('/session/:sessionCode', async (req, res) => {
   try {
     const { sessionCode } = req.params;
 
-    const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = await sessionRepository.findOne({
-      where: { code: sessionCode },
-      relations: ['teams']
-    });
+    const session = await sessionService.getSession(sessionCode, ['teams']);
 
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
 
     // Sort teams by points
-    const teams = session.teams.sort((a, b) => b.total_points - a.total_points);
+    const teams = session.teams.sort((a: any, b: any) => b.total_points - a.total_points);
 
     return res.json({ teams });
   } catch (error) {
@@ -135,14 +94,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const teamRepository = AppDataSource.getRepository(Team);
-    const team = await teamRepository.findOne({ where: { id } });
-
-    if (!team) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
-
-    await teamRepository.remove(team);
+    await teamService.deleteTeam(id);
 
     return res.json({ success: true });
   } catch (error) {
@@ -156,15 +108,7 @@ router.patch('/:id/activity', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const teamRepository = AppDataSource.getRepository(Team);
-    const team = await teamRepository.findOne({ where: { id } });
-
-    if (!team) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
-
-    // Update last activity timestamp
-    await teamRepository.update(id, { last_activity: new Date() });
+    await teamService.updateTeamActivity(id);
 
     return res.json({ success: true });
   } catch (error) {

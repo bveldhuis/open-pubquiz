@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { AppDataSource } from '../config/database';
-import { Question, QuestionType } from '../entities/Question';
-import { QuizSession } from '../entities/QuizSession';
-import { v4 as uuidv4 } from 'uuid';
+import { QuestionType } from '../entities/Question';
+import { ServiceFactory } from '../services/ServiceFactory';
 
 const router = Router();
+const serviceFactory = ServiceFactory.getInstance();
+const sessionService = serviceFactory.createSessionService(serviceFactory.createTeamService());
+const teamService = serviceFactory.createTeamService();
+const questionService = serviceFactory.createQuestionService(sessionService);
 
 // Create question
 router.post('/', async (req, res) => {
@@ -31,14 +33,6 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Invalid question type' });
     }
 
-    // Find session
-    const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = await sessionRepository.findOne({ where: { code: sessionCode } });
-
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-
     // Validate question type specific fields
     if (type === QuestionType.MULTIPLE_CHOICE && (!options || !Array.isArray(options) || options.length < 2)) {
       return res.status(400).json({ error: 'Multiple choice questions require at least 2 options' });
@@ -48,28 +42,19 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Sequence questions require at least 2 items' });
     }
 
-    // Create question
-    const questionRepository = AppDataSource.getRepository(Question);
-    const questionId = uuidv4();
-    console.log(`📝 Creating question with ID: ${questionId}`);
-    
-    const question = questionRepository.create({
-      id: questionId,
-      quiz_session_id: session.id,
-      round_number: roundNumber,
-      question_number: questionNumber,
+    const question = await questionService.createQuestion({
+      sessionCode,
+      roundNumber,
+      questionNumber,
       type,
-      question_text: questionText,
-      fun_fact: funFact || null,
-      time_limit: timeLimit || null,
-      points: points || 1,
-      options: type === QuestionType.MULTIPLE_CHOICE ? options : null,
-      correct_answer: correctAnswer || null,
-      sequence_items: type === QuestionType.SEQUENCE ? sequenceItems : null
+      questionText,
+      funFact,
+      timeLimit,
+      points,
+      options,
+      correctAnswer,
+      sequenceItems
     });
-
-    await questionRepository.save(question);
-    console.log(`✅ Question created successfully: ${questionId}`);
 
     return res.status(201).json({ question });
   } catch (error) {
@@ -82,30 +67,9 @@ router.post('/', async (req, res) => {
 router.get('/session/:sessionCode', async (req, res) => {
   try {
     const { sessionCode } = req.params;
-    const { round } = req.query;
 
-    const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = await sessionRepository.findOne({ where: { code: sessionCode } });
+    const questions = await questionService.getQuestionsForSession(sessionCode);
 
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-
-    const questionRepository = AppDataSource.getRepository(Question);
-    let whereClause: any = { quiz_session_id: session.id };
-    
-    if (round) {
-      whereClause.round_number = parseInt(round as string);
-    }
-
-    const questions = await questionRepository.find({
-      where: whereClause,
-      order: { round_number: 'ASC', question_number: 'ASC' }
-    });
-
-    console.log(`📋 Found ${questions.length} questions for session ${sessionCode}`);
-    questions.forEach(q => console.log(`  - Question ${q.id}: ${q.question_text.substring(0, 50)}...`));
-    
     return res.json({ questions });
   } catch (error) {
     console.error('Error fetching questions:', error);
@@ -117,20 +81,13 @@ router.get('/session/:sessionCode', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(`🔍 Looking for question with ID: ${id}`);
 
-    const questionRepository = AppDataSource.getRepository(Question);
-    const question = await questionRepository.findOne({
-      where: { id },
-      relations: ['quizSession']
-    });
+    const question = await questionService.getQuestionById(id);
 
     if (!question) {
-      console.log(`❌ Question not found: ${id}`);
       return res.status(404).json({ error: 'Question not found' });
     }
 
-    console.log(`✅ Question found: ${id}`);
     return res.json({ question });
   } catch (error) {
     console.error('Error fetching question:', error);
@@ -142,37 +99,11 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      questionText,
-      funFact,
-      timeLimit,
-      points,
-      options,
-      correctAnswer,
-      sequenceItems
-    } = req.body;
+    const updateData = req.body;
 
-    const questionRepository = AppDataSource.getRepository(Question);
-    const question = await questionRepository.findOne({ where: { id } });
+    await questionService.updateQuestion(id, updateData);
 
-    if (!question) {
-      return res.status(404).json({ error: 'Question not found' });
-    }
-
-    // Update fields
-    const updateData: any = {};
-    if (questionText !== undefined) updateData.question_text = questionText;
-    if (funFact !== undefined) updateData.fun_fact = funFact;
-    if (timeLimit !== undefined) updateData.time_limit = timeLimit;
-    if (points !== undefined) updateData.points = points;
-    if (options !== undefined) updateData.options = question.type === QuestionType.MULTIPLE_CHOICE ? options : null;
-    if (correctAnswer !== undefined) updateData.correct_answer = correctAnswer;
-    if (sequenceItems !== undefined) updateData.sequence_items = question.type === QuestionType.SEQUENCE ? sequenceItems : null;
-
-    await questionRepository.update(id, updateData);
-
-    const updatedQuestion = await questionRepository.findOne({ where: { id } });
-    return res.json({ question: updatedQuestion });
+    return res.json({ success: true });
   } catch (error) {
     console.error('Error updating question:', error);
     return res.status(500).json({ error: 'Failed to update question' });
@@ -184,14 +115,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const questionRepository = AppDataSource.getRepository(Question);
-    const question = await questionRepository.findOne({ where: { id } });
-
-    if (!question) {
-      return res.status(404).json({ error: 'Question not found' });
-    }
-
-    await questionRepository.remove(question);
+    await questionService.deleteQuestion(id);
 
     return res.json({ success: true });
   } catch (error) {
@@ -209,61 +133,11 @@ router.post('/bulk', async (req, res) => {
       return res.status(400).json({ error: 'Session code and questions array are required' });
     }
 
-    const sessionRepository = AppDataSource.getRepository(QuizSession);
-    const session = await sessionRepository.findOne({ where: { code: sessionCode } });
-
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-
-    const questionRepository = AppDataSource.getRepository(Question);
-    const createdQuestions = [];
-
-    for (const questionData of questions) {
-      const {
-        roundNumber,
-        questionNumber,
-        type,
-        questionText,
-        funFact,
-        timeLimit,
-        points,
-        options,
-        correctAnswer,
-        sequenceItems
-      } = questionData;
-
-      if (!roundNumber || !questionNumber || !type || !questionText) {
-        console.log(`⚠️ Skipping invalid question:`, questionData);
-        continue; // Skip invalid questions
-      }
-
-      const questionId = uuidv4();
-      console.log(`📝 Creating bulk question with ID: ${questionId}`);
-      
-      const question = questionRepository.create({
-        id: questionId,
-        quiz_session_id: session.id,
-        round_number: roundNumber,
-        question_number: questionNumber,
-        type,
-        question_text: questionText,
-        fun_fact: funFact || null,
-        time_limit: timeLimit || null,
-        points: points || 1,
-        options: type === QuestionType.MULTIPLE_CHOICE ? options : null,
-        correct_answer: correctAnswer || null,
-        sequence_items: type === QuestionType.SEQUENCE ? sequenceItems : null
-      });
-
-      await questionRepository.save(question);
-      console.log(`✅ Bulk question created successfully: ${questionId}`);
-      createdQuestions.push(question);
-    }
+    const createdQuestions = await questionService.bulkCreateQuestions(sessionCode, questions);
 
     return res.status(201).json({ questions: createdQuestions });
   } catch (error) {
-    console.error('Error creating questions in bulk:', error);
+    console.error('Error creating questions:', error);
     return res.status(500).json({ error: 'Failed to create questions' });
   }
 });
