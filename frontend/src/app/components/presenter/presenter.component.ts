@@ -193,7 +193,7 @@ import { Subscription, interval } from 'rxjs';
               <!-- Leaderboard Section -->
               <div class="leaderboard-section" *ngIf="showLeaderboard">
                 <app-leaderboard
-                  [teams]="teams"
+                  [teams]="leaderboardTeams"
                   [currentRound]="currentSession.current_round">
                 </app-leaderboard>
                 
@@ -558,6 +558,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
   isCreating = false;
   isConnected = false;
   teams: any[] = [];
+  leaderboardTeams: any[] = [];
   
   // Quiz state
   questions: Question[] = [];
@@ -664,6 +665,14 @@ export class PresenterComponent implements OnInit, OnDestroy {
               console.log(`📝 Team ${event.teamName} already answered this question`);
             }
           }
+        }
+      }),
+
+      // Subscribe to leaderboard updates
+      this.socketService.leaderboardUpdated$.subscribe(event => {
+        console.log('📊 Leaderboard updated via socket:', event);
+        if (this.currentSession && this.showLeaderboard) {
+          this.leaderboardTeams = event.teams;
         }
       })
     );
@@ -881,6 +890,11 @@ export class PresenterComponent implements OnInit, OnDestroy {
           answer.is_correct = isCorrect;
         }
         
+        // Refresh leaderboard data if currently showing
+        if (this.showLeaderboard && this.currentSession) {
+          this.refreshLeaderboard();
+        }
+        
         this.snackBar.open('Answer scored!', 'Close', {
           duration: 2000
         });
@@ -898,6 +912,9 @@ export class PresenterComponent implements OnInit, OnDestroy {
     this.showReview = false;
     this.showLeaderboard = true;
     
+    // Load leaderboard data
+    this.refreshLeaderboard();
+    
     // Use Socket.IO to show leaderboard
     if (this.currentSession) {
       this.socketService.showLeaderboard(this.currentSession.code);
@@ -905,6 +922,23 @@ export class PresenterComponent implements OnInit, OnDestroy {
     
     this.snackBar.open('Leaderboard displayed', 'Close', {
       duration: 2000
+    });
+  }
+
+  private refreshLeaderboard(): void {
+    if (!this.currentSession) return;
+    
+    this.quizService.getLeaderboard(this.currentSession.code).subscribe({
+      next: (response) => {
+        this.leaderboardTeams = response.teams;
+        console.log('Leaderboard data refreshed:', this.leaderboardTeams);
+      },
+      error: (error) => {
+        console.error('Error refreshing leaderboard:', error);
+        this.snackBar.open('Failed to refresh leaderboard data', 'Close', {
+          duration: 5000
+        });
+      }
     });
   }
 
