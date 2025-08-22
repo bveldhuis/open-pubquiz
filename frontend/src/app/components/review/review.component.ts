@@ -200,6 +200,10 @@ export interface ReviewAnswer {
       color: #ff9800;
       font-size: 24px;
       flex-shrink: 0;
+      width: 24px !important;
+      height: 24px !important;
+      min-width: 24px !important;
+      min-height: 24px !important;
     }
 
     .correct-answer {

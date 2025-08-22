@@ -181,6 +181,10 @@ export interface Team {
     .medal mat-icon {
       font-size: 1.5rem;
       color: #ff9800;
+      width: 1.5rem !important;
+      height: 1.5rem !important;
+      min-width: 1.5rem !important;
+      min-height: 1.5rem !important;
     }
 
     .team-info {
@@ -210,6 +214,10 @@ export interface Team {
     .stat mat-icon {
       font-size: 1rem;
       color: #ff9800;
+      width: 1rem !important;
+      height: 1rem !important;
+      min-width: 1rem !important;
+      min-height: 1rem !important;
     }
 
     .points-display {
@@ -242,6 +250,10 @@ export interface Team {
       font-size: 4rem;
       color: #e0e0e0;
       margin-bottom: 15px;
+      width: 4rem !important;
+      height: 4rem !important;
+      min-width: 4rem !important;
+      min-height: 4rem !important;
     }
 
     .no-teams p {

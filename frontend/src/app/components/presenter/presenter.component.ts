@@ -418,6 +418,10 @@ import { Subscription, interval } from 'rxjs';
 
     .action-buttons mat-icon {
       margin-right: 8px;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .connection-status {
@@ -434,10 +438,18 @@ import { Subscription, interval } from 'rxjs';
 
     .connection-status mat-icon.connected {
       color: #4caf50;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .connection-status mat-icon.disconnected {
       color: #f44336;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .teams-section {
@@ -467,6 +479,10 @@ import { Subscription, interval } from 'rxjs';
 
          .team-item mat-icon {
        color: #4caf50;
+       width: 20px !important;
+       height: 20px !important;
+       min-width: 20px !important;
+       min-height: 20px !important;
      }
 
      .quiz-management {

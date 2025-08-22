@@ -52,6 +52,10 @@ import { Router } from '@angular/router';
 
     .toolbar-button mat-icon {
       margin-right: 4px;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .app-container {

@@ -115,10 +115,18 @@ import { Subscription, interval } from 'rxjs';
 
     .connection-status mat-icon.connected {
       color: #4caf50;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .connection-status mat-icon.disconnected {
       color: #f44336;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .session-ended-card {

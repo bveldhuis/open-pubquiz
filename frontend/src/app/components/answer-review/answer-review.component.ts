@@ -254,6 +254,10 @@ export interface Answer {
 
     .correct-answer-reference mat-icon {
       color: #4caf50;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .correct-answer-reference span {
@@ -293,8 +297,10 @@ export interface Answer {
     .no-answers mat-icon {
       font-size: 48px;
       color: #ccc;
-      width: 48px;
-      height: 48px;
+      width: 48px !important;
+      height: 48px !important;
+      min-width: 48px !important;
+      min-height: 48px !important;
     }
 
     .answers-list {
@@ -465,8 +471,10 @@ export interface Answer {
 
     .override-btn mat-icon {
       font-size: 16px;
-      width: 16px;
-      height: 16px;
+      width: 16px !important;
+      height: 16px !important;
+      min-width: 16px !important;
+      min-height: 16px !important;
       margin-right: 4px;
     }
 
@@ -484,6 +492,10 @@ export interface Answer {
 
     .review-controls mat-icon {
       margin-right: 8px;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     @media (max-width: 768px) {

@@ -165,17 +165,29 @@ import { Question } from '../../../models/question.model';
     .correct-icon {
       color: #4caf50;
       font-size: 24px;
+      width: 24px !important;
+      height: 24px !important;
+      min-width: 24px !important;
+      min-height: 24px !important;
     }
 
     .incorrect-icon {
       color: #f44336;
       font-size: 24px;
+      width: 24px !important;
+      height: 24px !important;
+      min-width: 24px !important;
+      min-height: 24px !important;
     }
 
     .drag-handle {
       color: #999;
       font-size: 20px;
       cursor: grab;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .drag-handle:active {
@@ -215,6 +227,10 @@ import { Question } from '../../../models/question.model';
 
       .drag-handle {
         font-size: 18px;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
       }
     }
   `]

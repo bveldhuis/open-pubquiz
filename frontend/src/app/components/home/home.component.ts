@@ -134,8 +134,10 @@ import { Router } from '@angular/router';
 
     .feature-icon {
       font-size: 3rem;
-      width: 3rem;
-      height: 3rem;
+      width: 3rem !important;
+      height: 3rem !important;
+      min-width: 3rem !important;
+      min-height: 3rem !important;
       margin-bottom: 20px;
       opacity: 0.9;
     }
@@ -168,6 +170,10 @@ import { Router } from '@angular/router';
 
     .action-button mat-icon {
       margin-right: 8px;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .info-section {

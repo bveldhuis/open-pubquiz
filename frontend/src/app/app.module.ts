@@ -74,6 +74,7 @@ import { QuizManagementService } from './services/quiz-management.service';
 import { SocketService } from './services/socket.service';
 import { AuthService } from './services/auth.service';
 
+
 const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'presenter', component: PresenterComponent },

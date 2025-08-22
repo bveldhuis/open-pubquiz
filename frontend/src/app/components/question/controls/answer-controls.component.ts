@@ -68,6 +68,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
     .submit-button mat-icon {
       font-size: 24px;
+      width: 24px !important;
+      height: 24px !important;
+      min-width: 24px !important;
+      min-height: 24px !important;
     }
 
     .submit-hint {
@@ -85,6 +89,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
     .submit-hint mat-icon {
       font-size: 18px;
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      min-height: 18px !important;
     }
 
     .answer-status {
@@ -106,6 +114,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
       font-size: 32px;
       color: #28a745;
       flex-shrink: 0;
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      min-height: 32px !important;
     }
 
     .status-content h4 {
@@ -136,6 +148,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
     .time-warning mat-icon {
       color: #ffc107;
       font-size: 20px;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     .time-up {
@@ -153,6 +169,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
     .time-up mat-icon {
       color: #dc3545;
       font-size: 20px;
+      width: 20px !important;
+      height: 20px !important;
+      min-width: 20px !important;
+      min-height: 20px !important;
     }
 
     @keyframes pulse {
@@ -180,6 +200,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 
       .submitted-message mat-icon {
         font-size: 28px;
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
       }
     }
   `]
