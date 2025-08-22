@@ -20,7 +20,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -u root -proot"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -75,7 +75,7 @@ jobs:
           # Additional wait to ensure MySQL is fully ready
           echo "Waiting for MySQL to accept connections..."
           for i in {1..30}; do
-            if mysqladmin ping -h"localhost" -P"3306" -u"root" -p"root" --silent 2>/dev/null; then
+            if mysqladmin ping -h"127.0.0.1" -P"3306" -u"root" -p"root" --silent 2>/dev/null; then
               echo "MySQL is ready!"
               break
             fi
@@ -85,7 +85,7 @@ jobs:
           
           # Final check to ensure MySQL is accessible with test user
           echo "Testing connection with test user..."
-          if mysql -h"localhost" -P"3306" -u"test_user" -p"test_password" -e"SELECT 1;" --silent 2>/dev/null; then
+          if mysql -h"127.0.0.1" -P"3306" -u"test_user" -p"test_password" -e"SELECT 1;" --silent 2>/dev/null; then
             echo "MySQL is accessible with test user!"
           else
             echo "ERROR: MySQL is not accessible with test user"
@@ -93,6 +93,10 @@ jobs:
             docker ps -a | grep mysql
             echo "Checking MySQL logs:"
             docker logs $(docker ps -q --filter "ancestor=mysql:8.0") 2>&1 | tail -20
+            echo "Trying to connect with root user to debug:"
+            mysql -h"127.0.0.1" -P"3306" -u"root" -p"root" -e"SHOW DATABASES;" 2>&1 || echo "Root connection also failed"
+            echo "Checking if test_user exists:"
+            mysql -h"127.0.0.1" -P"3306" -u"root" -p"root" -e"SELECT User, Host FROM mysql.user WHERE User='test_user';" 2>&1 || echo "Could not check users"
             exit 1
           fi
 
