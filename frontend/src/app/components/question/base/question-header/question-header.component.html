@@ -3,27 +3,31 @@
     <div class="question-number">
       <h2>Question {{ question?.question_number || '?' }}</h2>
     </div>
-    
+
     <!-- Progress bar moved here, below question title -->
-    <div class="progress-section" *ngIf="showProgress && showTimer">
-      <div class="progress-container">
-        <div class="progress-bar" [style.width.%]="getProgressPercentage()"></div>
+    @if (showProgress && showTimer) {
+      <div class="progress-section">
+        <div class="progress-container">
+          <div class="progress-bar" [style.width.%]="getProgressPercentage()"></div>
+        </div>
       </div>
-    </div>
-    
+    }
+
     <div class="question-meta">
       <span class="question-type-badge">{{ getQuestionTypeLabel(question?.type || '') }}</span>
       <span class="points">{{ question?.points || 0 }} point{{ (question?.points || 0) !== 1 ? 's' : '' }}</span>
     </div>
   </div>
-  
-  <div class="timer-section" *ngIf="showTimer">
-    <app-question-timer 
-      [timeRemaining]="timeRemaining"
-      [totalTime]="totalTime"
-      [showProgress]="false"
-      (timeUp)="onTimeUp.emit()"
-      (timeChanged)="onTimeChanged.emit($event)">
-    </app-question-timer>
-  </div>
+
+  @if (showTimer) {
+    <div class="timer-section">
+      <app-question-timer
+        [timeRemaining]="timeRemaining"
+        [totalTime]="totalTime"
+        [showProgress]="false"
+        (timeUp)="onTimeUp.emit()"
+        (timeChanged)="onTimeChanged.emit($event)">
+      </app-question-timer>
+    </div>
+  }
 </div>

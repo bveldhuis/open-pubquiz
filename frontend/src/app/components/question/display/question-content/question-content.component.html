@@ -4,80 +4,88 @@
   </div>
 
   <!-- Multiple Choice -->
-  <app-multiple-choice 
-    *ngIf="question?.type === 'multiple_choice'"
-    [question]="question"
-    [isInteractive]="isInteractive"
-    [selectedAnswer]="selectedAnswer"
-    [showCorrectAnswer]="showCorrectAnswer"
-    [isAnswerSubmitted]="isAnswerSubmitted"
-    (answerSelected)="answerSelected.emit($event)">
-  </app-multiple-choice>
+  @if (question?.type === 'multiple_choice') {
+    <app-multiple-choice
+      [question]="question"
+      [isInteractive]="isInteractive"
+      [selectedAnswer]="selectedAnswer"
+      [showCorrectAnswer]="showCorrectAnswer"
+      [isAnswerSubmitted]="isAnswerSubmitted"
+      (answerSelected)="answerSelected.emit($event)">
+    </app-multiple-choice>
+  }
 
   <!-- Open Text -->
-  <app-open-text 
-    *ngIf="question?.type === 'open_text'"
-    [question]="question"
-    [isInteractive]="isInteractive"
-    [isAnswerSubmitted]="isAnswerSubmitted"
-    [showPreview]="showPreview"
-    (answerChanged)="answerChanged.emit($event)"
-    (answerValid)="answerValid.emit($event)">
-  </app-open-text>
+  @if (question?.type === 'open_text') {
+    <app-open-text
+      [question]="question"
+      [isInteractive]="isInteractive"
+      [isAnswerSubmitted]="isAnswerSubmitted"
+      [showPreview]="showPreview"
+      (answerChanged)="answerChanged.emit($event)"
+      (answerValid)="answerValid.emit($event)">
+    </app-open-text>
+  }
 
   <!-- Sequence -->
-  <app-sequence 
-    *ngIf="question?.type === 'sequence'"
-    [question]="question"
-    [isInteractive]="isInteractive"
-    [shuffledItems]="shuffledSequenceItems || []"
-    [showCorrectAnswer]="showCorrectAnswer"
-    [isAnswerSubmitted]="isAnswerSubmitted"
-    (sequenceReordered)="sequenceReordered.emit($event)">
-  </app-sequence>
+  @if (question?.type === 'sequence') {
+    <app-sequence
+      [question]="question"
+      [isInteractive]="isInteractive"
+      [shuffledItems]="shuffledSequenceItems || []"
+      [showCorrectAnswer]="showCorrectAnswer"
+      [isAnswerSubmitted]="isAnswerSubmitted"
+      (sequenceReordered)="sequenceReordered.emit($event)">
+    </app-sequence>
+  }
 
   <!-- True/False -->
-  <app-true-false 
-    *ngIf="question?.type === 'true_false'"
-    [question]="question"
-    [isDisabled]="!isInteractive || isAnswerSubmitted"
-    [showCorrectAnswer]="showCorrectAnswer"
-    (answerSelected)="answerSelected.emit($event)">
-  </app-true-false>
+  @if (question?.type === 'true_false') {
+    <app-true-false
+      [question]="question"
+      [isDisabled]="!isInteractive || isAnswerSubmitted"
+      [showCorrectAnswer]="showCorrectAnswer"
+      (answerSelected)="answerSelected.emit($event)">
+    </app-true-false>
+  }
 
   <!-- Numerical -->
-  <app-numerical 
-    *ngIf="question?.type === 'numerical'"
-    [question]="question"
-    [isDisabled]="!isInteractive || isAnswerSubmitted"
-    (answerChange)="answerChanged.emit($event)">
-  </app-numerical>
+  @if (question?.type === 'numerical') {
+    <app-numerical
+      [question]="question"
+      [isDisabled]="!isInteractive || isAnswerSubmitted"
+      (answerChange)="answerChanged.emit($event)">
+    </app-numerical>
+  }
 
   <!-- Image -->
-  <app-image 
-    *ngIf="question?.type === 'image'"
-    [question]="question"
-    [isDisabled]="!isInteractive || isAnswerSubmitted"
-    (answerChange)="answerChanged.emit($event)">
-  </app-image>
+  @if (question?.type === 'image') {
+    <app-image
+      [question]="question"
+      [isDisabled]="!isInteractive || isAnswerSubmitted"
+      (answerChange)="answerChanged.emit($event)">
+    </app-image>
+  }
 
   <!-- Audio -->
-  <app-audio 
-    *ngIf="question?.type === 'audio'"
-    [question]="question"
-    [isDisabled]="!isInteractive || isAnswerSubmitted"
-    [isPresenter]="isPresenter"
-    [isActive]="isActive"
-    (answerChange)="answerChanged.emit($event)">
-  </app-audio>
+  @if (question?.type === 'audio') {
+    <app-audio
+      [question]="question"
+      [isDisabled]="!isInteractive || isAnswerSubmitted"
+      [isPresenter]="isPresenter"
+      [isActive]="isActive"
+      (answerChange)="answerChanged.emit($event)">
+    </app-audio>
+  }
 
   <!-- Video -->
-  <app-video 
-    *ngIf="question?.type === 'video'"
-    [question]="question"
-    [isDisabled]="!isInteractive || isAnswerSubmitted"
-    [isPresenter]="isPresenter"
-    [isActive]="isActive"
-    (answerChange)="answerChanged.emit($event)">
-  </app-video>
+  @if (question?.type === 'video') {
+    <app-video
+      [question]="question"
+      [isDisabled]="!isInteractive || isAnswerSubmitted"
+      [isPresenter]="isPresenter"
+      [isActive]="isActive"
+      (answerChange)="answerChanged.emit($event)">
+    </app-video>
+  }
 </div>

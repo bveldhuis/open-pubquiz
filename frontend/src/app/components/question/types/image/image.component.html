@@ -1,27 +1,29 @@
 <div class="image-question">
   <div class="image-container">
-    <img 
+    <img
       [src]="question?.media_url || ''"
       [alt]="question?.question_text || 'Question image'"
       class="question-image"
       (error)="onImageError($event)">
-  </div>
-  <div class="question-content">
-    <p class="question-text">{{ question?.question_text }}</p>
-    <div class="answer-input">
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Your Answer</mat-label>
-        <input 
-          matInput 
-          [(ngModel)]="currentAnswer" 
-          placeholder="Enter your answer"
-          [disabled]="isDisabled"
-          (input)="onInputChange()">
-      </mat-form-field>
     </div>
-    <div class="question-info">
-      <span class="points">Points: {{ question?.points || 0 }}</span>
-      <span class="time-limit" *ngIf="question?.time_limit">Time: {{ question?.time_limit }}s</span>
+    <div class="question-content">
+      <p class="question-text">{{ question?.question_text }}</p>
+      <div class="answer-input">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Your Answer</mat-label>
+          <input
+            matInput
+            [(ngModel)]="currentAnswer"
+            placeholder="Enter your answer"
+            [disabled]="isDisabled"
+            (input)="onInputChange()">
+          </mat-form-field>
+        </div>
+        <div class="question-info">
+          <span class="points">Points: {{ question?.points || 0 }}</span>
+          @if (question?.time_limit) {
+            <span class="time-limit">Time: {{ question?.time_limit }}s</span>
+          }
+        </div>
+      </div>
     </div>
-  </div>
-</div>

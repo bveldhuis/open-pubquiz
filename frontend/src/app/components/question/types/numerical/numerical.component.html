@@ -1,27 +1,33 @@
 <div class="numerical-question">
   <div class="question-content">
     <p class="question-text">{{ question?.question_text }}</p>
-    <div class="numerical-info" *ngIf="question?.numerical_tolerance">
-      <span>Tolerance: ±{{ question?.numerical_tolerance }}</span>
-    </div>
+    @if (question?.numerical_tolerance) {
+      <div class="numerical-info">
+        <span>Tolerance: ±{{ question?.numerical_tolerance }}</span>
+      </div>
+    }
     <div class="answer-input">
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Your Answer</mat-label>
-        <input 
-          matInput 
+        <input
+          matInput
           type="number"
-          [(ngModel)]="currentAnswer" 
+          [(ngModel)]="currentAnswer"
           placeholder="Enter a number"
           [disabled]="isDisabled"
           (input)="onInputChange()">
-        <mat-hint *ngIf="question?.numerical_tolerance">
-          Tolerance: ±{{ question?.numerical_tolerance }}
-        </mat-hint>
-      </mat-form-field>
-    </div>
-    <div class="question-info">
-      <span class="points">Points: {{ question?.points || 0 }}</span>
-      <span class="time-limit" *ngIf="question?.time_limit">Time: {{ question?.time_limit }}s</span>
+          @if (question?.numerical_tolerance) {
+            <mat-hint>
+              Tolerance: ±{{ question?.numerical_tolerance }}
+            </mat-hint>
+          }
+        </mat-form-field>
+      </div>
+      <div class="question-info">
+        <span class="points">Points: {{ question?.points || 0 }}</span>
+        @if (question?.time_limit) {
+          <span class="time-limit">Time: {{ question?.time_limit }}s</span>
+        }
+      </div>
     </div>
   </div>
-</div>

@@ -11,12 +11,16 @@
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Session Code</mat-label>
         <input matInput formControlName="sessionCode" placeholder="Enter session code (e.g., ABC123)">
-        <mat-error *ngIf="configForm.get('sessionCode')?.hasError('required')">
-          Session code is required
-        </mat-error>
-        <mat-error *ngIf="configForm.get('sessionCode')?.hasError('pattern')">
-          Session code must be 6 characters (letters and numbers)
-        </mat-error>
+        @if (configForm.get('sessionCode')?.hasError('required')) {
+          <mat-error>
+            Session code is required
+          </mat-error>
+        }
+        @if (configForm.get('sessionCode')?.hasError('pattern')) {
+          <mat-error>
+            Session code must be 6 characters (letters and numbers)
+          </mat-error>
+        }
       </mat-form-field>
     </div>
 
@@ -26,137 +30,169 @@
       <mat-form-field appearance="outline">
         <mat-label>Total Rounds</mat-label>
         <input matInput type="number" formControlName="totalRounds" min="1" max="10">
-        <mat-error *ngIf="configForm.get('totalRounds')?.hasError('required')">
-          Number of rounds is required
-        </mat-error>
-        <mat-error *ngIf="configForm.get('totalRounds')?.hasError('min')">
-          Must have at least 1 round
-        </mat-error>
-        <mat-error *ngIf="configForm.get('totalRounds')?.hasError('max')">
-          Maximum 10 rounds allowed
-        </mat-error>
+        @if (configForm.get('totalRounds')?.hasError('required')) {
+          <mat-error>
+            Number of rounds is required
+          </mat-error>
+        }
+        @if (configForm.get('totalRounds')?.hasError('min')) {
+          <mat-error>
+            Must have at least 1 round
+          </mat-error>
+        }
+        @if (configForm.get('totalRounds')?.hasError('max')) {
+          <mat-error>
+            Maximum 10 rounds allowed
+          </mat-error>
+        }
       </mat-form-field>
     </div>
 
     <!-- Round Configurations -->
-    <div class="form-section" *ngIf="configForm.get('totalRounds')?.value > 0">
-      <h3>Round Configurations</h3>
-      <div formArrayName="roundConfigurations" class="rounds-container">
-        <div 
-          *ngFor="let roundGroup of roundConfigurationsArray.controls; let i = index" 
-          [formGroupName]="i"
-          class="round-config">
-          
-          <div class="round-header">
-            <h4>Round {{ i + 1 }}</h4>
-            <button 
-              type="button" 
-              mat-icon-button 
-              color="warn" 
-              (click)="removeRound(i)"
-              *ngIf="roundConfigurationsArray.length > 1">
-              <mat-icon>delete</mat-icon>
-            </button>
+    @if (configForm.get('totalRounds')?.value > 0) {
+      <div class="form-section">
+        <h3>Round Configurations</h3>
+        <div formArrayName="roundConfigurations" class="rounds-container">
+          @for (roundGroup of roundConfigurationsArray.controls; track roundGroup; let i = $index) {
+            <div
+              [formGroupName]="i"
+              class="round-config">
+              <div class="round-header">
+                <h4>Round {{ i + 1 }}</h4>
+                @if (roundConfigurationsArray.length > 1) {
+                  <button
+                    type="button"
+                    mat-icon-button
+                    color="warn"
+                    (click)="removeRound(i)"
+                    >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                }
+              </div>
+              <!-- Theme Selection -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Theme</mat-label>
+                <mat-select formControlName="themeId" (selectionChange)="onThemeChange(i, $event.value)">
+                  @for (theme of themes; track theme) {
+                    <mat-option [value]="theme.id">
+                      {{ theme.name }}
+                    </mat-option>
+                  }
+                </mat-select>
+                @if (roundGroup.get('themeId')?.hasError('required')) {
+                  <mat-error>
+                    Theme is required
+                  </mat-error>
+                }
+              </mat-form-field>
+              <!-- Round Validation Error -->
+              @if (roundGroup.hasError('noQuestionTypesEnabled')) {
+                <div class="round-error">
+                  <mat-error>At least one question type must be enabled for this round</mat-error>
+                </div>
+              }
+              <!-- Question Types Configuration -->
+              @if (roundGroup.get('themeId')?.value) {
+                <div class="question-types-section">
+                  <h5>Question Types</h5>
+                  <div class="question-types-grid">
+                    @for (questionTypeGroup of getQuestionTypesArray(i).controls; track questionTypeGroup; let j = $index) {
+                      <div
+                        class="question-type-config">
+                        <mat-checkbox
+                          [formControl]="getQuestionTypeControl(i, j, 'enabled')"
+                          (change)="onQuestionTypeToggle(i, j)">
+                          {{ getQuestionTypeDisplayName(getQuestionTypeControl(i, j, 'type').value) }}
+                        </mat-checkbox>
+                        @if (getQuestionTypeControl(i, j, 'enabled').value) {
+                          <mat-form-field
+                            appearance="outline"
+                            class="question-count-field"
+                            >
+                            <mat-label># Questions</mat-label>
+                            <input
+                              matInput
+                              type="number"
+                              [formControl]="getQuestionTypeControl(i, j, 'questionCount')"
+                              min="1"
+                              [max]="getMaxQuestionsForType(i, getQuestionTypeControl(i, j, 'type').value)">
+                              <mat-hint>
+                                Max: {{ getMaxQuestionsForType(i, getQuestionTypeControl(i, j, 'type').value) }}
+                              </mat-hint>
+                              @if (getQuestionTypeControl(i, j, 'questionCount').hasError('required')) {
+                                <mat-error>
+                                  Question count is required
+                                </mat-error>
+                              }
+                              @if (getQuestionTypeControl(i, j, 'questionCount').hasError('min')) {
+                                <mat-error>
+                                  Must have at least 1 question
+                                </mat-error>
+                              }
+                              @if (getQuestionTypeControl(i, j, 'questionCount').hasError('max')) {
+                                <mat-error>
+                                  Cannot exceed available questions
+                                </mat-error>
+                              }
+                            </mat-form-field>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
           </div>
+        </div>
+      }
 
-          <!-- Theme Selection -->
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Theme</mat-label>
-            <mat-select formControlName="themeId" (selectionChange)="onThemeChange(i, $event.value)">
-              <mat-option *ngFor="let theme of themes" [value]="theme.id">
-                {{ theme.name }}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="roundGroup.get('themeId')?.hasError('required')">
-              Theme is required
-            </mat-error>
-          </mat-form-field>
+      <!-- Submit Button -->
+      <div class="form-actions">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="cancelConfiguration()"
+          [disabled]="isConfiguring">
+          Cancel
+        </button>
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="configForm.invalid || isConfiguring">
+          @if (isConfiguring) {
+            <mat-spinner diameter="20" class="spinner"></mat-spinner>
+          }
+          @if (!isConfiguring) {
+            <span>Configure Session</span>
+          }
+        </button>
+      </div>
+    </form>
 
-          <!-- Round Validation Error -->
-          <div class="round-error" *ngIf="roundGroup.hasError('noQuestionTypesEnabled')">
-            <mat-error>At least one question type must be enabled for this round</mat-error>
+    <!-- Configuration Summary -->
+    @if (sessionConfiguration) {
+      <div class="config-summary">
+        <h3>Configuration Summary</h3>
+        <div class="summary-content">
+          <div class="summary-item">
+            <strong>Total Rounds:</strong> {{ sessionConfiguration.total_rounds }}
           </div>
-
-          <!-- Question Types Configuration -->
-          <div class="question-types-section" *ngIf="roundGroup.get('themeId')?.value">
-            <h5>Question Types</h5>
-            <div class="question-types-grid">
-              <div 
-                *ngFor="let questionTypeGroup of getQuestionTypesArray(i).controls; let j = index"
-                class="question-type-config">
-                
-                <mat-checkbox 
-                  [formControl]="getQuestionTypeControl(i, j, 'enabled')"
-                  (change)="onQuestionTypeToggle(i, j)">
-                  {{ getQuestionTypeDisplayName(getQuestionTypeControl(i, j, 'type').value) }}
-                </mat-checkbox>
-                
-                <mat-form-field 
-                  appearance="outline" 
-                  class="question-count-field"
-                  *ngIf="getQuestionTypeControl(i, j, 'enabled').value">
-                  <mat-label># Questions</mat-label>
-                  <input 
-                    matInput 
-                    type="number" 
-                    [formControl]="getQuestionTypeControl(i, j, 'questionCount')"
-                    min="1"
-                    [max]="getMaxQuestionsForType(i, getQuestionTypeControl(i, j, 'type').value)">
-                  <mat-hint>
-                    Max: {{ getMaxQuestionsForType(i, getQuestionTypeControl(i, j, 'type').value) }}
-                  </mat-hint>
-                  <mat-error *ngIf="getQuestionTypeControl(i, j, 'questionCount').hasError('required')">
-                    Question count is required
-                  </mat-error>
-                  <mat-error *ngIf="getQuestionTypeControl(i, j, 'questionCount').hasError('min')">
-                    Must have at least 1 question
-                  </mat-error>
-                  <mat-error *ngIf="getQuestionTypeControl(i, j, 'questionCount').hasError('max')">
-                    Cannot exceed available questions
-                  </mat-error>
-                </mat-form-field>
+          @for (round of sessionConfiguration.round_configurations; track round) {
+            <div class="summary-item">
+              <strong>Round {{ round.roundNumber }}:</strong> {{ round.themeName }}
+              <div class="round-details">
+                @for (qt of round.questionTypes; track qt) {
+                  <span class="question-type-summary">
+                    {{ qt.enabled ? qt.questionCount + ' ' + getQuestionTypeDisplayName(qt.type) : '' }}
+                  </span>
+                }
               </div>
             </div>
-          </div>
+          }
         </div>
       </div>
-    </div>
-
-    <!-- Submit Button -->
-    <div class="form-actions">
-      <button 
-        mat-stroked-button 
-        type="button"
-        (click)="cancelConfiguration()"
-        [disabled]="isConfiguring">
-        Cancel
-      </button>
-      <button 
-        mat-raised-button 
-        color="primary" 
-        type="submit"
-        [disabled]="configForm.invalid || isConfiguring">
-        <mat-spinner *ngIf="isConfiguring" diameter="20" class="spinner"></mat-spinner>
-        <span *ngIf="!isConfiguring">Configure Session</span>
-      </button>
-    </div>
-  </form>
-
-  <!-- Configuration Summary -->
-  <div class="config-summary" *ngIf="sessionConfiguration">
-    <h3>Configuration Summary</h3>
-    <div class="summary-content">
-      <div class="summary-item">
-        <strong>Total Rounds:</strong> {{ sessionConfiguration.total_rounds }}
-      </div>
-      <div class="summary-item" *ngFor="let round of sessionConfiguration.round_configurations">
-        <strong>Round {{ round.roundNumber }}:</strong> {{ round.themeName }}
-        <div class="round-details">
-          <span *ngFor="let qt of round.questionTypes" class="question-type-summary">
-            {{ qt.enabled ? qt.questionCount + ' ' + getQuestionTypeDisplayName(qt.type) : '' }}
-          </span>
-        </div>
-      </div>
-    </div>
+    }
   </div>
-</div>

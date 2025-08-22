@@ -1,54 +1,63 @@
 <div class="leaderboard quiz-component-card">
   <div class="leaderboard-header">
     <h2>🏆 Leaderboard</h2>
-    <div class="round-info" *ngIf="currentRound">
-      <span class="round-label">Round {{ currentRound }}</span>
-    </div>
+    @if (currentRound) {
+      <div class="round-info">
+        <span class="round-label">Round {{ currentRound }}</span>
+      </div>
+    }
   </div>
 
   <div class="teams-list">
-    <div 
-      class="team-item" 
-      *ngFor="let team of sortedTeams; let i = index"
-      [class.top-three]="i < 3">
-      
-      <div class="position">
-        <div class="position-number" [class.top-three]="i < 3">
-          {{ i + 1 }}
+    @for (team of sortedTeams; track team; let i = $index) {
+      <div
+        class="team-item"
+        [class.top-three]="i < 3">
+        <div class="position">
+          <div class="position-number" [class.top-three]="i < 3">
+            {{ i + 1 }}
+          </div>
+          @if (i < 3) {
+            <div class="medal">
+              @if (i === 0) {
+                <mat-icon>emoji_events</mat-icon>
+              }
+              @if (i === 1) {
+                <mat-icon>military_tech</mat-icon>
+              }
+              @if (i === 2) {
+                <mat-icon>workspace_premium</mat-icon>
+              }
+            </div>
+          }
         </div>
-        <div class="medal" *ngIf="i < 3">
-          <mat-icon *ngIf="i === 0">emoji_events</mat-icon>
-          <mat-icon *ngIf="i === 1">military_tech</mat-icon>
-          <mat-icon *ngIf="i === 2">workspace_premium</mat-icon>
+        <div class="team-info">
+          <div class="team-name">{{ team.name }}</div>
+          <div class="team-stats">
+            <span class="stat">
+              <mat-icon>star</mat-icon>
+              {{ team.total_points || 0 }} pts
+            </span>
+            <span class="stat">
+              <mat-icon>quiz</mat-icon>
+              {{ team.correct_answers || 0 }}/{{ team.answers_submitted || 0 }} correct
+            </span>
+          </div>
+        </div>
+        <div class="points-display">
+          <span class="points">{{ team.total_points || 0 }}</span>
+          <span class="points-label">points</span>
         </div>
       </div>
-
-      <div class="team-info">
-        <div class="team-name">{{ team.name }}</div>
-        <div class="team-stats">
-          <span class="stat">
-            <mat-icon>star</mat-icon>
-            {{ team.total_points || 0 }} pts
-          </span>
-          <span class="stat">
-            <mat-icon>quiz</mat-icon>
-            {{ team.correct_answers || 0 }}/{{ team.answers_submitted || 0 }} correct
-          </span>
-        </div>
-      </div>
-
-      <div class="points-display">
-        <span class="points">{{ team.total_points || 0 }}</span>
-        <span class="points-label">points</span>
-      </div>
-    </div>
+    }
   </div>
 
-  <app-no-content-state 
-    *ngIf="teams.length === 0" 
-    icon="group_off" 
-    message="No teams have joined yet">
-  </app-no-content-state>
+  @if (teams.length === 0) {
+    <app-no-content-state
+      icon="group_off"
+      message="No teams have joined yet">
+    </app-no-content-state>
+  }
 
   <div class="leaderboard-footer">
     <div class="stats-summary">

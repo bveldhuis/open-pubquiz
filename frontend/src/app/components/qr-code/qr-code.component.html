@@ -3,46 +3,48 @@
     <h3>Join Session</h3>
     <p>Scan this QR code with your phone to join the quiz session</p>
   </div>
-  
+
   <div class="qr-content">
     <div class="qr-code-wrapper">
       <canvas #qrCanvas class="qr-canvas"></canvas>
-      <div class="qr-overlay" *ngIf="isGenerating">
-        <mat-spinner diameter="40"></mat-spinner>
-        <span>Generating QR Code...</span>
-      </div>
+      @if (isGenerating) {
+        <div class="qr-overlay">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span>Generating QR Code...</span>
+        </div>
+      }
     </div>
-    
+
     <div class="session-info">
       <div class="session-code">
         <span class="code-label">Session Code:</span>
         <span class="code-value">{{ sessionCode }}</span>
       </div>
-      
+
       <div class="join-url">
         <span class="url-label">Or visit:</span>
         <a [href]="joinUrl" target="_blank" class="url-link">{{ joinUrl }}</a>
       </div>
     </div>
   </div>
-  
+
   <div class="qr-actions">
     <button mat-raised-button color="primary" (click)="downloadQR()" [disabled]="!qrCodeGenerated">
       <mat-icon>download</mat-icon>
       Download QR Code
     </button>
-    
+
     <button mat-stroked-button (click)="copyUrl()" [disabled]="!qrCodeGenerated">
       <mat-icon>content_copy</mat-icon>
       Copy URL
     </button>
-    
+
     <button mat-stroked-button (click)="shareUrl()" [disabled]="!qrCodeGenerated">
       <mat-icon>share</mat-icon>
       Share
     </button>
   </div>
-  
+
   <div class="qr-instructions">
     <h4>How to join:</h4>
     <ol>
