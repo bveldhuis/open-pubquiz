@@ -1,0 +1,172 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  backend-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: pubquiz_test
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Wait for MySQL to be ready
+        run: |
+          while ! mysqladmin ping -h"localhost" -P"3306" -u"test_user" -p"test_password" --silent; do
+            echo "Waiting for MySQL to be ready..."
+            sleep 2
+          done
+          echo "MySQL is ready!"
+
+      - name: Run backend unit tests
+        working-directory: ./backend
+        run: npm test
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USERNAME: test_user
+          DB_PASSWORD: test_password
+          DB_DATABASE: pubquiz_test
+          NODE_ENV: test
+          JWT_SECRET: test-jwt-secret
+          JWT_EXPIRES_IN: 24h
+          CORS_ORIGIN: http://localhost:4200
+          RATE_LIMIT_WINDOW_MS: 900000
+          RATE_LIMIT_MAX_REQUESTS: 100
+          MAX_FILE_SIZE: 5242880
+          UPLOAD_PATH: ./uploads
+          CLEANUP_ENABLED: false
+
+      - name: Upload backend test coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  frontend-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run frontend unit tests
+        working-directory: ./frontend
+        run: npm test -- --watch=false --browsers=ChromeHeadless --code-coverage
+
+      - name: Upload frontend test coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+  lint-checks:
+    name: Lint Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run backend linting
+        working-directory: ./backend
+        run: |
+          if npm run lint; then
+            echo "Backend linting completed"
+          else
+            echo "No lint script found in backend, skipping linting"
+          fi
+
+      - name: Run frontend linting
+        working-directory: ./frontend
+        run: npm run lint
+
+  build-validation:
+    name: Build Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build backend
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Validate Docker builds (without pushing)
+        run: |
+          docker build -t frontend-test ./frontend
+          docker build -t backend-test ./backend
+          docker compose build

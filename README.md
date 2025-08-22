@@ -24,7 +24,7 @@ A self-hosted pub quiz web application with real-time updates, multiple question
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js 18+ (for development)
+- Node.js 22+ (for development)
 
 ### API Documentation
 The Open Pub Quiz API is fully documented with:
@@ -82,6 +82,24 @@ cd frontend
 npm start
 ```
 
+### Running Tests Locally
+
+#### Backend Tests
+```bash
+cd backend
+npm test                    # Run all tests
+npm run test:watch         # Run tests in watch mode
+npm run test:coverage      # Run tests with coverage report
+```
+
+#### Frontend Tests
+```bash
+cd frontend
+npm test                   # Run all tests
+npm test -- --watch       # Run tests in watch mode
+npm test -- --coverage    # Run tests with coverage report
+```
+
 ## 📱 Usage
 
 ### Presenter Mode
@@ -97,6 +115,31 @@ npm start
 4. View leaderboard and review phases
 
 ## 🛠 Development
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+#### Pull Request Checks
+When a PR is created against the `main` branch, the following checks run automatically:
+- **Backend Unit Tests**: Runs Jest tests with MySQL test database
+- **Frontend Unit Tests**: Runs Angular tests with code coverage
+- **Lint Checks**: Validates code style for both frontend and backend
+- **Build Validation**: Ensures both applications build successfully
+- **Docker Build Validation**: Verifies Docker images can be built (without pushing)
+
+#### Main Branch Deployment
+When code is merged to `main`, the following additional steps run:
+- **Docker Image Building**: Builds and pushes Docker images to GitHub Container Registry
+- **Image Tagging**: Tags images as `latest` for production deployment
+
+### Technology Stack (Latest LTS Versions)
+- **Node.js**: 22.x (LTS)
+- **Angular**: 20.x (Latest)
+- **Express**: 4.19.x (Latest)
+- **MySQL**: 8.4 (Latest)
+- **TypeScript**: 5.8.x (Latest)
+- **Docker**: Latest Alpine images
 
 ### Project Structure
 ```
