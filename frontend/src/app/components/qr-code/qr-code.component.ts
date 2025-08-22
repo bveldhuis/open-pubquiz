@@ -1,18 +1,26 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ElementRef, ViewChild  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import * as QRCode from 'qrcode';
 
 @Component({
     selector: 'app-qr-code',
     templateUrl: './qr-code.component.html',
     styleUrls: ['./qr-code.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatButtonModule,
+        MatProgressSpinnerModule
+    ]
 })
-export class QrCodeComponent implements OnInit, OnDestroy {
-  @Input() sessionCode: string = '';
-  @Input() sessionName: string = '';
+export class QrCodeComponent implements OnInit {
+  @Input() sessionCode = '';
+  @Input() sessionName = '';
   
   @Output() qrGenerated = new EventEmitter<string>();
-  @Output() error = new EventEmitter<string>();
+  @Output() qrError = new EventEmitter<string>();
 
   @ViewChild('qrCanvas', { static: true }) qrCanvas!: ElementRef<HTMLCanvasElement>;
 
@@ -26,13 +34,9 @@ export class QrCodeComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    // Cleanup if needed
-  }
-
   generateQRCode(): void {
     if (!this.sessionCode) {
-      this.error.emit('No session code provided');
+      this.qrError.emit('No session code provided');
       return;
     }
 
@@ -59,7 +63,7 @@ export class QrCodeComponent implements OnInit, OnDestroy {
     .catch((err) => {
       this.isGenerating = false;
       console.error('Error generating QR code:', err);
-      this.error.emit('Failed to generate QR code');
+      this.qrError.emit('Failed to generate QR code');
     });
   }
 
@@ -81,7 +85,7 @@ export class QrCodeComponent implements OnInit, OnDestroy {
       console.log('URL copied to clipboard');
     }).catch((err) => {
       console.error('Failed to copy URL:', err);
-      this.error.emit('Failed to copy URL to clipboard');
+      this.qrError.emit('Failed to copy URL to clipboard');
     });
   }
 

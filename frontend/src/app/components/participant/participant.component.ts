@@ -1,22 +1,38 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { QuestionAnswerComponent } from '../question/answer/question-answer.component';
 import { AuthService } from '../../services/auth.service';
 import { SocketService } from '../../services/socket.service';
 import { QuizManagementService } from '../../services/quiz-management.service';
 import { Question } from '../../models/question.model';
+import { LeaderboardTeam } from '../../models/leaderboard-team.model';
+
 import { Subscription, interval } from 'rxjs';
 
 @Component({
     selector: 'app-participant',
     templateUrl: './participant.component.html',
     styleUrls: ['./participant.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatCardModule,
+        QuestionAnswerComponent
+    ]
 })
 export class ParticipantComponent implements OnInit, OnDestroy {
-  teamName: string = '';
-  sessionCode: string = '';
-  isConnected: boolean = false;
+  private authService = inject(AuthService);
+  private socketService = inject(SocketService);
+  private quizManagementService = inject(QuizManagementService);
+  private router = inject(Router);
+  private snackBar = inject(MatSnackBar);
+
+  teamName = '';
+  sessionCode = '';
+  isConnected = false;
   
   // Quiz state
   currentQuestion?: Question;
@@ -26,18 +42,10 @@ export class ParticipantComponent implements OnInit, OnDestroy {
   
   // Session ended state
   sessionEnded = false;
-  finalLeaderboard: any[] = [];
+  finalLeaderboard: LeaderboardTeam[] = [];
   
   private subscriptions: Subscription[] = [];
   private timerSubscription?: Subscription;
-
-  constructor(
-    private authService: AuthService,
-    private socketService: SocketService,
-    private quizManagementService: QuizManagementService,
-    private router: Router,
-    private snackBar: MatSnackBar
-  ) {}
 
   ngOnInit(): void {
     const currentUser = this.authService.getCurrentUser();
@@ -71,7 +79,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
 
     // Subscribe to Socket.IO events
     this.subscriptions.push(
-      this.socketService.teamJoined$.subscribe(event => {
+      this.socketService.teamJoined$.subscribe(() => {
         this.snackBar.open(`Successfully joined session!`, 'Close', {
           duration: 3000
         });
@@ -93,7 +101,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
           });
           return;
         }
-        this.currentQuestion = event.question;
+        this.currentQuestion = event.question as Question;
         this.isQuestionActive = true;
         this.timeRemaining = event.timeLimit || 0;
         this.answerSubmitted = false;
@@ -119,7 +127,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
         this.sessionEnded = true;
         this.isQuestionActive = false;
         this.stopTimer();
-        this.finalLeaderboard = event.teams;
+        this.finalLeaderboard = event.teams as LeaderboardTeam[];
         this.snackBar.open('Quiz session has ended!', 'Close', {
           duration: 5000
         });

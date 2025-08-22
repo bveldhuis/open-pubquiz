@@ -1,5 +1,5 @@
 export interface QuestionStartedEvent {
-  question: any;
+  question: unknown;
   timeLimit?: number;
 }
 
@@ -11,10 +11,10 @@ export interface AnswerReceivedEvent {
 
 export interface ReviewAnswersEvent {
   questionId: string;
-  answers: Array<{
+  answers: {
     teamName: string;
     answer: string;
     isCorrect?: boolean;
     pointsAwarded: number;
-  }>;
+  }[];
 }

@@ -1,5 +1,5 @@
 export interface LeaderboardUpdatedEvent {
-  teams: any[];
+  teams: unknown[];
 }
 
 export interface RoundStartedEvent {
@@ -7,7 +7,7 @@ export interface RoundStartedEvent {
 }
 
 export interface SessionEndedEvent {
-  teams: any[];
+  teams: unknown[];
 }
 
 export interface SessionEndedErrorEvent {

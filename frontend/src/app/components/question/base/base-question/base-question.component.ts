@@ -1,10 +1,10 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input  } from '@angular/core';
 import { Question } from '../../../../models/question.model';
 import { QuestionUtils } from '../../../../utils';
 
 @Component({
     template: '',
-    standalone: false
+    standalone: true
 })
 export abstract class BaseQuestionComponent {
   @Input() question?: Question;

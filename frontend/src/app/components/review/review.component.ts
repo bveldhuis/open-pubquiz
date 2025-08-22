@@ -1,4 +1,8 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { Question } from '../../models/question.model';
 import { ReviewAnswer } from '../../models/review-answer.model';
 import { QuestionUtils, StatisticsUtils } from '../../utils';
@@ -7,7 +11,13 @@ import { QuestionUtils, StatisticsUtils } from '../../utils';
     selector: 'app-review',
     templateUrl: './review.component.html',
     styleUrls: ['./review.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatButtonModule,
+        MatCardModule,
+        MatChipsModule
+    ]
 })
 export class ReviewComponent {
   @Input() question?: Question;

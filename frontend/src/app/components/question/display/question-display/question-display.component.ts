@@ -1,6 +1,11 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter  } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import { Question } from '../../../../models/question.model';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { QuestionHeaderComponent } from '../../base/question-header/question-header.component';
+import { QuestionContentComponent } from '../question-content/question-content.component';
+import { PresenterControlsComponent } from '../../controls/presenter-controls/presenter-controls.component';
+
 import { BaseQuestionComponent } from '../../base/base-question/base-question.component';
 
 @Component({
@@ -25,7 +30,14 @@ import { BaseQuestionComponent } from '../../base/base-question/base-question.co
             ])
         ])
     ],
-    standalone: false
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatButtonModule,
+        QuestionHeaderComponent,
+        QuestionContentComponent,
+        PresenterControlsComponent
+    ]
 })
 export class QuestionDisplayComponent extends BaseQuestionComponent {
   @Input() isActive = false;
@@ -43,6 +55,6 @@ export class QuestionDisplayComponent extends BaseQuestionComponent {
   @Output() showReview = new EventEmitter<void>();
   @Output() nextQuestion = new EventEmitter<void>();
   @Output() endRound = new EventEmitter<void>();
-  @Output() onTimeUp = new EventEmitter<void>();
-  @Output() onTimeChanged = new EventEmitter<number>();
+  @Output() timeUp = new EventEmitter<void>();
+  @Output() timeChanged = new EventEmitter<number>();
 }

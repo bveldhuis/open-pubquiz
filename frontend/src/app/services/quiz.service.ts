@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -15,9 +15,8 @@ import { ScoreAnswerRequest } from '../models/score-answer-request.model';
   providedIn: 'root'
 })
 export class QuizService {
+  private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
-
-  constructor(private http: HttpClient) {}
 
   // Session management
   createSession(request: CreateSessionRequest): Observable<{ session: QuizSession }> {
@@ -46,16 +45,16 @@ export class QuizService {
     return this.http.patch<{ success: boolean; status: string }>(`${this.apiUrl}/api/quiz/${code}/status`, { status });
   }
 
-  endSession(code: string): Observable<{ success: boolean; teams?: any[] }> {
-    return this.http.post<{ success: boolean; teams?: any[] }>(`${this.apiUrl}/api/quiz/${code}/end`, {});
+  endSession(code: string): Observable<{ success: boolean; teams?: unknown[] }> {
+    return this.http.post<{ success: boolean; teams?: unknown[] }>(`${this.apiUrl}/api/quiz/${code}/end`, {});
   }
 
   getLeaderboard(code: string): Observable<{ teams: Team[] }> {
     return this.http.get<{ teams: Team[] }>(`${this.apiUrl}/api/quiz/${code}/leaderboard`);
   }
 
-  getSessionEvents(code: string): Observable<{ events: any[] }> {
-    return this.http.get<{ events: any[] }>(`${this.apiUrl}/api/quiz/${code}/events`);
+  getSessionEvents(code: string): Observable<{ events: unknown[] }> {
+    return this.http.get<{ events: unknown[] }>(`${this.apiUrl}/api/quiz/${code}/events`);
   }
 
   // Team management
@@ -84,12 +83,12 @@ export class QuizService {
   }
 
   // Question management
-  createQuestion(request: any): Observable<{ question: Question }> {
+  createQuestion(request: unknown): Observable<{ question: Question }> {
     return this.http.post<{ question: Question }>(`${this.apiUrl}/api/questions`, request);
   }
 
   getQuestionsForSession(sessionCode: string, round?: number): Observable<{ questions: Question[] }> {
-    let params: any = {};
+    let params: Record<string, string> = {};
     if (round !== undefined) {
       params = { round: round.toString() };
     }
@@ -100,7 +99,7 @@ export class QuizService {
     return this.http.get<{ question: Question }>(`${this.apiUrl}/api/questions/${id}`);
   }
 
-  updateQuestion(id: string, request: any): Observable<{ question: Question }> {
+  updateQuestion(id: string, request: unknown): Observable<{ question: Question }> {
     return this.http.put<{ question: Question }>(`${this.apiUrl}/api/questions/${id}`, request);
   }
 
@@ -108,7 +107,7 @@ export class QuizService {
     return this.http.delete<{ success: boolean }>(`${this.apiUrl}/api/questions/${id}`);
   }
 
-  createQuestionsBulk(request: { sessionCode: string; questions: any[] }): Observable<{ questions: Question[] }> {
+  createQuestionsBulk(request: { sessionCode: string; questions: unknown[] }): Observable<{ questions: Question[] }> {
     return this.http.post<{ questions: Question[] }>(`${this.apiUrl}/api/questions/bulk`, request);
   }
 

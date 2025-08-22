@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { Team } from '../models/team.model';
+import { Injectable  } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+
+
 import { UserSession } from '../models/user-session.model';
 
 @Injectable({

@@ -1,10 +1,16 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
     selector: 'app-presenter-controls',
     templateUrl: './presenter-controls.component.html',
     styleUrls: ['./presenter-controls.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatButtonModule
+    ]
 })
 export class PresenterControlsComponent {
   @Input() isActive = false;

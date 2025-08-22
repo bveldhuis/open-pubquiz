@@ -1,4 +1,13 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { FormsModule } from '@angular/forms';
+import { LoadingStateComponent } from '../shared/loading-state/loading-state.component';
+import { NoContentStateComponent } from '../shared/no-content-state/no-content-state.component';
 import { Question } from '../../models/question.model';
 import { Answer } from '../../models/answer.model';
 import { SequenceAnswer } from '../../models/sequence-answer.model';
@@ -8,13 +17,24 @@ import { QuestionUtils } from '../../utils';
     selector: 'app-answer-review',
     templateUrl: './answer-review.component.html',
     styleUrls: ['./answer-review.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatButtonModule,
+        MatCardModule,
+        MatChipsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        FormsModule,
+        LoadingStateComponent,
+        NoContentStateComponent
+    ]
 })
 export class AnswerReviewComponent {
   @Input() question?: Question;
   @Input() answers: Answer[] = [];
-  @Input() isLastQuestion: boolean = false;
-  @Input() isLoading: boolean = false;
+  @Input() isLastQuestion = false;
+  @Input() isLoading = false;
 
   @Output() scoreAnswer = new EventEmitter<{ answerId: string; points: number; isCorrect: boolean }>();
   @Output() showLeaderboard = new EventEmitter<void>();
@@ -22,29 +42,9 @@ export class AnswerReviewComponent {
 
   // Manual scoring state
   editingAnswerId: string | null = null;
-  editingPoints: number = 0;
+  editingPoints = 0;
 
-  ngOnInit() {
-    console.log('AnswerReviewComponent initialized with:', {
-      question: this.question,
-      answers: this.answers,
-      isLastQuestion: this.isLastQuestion
-    });
-  }
-
-  ngOnChanges() {
-    console.log('AnswerReviewComponent changes:', {
-      question: this.question,
-      answers: this.answers,
-      isLastQuestion: this.isLastQuestion
-    });
-  }
-
-  get hasUnscoredAnswers(): boolean {
-    // Only open text questions need manual scoring
-    // For now, let's allow navigation even with unscored answers
-    return false;
-  }
+  readonly hasUnscoredAnswers = false;
 
   getQuestionTypeLabel(type: string): string {
     return QuestionUtils.getQuestionTypeLabel(type);
@@ -119,38 +119,9 @@ export class AnswerReviewComponent {
     return answer.answer_text.replace(/\|/g, ' → ');
   }
 
-  getFormattedCorrectAnswer(): string {
-    // For numerical questions, show the answer with tolerance
-    if (this.question?.type === 'numerical') {
-      if (this.question.numerical_answer !== null && this.question.numerical_answer !== undefined) {
-        let result = `${this.question.numerical_answer}`;
-        if (this.question.numerical_tolerance !== null && this.question.numerical_tolerance !== undefined) {
-          result += ` (±${this.question.numerical_tolerance})`;
-        }
-        return result;
-      }
-      // Fallback to correct_answer if numerical_answer is not available
-      return this.question.correct_answer || '';
-    }
-    
-    // For sequence questions, replace pipes with arrows
-    if (this.question?.type === 'sequence') {
-      return this.question.correct_answer?.replace(/\|/g, ' → ') || '';
-    }
-    
-    // For other question types, return correct_answer
-    return this.question?.correct_answer || '';
-  }
-
   isAutoScoredQuestion(): boolean {
-    return this.question?.type === 'multiple_choice' || 
-           this.question?.type === 'sequence' ||
-           this.question?.type === 'true_false' ||
-           this.question?.type === 'numerical' ||
-           this.question?.type === 'image' ||
-           this.question?.type === 'audio' ||
-           this.question?.type === 'video' ||
-           this.question?.type === 'open_text';
+    if (!this.question) return false;
+    return ['multiple_choice', 'true_false', 'numerical'].includes(this.question.type);
   }
 
   getAutoScoreResultText(answer: Answer): string {
@@ -158,14 +129,80 @@ export class AnswerReviewComponent {
       return 'Not scored';
     }
     
-    if (this.question?.type === 'sequence') {
-      return this.getSequenceResultText(answer);
+    if (answer.is_correct) {
+      return `Correct (${answer.points_awarded} pts)`;
+    } else {
+      return 'Incorrect (0 pts)';
+    }
+  }
+
+  getFormattedCorrectAnswer(): string {
+    // For numerical questions, show the answer with tolerance
+    if (this.question?.type === 'numerical' && this.question.numerical_tolerance) {
+      return `${this.question.correct_answer} (±${this.question.numerical_tolerance})`;
     }
     
-    if (answer.is_correct) {
-      return 'Correct';
-    } else {
-      return 'Incorrect';
+    // For sequence questions, format the sequence
+    if (this.question?.type === 'sequence' && this.question.sequence_items) {
+      return this.question.sequence_items.join(' → ');
     }
+    
+    // For multiple choice, show the correct option
+    if (this.question?.type === 'multiple_choice' && this.question.options) {
+      const correctIndex = this.question.options.findIndex(option => 
+        option === this.question?.correct_answer
+      );
+      if (correctIndex >= 0) {
+        return `${QuestionUtils.getOptionLetter(correctIndex)}. ${this.question.correct_answer}`;
+      }
+    }
+    
+    return this.question?.correct_answer || '';
+  }
+
+  getAnswerStatus(answer: Answer): string {
+    if (answer.is_correct === null || answer.is_correct === undefined) {
+      return 'unscored';
+    }
+    return answer.is_correct ? 'correct' : 'incorrect';
+  }
+
+  getAnswerStatusIcon(answer: Answer): string {
+    if (answer.is_correct === null || answer.is_correct === undefined) {
+      return 'help_outline';
+    }
+    return answer.is_correct ? 'check_circle' : 'cancel';
+  }
+
+  getAnswerStatusColor(answer: Answer): string {
+    if (answer.is_correct === null || answer.is_correct === undefined) {
+      return 'warn';
+    }
+    return answer.is_correct ? 'primary' : 'accent';
+  }
+
+  getAnswerPointsText(answer: Answer): string {
+    if (answer.points_awarded === null || answer.points_awarded === undefined) {
+      return 'Not scored';
+    }
+    return `${answer.points_awarded} / ${this.question?.points || 0} points`;
+  }
+
+  getAnswerText(answer: Answer): string {
+    // For sequence questions, format the sequence
+    if (this.question?.type === 'sequence') {
+      return this.getSequenceAnswerText(answer);
+    }
+    
+    // For other question types, return the answer text
+    return answer.answer_text;
+  }
+
+  onNextQuestion() {
+    this.nextQuestion.emit();
+  }
+
+  onShowLeaderboard() {
+    this.showLeaderboard.emit();
   }
 }

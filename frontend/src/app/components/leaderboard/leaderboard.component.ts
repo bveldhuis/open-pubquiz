@@ -1,4 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input  } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { NoContentStateComponent } from '../shared/no-content-state/no-content-state.component';
 import { LeaderboardTeam } from '../../models/leaderboard-team.model';
 import { StatisticsUtils } from '../../utils';
 
@@ -6,7 +11,14 @@ import { StatisticsUtils } from '../../utils';
     selector: 'app-leaderboard',
     templateUrl: './leaderboard.component.html',
     styleUrls: ['./leaderboard.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        DecimalPipe,
+        MatIconModule,
+        MatCardModule,
+        MatChipsModule,
+        NoContentStateComponent
+    ]
 })
 export class LeaderboardComponent {
   @Input() teams: LeaderboardTeam[] = [];

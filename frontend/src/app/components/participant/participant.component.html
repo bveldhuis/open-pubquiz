@@ -43,8 +43,8 @@
         [timeRemaining]="timeRemaining"
         [totalTime]="currentQuestion.time_limit || 60"
         (answerSubmitted)="onAnswerSubmitted($event)"
-        (onTimeUp)="onTimeUp()"
-        (onTimeChanged)="onTimeChanged($event)">
+        (timeUp)="onTimeUp()"
+        (timeChanged)="onTimeChanged($event)">
       </app-question-answer>
     }
 

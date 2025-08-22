@@ -1,4 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input  } from '@angular/core';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
     selector: 'app-loading-state',
@@ -9,8 +10,11 @@ import { Component, Input } from '@angular/core';
     </div>
   `,
     styles: [],
-    standalone: false
+    standalone: true,
+    imports: [
+        MatProgressSpinnerModule
+    ]
 })
 export class LoadingStateComponent {
-  @Input() message: string = 'Loading...';
+  @Input() message = 'Loading...';
 }

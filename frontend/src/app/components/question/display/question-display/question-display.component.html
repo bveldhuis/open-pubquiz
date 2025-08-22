@@ -6,8 +6,8 @@
       [timeRemaining]="timeRemaining"
       [totalTime]="totalTime"
       [showProgress]="true"
-      (onTimeUp)="onTimeUp.emit()"
-      (onTimeChanged)="onTimeChanged.emit($event)">
+      (timeUp)="timeUp.emit()"
+      (timeChanged)="timeChanged.emit($event)">
     </app-question-header>
     @if (isActive || showCorrectAnswer) {
       <app-question-content

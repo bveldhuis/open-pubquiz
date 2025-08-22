@@ -1,4 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
     selector: 'app-no-content-state',
@@ -9,9 +10,12 @@ import { Component, Input } from '@angular/core';
     </div>
   `,
     styles: [],
-    standalone: false
+    standalone: true,
+    imports: [
+        MatIconModule
+    ]
 })
 export class NoContentStateComponent {
-  @Input() icon: string = 'info';
-  @Input() message: string = 'No content available';
+  @Input() icon = 'info';
+  @Input() message = 'No content available';
 }

@@ -38,7 +38,7 @@ export class StatisticsUtils {
   /**
    * Calculate percentage with specified decimal places
    */
-  static calculatePercentage(part: number, total: number, decimalPlaces: number = 0): number {
+  static calculatePercentage(part: number, total: number, decimalPlaces = 0): number {
     if (total === 0) return 0;
     const percentage = (part / total) * 100;
     return Math.round(percentage * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);

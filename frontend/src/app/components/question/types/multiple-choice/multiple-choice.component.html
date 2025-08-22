@@ -7,7 +7,12 @@
         [class.correct]="showCorrectAnswer && option === question?.correct_answer"
         [class.incorrect]="showCorrectAnswer && selectedAnswer === option && option !== question?.correct_answer"
         [class.disabled]="!isInteractive || isAnswerSubmitted"
-        (click)="onOptionClick(option)">
+        (click)="onOptionClick(option)"
+        (keydown.enter)="onOptionClick(option)"
+        (keydown.space)="onOptionClick(option)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="'Select option ' + getOptionLetter(i) + ': ' + option">
         <div class="option-content">
           <span class="option-letter">{{ getOptionLetter(i) }}</span>
           <span class="option-text">{{ option }}</span>

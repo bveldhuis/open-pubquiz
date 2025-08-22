@@ -1,21 +1,20 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Question } from '../models/question.model';
+
 import { Theme } from '../models/theme.model';
 import { SessionConfiguration } from '../models/session-configuration.model';
-import { RoundConfiguration } from '../models/round-configuration.model';
+import { Question } from '../models/question.model';
 import { CreateQuestionRequest } from '../models/create-question-request.model';
-import { QuizState } from '../models/quiz-state.model';
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class QuizManagementService {
+  private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
-
-  constructor(private http: HttpClient) {}
 
   // Question Management
   createQuestion(request: CreateQuestionRequest): Observable<{ question: Question }> {
@@ -23,14 +22,12 @@ export class QuizManagementService {
   }
 
   getQuestionsForSession(sessionCode: string, round?: number): Observable<{ questions: Question[] }> {
-    let params: any = {};
+    let params: Record<string, string> = {};
     if (round !== undefined) {
       params = { round: round.toString() };
     }
     return this.http.get<{ questions: Question[] }>(`${this.apiUrl}/api/questions/session/${sessionCode}`, { params });
   }
-
-
 
   deleteQuestion(questionId: string): Observable<{ success: boolean }> {
     return this.http.delete<{ success: boolean }>(`${this.apiUrl}/api/questions/${questionId}`);
@@ -57,13 +54,13 @@ export class QuizManagementService {
     return this.http.post<{ success: boolean; currentRound?: number }>(`${this.apiUrl}/api/quiz/${sessionCode}/next-round`, {});
   }
 
-  endSession(sessionCode: string): Observable<{ success: boolean; teams?: any[] }> {
-    return this.http.post<{ success: boolean; teams?: any[] }>(`${this.apiUrl}/api/quiz/${sessionCode}/end`, {});
+  endSession(sessionCode: string): Observable<{ success: boolean; teams?: unknown[] }> {
+    return this.http.post<{ success: boolean; teams?: unknown[] }>(`${this.apiUrl}/api/quiz/${sessionCode}/end`, {});
   }
 
   // Answer Management
-  getAnswersForQuestion(questionId: string): Observable<{ answers: any[] }> {
-    return this.http.get<{ answers: any[] }>(`${this.apiUrl}/api/answers/question/${questionId}`);
+  getAnswersForQuestion(questionId: string): Observable<{ answers: unknown[] }> {
+    return this.http.get<{ answers: unknown[] }>(`${this.apiUrl}/api/answers/question/${questionId}`);
   }
 
   scoreAnswer(answerId: string, points: number, isCorrect?: boolean): Observable<{ success: boolean }> {
@@ -74,8 +71,8 @@ export class QuizManagementService {
   }
 
   // Team Management
-  getTeamsForSession(sessionCode: string): Observable<{ teams: any[] }> {
-    return this.http.get<{ teams: any[] }>(`${this.apiUrl}/api/teams/session/${sessionCode}`);
+  getTeamsForSession(sessionCode: string): Observable<{ teams: unknown[] }> {
+    return this.http.get<{ teams: unknown[] }>(`${this.apiUrl}/api/teams/session/${sessionCode}`);
   }
 
   // Theme and Session Configuration Methods
@@ -110,6 +107,4 @@ export class QuizManagementService {
   generateQuestionsForRound(sessionCode: string, roundNumber: number): Observable<{ questions: Question[] }> {
     return this.http.post<{ questions: Question[] }>(`${this.apiUrl}/api/session-config/${sessionCode}/generate-questions/${roundNumber}`, {});
   }
-
-
 }

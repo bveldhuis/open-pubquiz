@@ -1,26 +1,33 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnDestroy, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges  } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { Question } from '../../../../models/question.model';
+
 
 @Component({
     selector: 'app-audio',
     templateUrl: './audio.component.html',
     styleUrls: ['./audio.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        FormsModule,
+        MatIconModule,
+        MatFormFieldModule,
+        MatInputModule
+    ]
 })
-export class AudioComponent implements OnInit, OnDestroy, AfterViewInit, OnChanges {
+export class AudioComponent implements OnDestroy, AfterViewInit, OnChanges {
   @Input() question?: Question;
-  @Input() isDisabled: boolean = false;
-  @Input() isPresenter: boolean = false;
-  @Input() isActive: boolean = false;
+  @Input() isDisabled= false;
+  @Input() isPresenter= false;
+  @Input() isActive= false;
   @Output() answerChange = new EventEmitter<string>();
   @ViewChild('audioElement') audioElement!: ElementRef<HTMLAudioElement>;
 
-  currentAnswer: string = '';
+  currentAnswer = '';
 
-  ngOnInit(): void {
-    // Auto-play and loop for presenter when question becomes active
-    // Note: ViewChild might not be available in ngOnInit, so we'll handle this in ngAfterViewInit
-  }
 
   ngAfterViewInit(): void {
     // Auto-play and loop for presenter when question becomes active
@@ -55,7 +62,7 @@ export class AudioComponent implements OnInit, OnDestroy, AfterViewInit, OnChang
     }
   }
 
-  onAudioError(event: any): void {
+  onAudioError(event: unknown): void {
     console.error('Audio failed to load:', event);
   }
 

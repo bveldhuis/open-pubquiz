@@ -10,8 +10,8 @@ export interface TeamJoinedSessionEvent {
 }
 
 export interface ExistingTeamsEvent {
-  teams: Array<{
+  teams: {
     id: string;
     name: string;
-  }>;
+  }[];
 }

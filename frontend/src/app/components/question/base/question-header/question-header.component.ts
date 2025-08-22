@@ -1,4 +1,5 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter  } from '@angular/core';
+import { QuestionTimerComponent } from '../question-timer/question-timer.component';
 import { Question } from '../../../../models/question.model';
 import { QuestionUtils } from '../../../../utils';
 
@@ -6,7 +7,10 @@ import { QuestionUtils } from '../../../../utils';
     selector: 'app-question-header',
     templateUrl: './question-header.component.html',
     styleUrls: ['./question-header.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        QuestionTimerComponent
+    ]
 })
 export class QuestionHeaderComponent {
   @Input() question?: Question;
@@ -15,8 +19,8 @@ export class QuestionHeaderComponent {
   @Input() totalTime = 0;
   @Input() showProgress = true;
   
-  @Output() onTimeUp = new EventEmitter<void>();
-  @Output() onTimeChanged = new EventEmitter<number>();
+  @Output() timeUp = new EventEmitter<void>();
+  @Output() timeChanged = new EventEmitter<number>();
 
   getQuestionTypeLabel(type: string): string {
     return QuestionUtils.getQuestionTypeLabel(type);

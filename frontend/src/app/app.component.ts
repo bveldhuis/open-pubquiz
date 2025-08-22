@@ -1,11 +1,14 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterOutlet, RouterModule } from '@angular/router';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
     selector: 'app-root',
     template: `
     <mat-toolbar color="primary" class="toolbar">
-      <span class="toolbar-title" (click)="goHome()">🎯 Open Pub Quiz</span>
+      <span class="toolbar-title" (click)="goHome()" (keydown.enter)="goHome()" tabindex="0" role="button">🎯 Open Pub Quiz</span>
       <span class="toolbar-spacer"></span>
       <button mat-button routerLink="/presenter" class="toolbar-button">
         <mat-icon>present_to_all</mat-icon>
@@ -79,10 +82,17 @@ import { Router } from '@angular/router';
       }
     }
   `],
-    standalone: false
+    standalone: true,
+    imports: [
+        RouterOutlet,
+        RouterModule,
+        MatToolbarModule,
+        MatButtonModule,
+        MatIconModule
+    ]
 })
 export class AppComponent {
-  constructor(private router: Router) {}
+  private router = inject(Router);
 
   goHome() {
     this.router.navigate(['/']);

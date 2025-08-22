@@ -1,18 +1,40 @@
-import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, FormControl, AbstractControl, Validators } from '@angular/forms';
+import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter , inject } from '@angular/core';
+import { FormBuilder, FormGroup, FormArray, FormControl, AbstractControl, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { QuizManagementService } from '../../services/quiz-management.service';
 import { Theme } from '../../models/theme.model';
 import { SessionConfiguration } from '../../models/session-configuration.model';
+import { QuestionTypeFormValue, RoundFormValue, SessionConfigFormValue, HttpError } from '../../models/session-config-form.model';
 
 @Component({
     selector: 'app-session-config',
     templateUrl: './session-config.component.html',
     styleUrls: ['./session-config.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatCheckboxModule,
+        MatButtonModule,
+        MatIconModule,
+        MatProgressSpinnerModule
+    ]
 })
 export class SessionConfigComponent implements OnInit, OnChanges {
-  @Input() sessionCode: string = '';
+  private fb = inject(FormBuilder);
+  private snackBar = inject(MatSnackBar);
+  private quizManagementService = inject(QuizManagementService);
+
+  @Input() sessionCode = '';
   @Output() configurationComplete = new EventEmitter<SessionConfiguration>();
   @Output() configurationCancelled = new EventEmitter<void>();
   
@@ -23,11 +45,7 @@ export class SessionConfigComponent implements OnInit, OnChanges {
   isConfiguring = false;
   sessionConfiguration: SessionConfiguration | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private quizManagementService: QuizManagementService,
-    private snackBar: MatSnackBar
-  ) {
+  constructor() {
     this.configForm = this.fb.group({
       sessionCode: ['', [Validators.required, Validators.pattern(/^[A-Z0-9]{6}$/)]],
       totalRounds: [1, [Validators.required, Validators.min(1), Validators.max(10)]],
@@ -101,10 +119,10 @@ export class SessionConfigComponent implements OnInit, OnChanges {
 
   private loadThemes(): void {
     this.quizManagementService.getAvailableThemes().subscribe({
-      next: (response) => {
+      next: (response: { themes: Theme[] }) => {
         this.themes = response.themes;
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error('Error loading themes:', error);
         this.snackBar.open('Failed to load themes', 'Close', {
           duration: 5000
@@ -151,7 +169,7 @@ export class SessionConfigComponent implements OnInit, OnChanges {
   }
 
   // Custom validator for question count - only validate when enabled
-  private questionCountValidator(control: AbstractControl): {[key: string]: any} | null {
+  private questionCountValidator(control: AbstractControl): Record<string, unknown> | null {
     if (!control.parent) {
       return null;
     }
@@ -173,7 +191,7 @@ export class SessionConfigComponent implements OnInit, OnChanges {
   }
 
   // Custom validator to ensure at least one question type is enabled
-  private atLeastOneQuestionTypeEnabled(group: FormGroup): {[key: string]: any} | null {
+  private atLeastOneQuestionTypeEnabled(group: FormGroup): Record<string, unknown> | null {
     const questionTypes = group.get('questionTypes') as FormArray;
     const hasEnabledType = questionTypes.controls.some(control => 
       control.get('enabled')?.value === true
@@ -190,16 +208,16 @@ export class SessionConfigComponent implements OnInit, OnChanges {
 
   onThemeChange(roundIndex: number, themeId: string): void {
     if (themeId) {
-      this.loadThemeQuestionCounts(themeId, roundIndex);
+      this.loadThemeQuestionCounts(themeId);
     }
   }
 
-  private loadThemeQuestionCounts(themeId: string, roundIndex: number): void {
+  private loadThemeQuestionCounts(themeId: string): void {
     this.quizManagementService.getThemeQuestionCounts(themeId).subscribe({
-      next: (response) => {
+      next: (response: { questionCounts: Record<string, number> }) => {
         this.themeQuestionCounts[themeId] = response.questionCounts;
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error('Error loading theme question counts:', error);
         this.snackBar.open('Failed to load theme question counts', 'Close', {
           duration: 5000
@@ -261,17 +279,17 @@ export class SessionConfigComponent implements OnInit, OnChanges {
   configureSession(): void {
     if (this.configForm.valid) {
       this.isConfiguring = true;
-      const formValue = this.configForm.value;
+      const formValue = this.configForm.value as SessionConfigFormValue;
 
       const config = {
-        sessionCode: formValue.sessionCode,
+        sessionCode: formValue.sessionCode || this.sessionCode,
         totalRounds: formValue.totalRounds,
-        roundConfigurations: formValue.roundConfigurations.map((round: any, index: number) => ({
+        roundConfigurations: formValue.roundConfigurations.map((round: RoundFormValue, index: number) => ({
           roundNumber: index + 1,
           themeId: round.themeId,
           questionTypes: round.questionTypes
-            .filter((qt: any) => qt.enabled)
-            .map((qt: any) => ({
+            .filter((qt: QuestionTypeFormValue) => qt.enabled)
+            .map((qt: QuestionTypeFormValue) => ({
               type: qt.type,
               enabled: qt.enabled,
               questionCount: qt.questionCount
@@ -280,7 +298,7 @@ export class SessionConfigComponent implements OnInit, OnChanges {
       };
 
       this.quizManagementService.configureSession(config).subscribe({
-        next: (response) => {
+        next: (response: { configuration: SessionConfiguration }) => {
           this.sessionConfiguration = response.configuration;
           this.isConfiguring = false;
           this.snackBar.open('Session configured successfully!', 'Close', {
@@ -289,10 +307,11 @@ export class SessionConfigComponent implements OnInit, OnChanges {
           // Emit the configuration to parent component
           this.configurationComplete.emit(response.configuration);
         },
-        error: (error) => {
+        error: (error: unknown) => {
           this.isConfiguring = false;
           console.error('Error configuring session:', error);
-          this.snackBar.open(error.error?.error || 'Failed to configure session', 'Close', {
+          const errorMessage = (error as HttpError)?.error?.error || 'Failed to configure session';
+          this.snackBar.open(errorMessage, 'Close', {
             duration: 5000
           });
         }
@@ -303,6 +322,4 @@ export class SessionConfigComponent implements OnInit, OnChanges {
   cancelConfiguration(): void {
     this.configurationCancelled.emit();
   }
-
-
 }
