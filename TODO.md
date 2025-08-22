@@ -1,6 +1,6 @@
 # TODO.md - Open Pub Quiz Development Tasks
 
-### UI/UX Improvements
+## UI/UX Improvements
 9. **Responsive Design**
    - [ ] Mobile-first approach for all components
    - [ ] Touch-friendly interfaces

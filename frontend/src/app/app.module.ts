@@ -66,6 +66,7 @@ import { VideoComponent } from './components/question/types/video.component';
 // Legacy Components (to be implemented/updated)
 import { ReviewComponent } from './components/review/review.component';
 import { QrCodeComponent } from './components/qr-code/qr-code.component';
+import { SessionConfigComponent } from './components/session-config/session-config.component';
 
 // Services
 import { QuizService } from './services/quiz.service';
@@ -110,7 +111,8 @@ const routes: Routes = [
 
     // Legacy Components (to be implemented/updated)
     ReviewComponent,
-    QrCodeComponent
+    QrCodeComponent,
+    SessionConfigComponent
   ],
   imports: [
     BrowserModule,

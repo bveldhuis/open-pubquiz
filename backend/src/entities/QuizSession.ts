@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne, Index } from 'typeorm';
 import { Question } from './Question';
 import { Team } from './Team';
 import { SessionEvent } from './SessionEvent';
+import { SessionConfiguration } from './SessionConfiguration';
 
 export enum QuizSessionStatus {
   WAITING = 'waiting',
@@ -50,4 +51,7 @@ export class QuizSession {
 
   @OneToMany(() => SessionEvent, event => event.quizSession)
   events!: SessionEvent[];
+
+  @OneToOne(() => SessionConfiguration, config => config.quizSession)
+  configuration!: SessionConfiguration;
 }

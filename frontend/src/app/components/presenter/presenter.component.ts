@@ -39,7 +39,17 @@ import { Subscription, interval } from 'rxjs';
 
         <!-- Session Management -->
         <div *ngIf="currentSession" class="session-management">
-          <div class="session-info-card">
+          <!-- Session Configuration UI -->
+          <div *ngIf="showConfigurationForm" class="session-config-section">
+            <app-session-config 
+              [sessionCode]="currentSession.code"
+              (configurationComplete)="onSessionConfigured($event)"
+              (configurationCancelled)="onConfigurationCancelled()">
+            </app-session-config>
+          </div>
+
+          <!-- Session Info Card -->
+          <div *ngIf="!showConfigurationForm" class="session-info-card">
             <h2>Session: {{ currentSession.name }}</h2>
             
             <div class="connection-status">
@@ -89,12 +99,35 @@ import { Subscription, interval } from 'rxjs';
                 </div>
               </div>
             </div>
+
+            <!-- Session Configuration Summary -->
+            <div class="config-summary" *ngIf="sessionConfiguration">
+              <h3>Session Configuration</h3>
+              <div class="summary-content">
+                <div class="summary-item">
+                  <strong>Total Rounds:</strong> {{ sessionConfiguration.total_rounds }}
+                </div>
+                <div class="summary-item" *ngFor="let round of sessionConfiguration.round_configurations">
+                  <strong>Round {{ round.roundNumber }}:</strong> {{ round.themeName }}
+                  <div class="round-details">
+                    <span *ngFor="let qt of round.questionTypes" class="question-type-summary">
+                      <span *ngIf="qt.enabled">{{ qt.questionCount }} {{ getQuestionTypeDisplayName(qt.type) }}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-                     <div class="action-buttons">
-             <button mat-raised-button color="accent" (click)="loadSampleQuestions()">
+          <div class="action-buttons" *ngIf="!showConfigurationForm">
+             <button mat-raised-button color="primary" (click)="showSessionConfiguration()" *ngIf="!sessionConfiguration">
+               <mat-icon>settings</mat-icon>
+               Configure Session
+             </button>
+             
+             <button mat-raised-button color="accent" (click)="generateQuestionsForCurrentRound()" *ngIf="sessionConfiguration && questions.length === 0">
                <mat-icon>quiz</mat-icon>
-               Load Sample Questions
+               Generate Questions
              </button>
              
              <button mat-raised-button color="warn" (click)="endSession()">
@@ -201,9 +234,18 @@ import { Subscription, interval } from 'rxjs';
                   <button 
                     mat-raised-button 
                     color="primary" 
-                    (click)="startNextRound()">
+                    (click)="startNextRound()"
+                    *ngIf="!isLastRound()">
                     <mat-icon>play_arrow</mat-icon>
                     Start Next Round
+                  </button>
+                  <button 
+                    mat-raised-button 
+                    color="accent" 
+                    (click)="endSession()"
+                    *ngIf="isLastRound()">
+                    <mat-icon>flag</mat-icon>
+                    End Session
                   </button>
                 </div>
               </div>
@@ -366,6 +408,7 @@ import { Subscription, interval } from 'rxjs';
       gap: 20px;
       justify-content: center;
       flex-wrap: wrap;
+      margin-bottom: 80px;
     }
 
     .action-buttons button {
@@ -496,6 +539,7 @@ import { Subscription, interval } from 'rxjs';
 
       .question-navigation {
         margin-top: 20px;
+        margin-bottom: 80px;
         padding: 20px;
         background: #f8f9fa;
         border-radius: 8px;
@@ -526,6 +570,7 @@ import { Subscription, interval } from 'rxjs';
 
       .leaderboard-actions {
         margin-top: 20px;
+        margin-bottom: 80px;
         text-align: center;
       }
 
@@ -554,11 +599,59 @@ import { Subscription, interval } from 'rxjs';
 
       .final-leaderboard-actions {
         margin-top: 30px;
+        margin-bottom: 80px;
       }
 
       .final-leaderboard-actions button {
         padding: 16px 32px;
         font-size: 1.1rem;
+      }
+
+      .session-config-section {
+        margin-bottom: 30px;
+      }
+
+      .config-summary {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+        border-left: 4px solid #4caf50;
+      }
+
+      .config-summary h3 {
+        color: #333;
+        margin-bottom: 15px;
+        text-align: center;
+      }
+
+      .summary-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .summary-item {
+        padding: 12px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #e0e0e0;
+      }
+
+      .round-details {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .question-type-summary {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: 500;
       }
 
     @media (max-width: 768px) {
@@ -619,6 +712,8 @@ export class PresenterComponent implements OnInit, OnDestroy {
   showLeaderboard = false;
   currentAnswers: any[] = [];
   isLoadingAnswers = false;
+  sessionConfiguration: any = null;
+  showConfigurationForm = false;
   
   private subscriptions: Subscription[] = [];
   private timerSubscription?: Subscription;
@@ -736,7 +831,23 @@ export class PresenterComponent implements OnInit, OnDestroy {
       this.quizService.createSession({ name: sessionName }).subscribe({
         next: (response) => {
           this.currentSession = response.session;
-          this.teams = []; // Reset teams list
+          
+          // Reset all session-related state
+          this.teams = [];
+          this.leaderboardTeams = [];
+          this.questions = [];
+          this.currentQuestion = undefined;
+          this.currentQuestionIndex = 0;
+          this.isQuestionActive = false;
+          this.timeRemaining = 0;
+          this.submissionsReceived = 0;
+          this.showReview = false;
+          this.showLeaderboard = false;
+          this.currentAnswers = [];
+          this.isLoadingAnswers = false;
+          this.sessionConfiguration = null;
+          this.showConfigurationForm = false;
+          
           this.isCreating = false;
           
           // Join the socket room for this session
@@ -784,7 +895,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
           this.createForm.reset();
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         this.snackBar.open('Failed to end session', 'Close', {
           duration: 5000
         });
@@ -793,58 +904,88 @@ export class PresenterComponent implements OnInit, OnDestroy {
   }
 
   createNewSession(): void {
-    this.showLeaderboard = false;
+    // Reset all session-related state
+    this.currentSession = null;
+    this.teams = [];
     this.leaderboardTeams = [];
+    this.questions = [];
+    this.currentQuestion = undefined;
+    this.currentQuestionIndex = 0;
+    this.isQuestionActive = false;
+    this.timeRemaining = 0;
+    this.submissionsReceived = 0;
+    this.showReview = false;
+    this.showLeaderboard = false;
+    this.currentAnswers = [];
+    this.isLoadingAnswers = false;
+    this.sessionConfiguration = null;
+    this.showConfigurationForm = false;
+    
     this.createForm.reset();
   }
 
-  // Quiz Management Methods
-  loadSampleQuestions(): void {
-    if (!this.currentSession) return;
+  // Session Configuration Methods
+  showSessionConfiguration(): void {
+    this.showConfigurationForm = true;
+  }
 
-    // Check if questions already exist for this round
-    if (this.questions.length > 0) {
-      this.snackBar.open('Questions already loaded for this round!', 'Close', {
-        duration: 3000
-      });
-      return;
-    }
-
-    const roundNumber = this.currentSession.current_round || 1;
-    const sampleQuestions = this.quizManagementService.getSampleQuestions(roundNumber);
-    
-    // Create questions in the database
-    const createPromises = sampleQuestions.map((question, index) => {
-      return this.quizManagementService.createQuestion({
-        sessionCode: this.currentSession!.code,
-        roundNumber: question.round_number,
-        questionNumber: question.question_number,
-        type: question.type,
-        questionText: question.question_text,
-        funFact: question.fun_fact,
-        timeLimit: question.time_limit,
-        points: question.points,
-        options: question.options,
-        correctAnswer: question.correct_answer,
-        sequenceItems: question.sequence_items,
-        mediaUrl: question.media_url,
-        numericalAnswer: question.numerical_answer,
-        numericalTolerance: question.numerical_tolerance
-      }).toPromise();
-    });
-
-    Promise.all(createPromises).then(() => {
-      this.loadQuestionsForCurrentRound();
-      this.snackBar.open('Sample questions loaded successfully!', 'Close', {
-        duration: 3000
-      });
-    }).catch(error => {
-      console.error('Error loading sample questions:', error);
-      this.snackBar.open('Failed to load sample questions', 'Close', {
-        duration: 5000
-      });
+  onSessionConfigured(configuration: any): void {
+    this.sessionConfiguration = configuration;
+    this.showConfigurationForm = false;
+    this.snackBar.open('Session configured successfully!', 'Close', {
+      duration: 3000
     });
   }
+
+  onConfigurationCancelled(): void {
+    this.showConfigurationForm = false;
+  }
+
+  getQuestionTypeDisplayName(type: string): string {
+    const displayNames: Record<string, string> = {
+      multiple_choice: 'Multiple Choice',
+      open_text: 'Open Text',
+      sequence: 'Sequence',
+      true_false: 'True/False',
+      numerical: 'Numerical',
+      image: 'Image',
+      audio: 'Audio',
+      video: 'Video'
+    };
+    return displayNames[type] || type;
+  }
+
+  generateQuestionsForCurrentRound(): void {
+    if (!this.currentSession || !this.sessionConfiguration) return;
+
+    const roundNumber = this.currentSession.current_round || 1;
+    
+    this.quizManagementService.generateQuestionsForRound(this.currentSession.code, roundNumber).subscribe({
+      next: (response) => {
+        this.questions = response.questions;
+        if (this.questions.length > 0) {
+          this.currentQuestionIndex = 0;
+          this.currentQuestion = this.questions[0];
+          this.currentAnswers = [];
+          this.submissionsReceived = 0;
+          this.showReview = false;
+          this.showLeaderboard = false;
+          this.isQuestionActive = false;
+        }
+        this.snackBar.open(`Generated ${this.questions.length} questions for round ${roundNumber}!`, 'Close', {
+          duration: 3000
+        });
+      },
+      error: (error) => {
+        console.error('Error generating questions:', error);
+        this.snackBar.open('Failed to generate questions', 'Close', {
+          duration: 5000
+        });
+      }
+    });
+  }
+
+
 
   loadQuestionsForCurrentRound(): void {
     if (!this.currentSession) return;
@@ -1204,6 +1345,13 @@ export class PresenterComponent implements OnInit, OnDestroy {
     if (this.showReview) return 'Reviewing Answers';
     if (this.showLeaderboard) return 'Showing Leaderboard';
     return 'Waiting';
+  }
+
+  isLastRound(): boolean {
+    if (!this.currentSession || !this.sessionConfiguration) {
+      return false;
+    }
+    return this.currentSession.current_round >= this.sessionConfiguration.total_rounds;
   }
 
   ngOnDestroy(): void {
