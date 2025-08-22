@@ -9,7 +9,7 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-join',
   template: `
     <div class="container">
-      <div class="join-card">
+      <div class="join-card quiz-card-large">
         <h1 class="join-title">Join Quiz Session</h1>
         
         <form [formGroup]="joinForm" (ngSubmit)="onSubmit()" class="join-form">
@@ -54,10 +54,6 @@ import { AuthService } from '../../services/auth.service';
     .join-card {
       max-width: 400px;
       margin: 60px auto;
-      padding: 40px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
 
     .join-title {

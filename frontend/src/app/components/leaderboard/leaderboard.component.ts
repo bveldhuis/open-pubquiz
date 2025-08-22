@@ -1,10 +1,11 @@
 import { Component, Input } from '@angular/core';
 import { LeaderboardTeam } from '../../models/leaderboard-team.model';
+import { StatisticsUtils } from '../../utils';
 
 @Component({
   selector: 'app-leaderboard',
   template: `
-    <div class="leaderboard">
+    <div class="leaderboard quiz-component-card">
       <div class="leaderboard-header">
         <h2>🏆 Leaderboard</h2>
         <div class="round-info" *ngIf="currentRound">
@@ -50,10 +51,11 @@ import { LeaderboardTeam } from '../../models/leaderboard-team.model';
         </div>
       </div>
 
-      <div class="no-teams" *ngIf="teams.length === 0">
-        <mat-icon>group_off</mat-icon>
-        <p>No teams have joined yet</p>
-      </div>
+      <app-no-content-state 
+        *ngIf="teams.length === 0" 
+        icon="group_off" 
+        message="No teams have joined yet">
+      </app-no-content-state>
 
       <div class="leaderboard-footer">
         <div class="stats-summary">
@@ -75,10 +77,6 @@ import { LeaderboardTeam } from '../../models/leaderboard-team.model';
   `,
   styles: [`
     .leaderboard {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
 
     .leaderboard-header {
@@ -225,22 +223,7 @@ import { LeaderboardTeam } from '../../models/leaderboard-team.model';
       letter-spacing: 0.5px;
     }
 
-    .no-teams {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-    }
 
-    .no-teams mat-icon {
-      font-size: 4rem;
-      color: #e0e0e0;
-      margin-bottom: 15px;
-    }
-
-    .no-teams p {
-      margin: 0;
-      font-size: 1.1rem;
-    }
 
     .leaderboard-footer {
       padding-top: 20px;
@@ -325,14 +308,12 @@ export class LeaderboardComponent {
   }
 
   get averageScore(): number {
-    if (this.teams.length === 0) return 0;
-    const total = this.teams.reduce((sum, team) => sum + (team.total_points || 0), 0);
-    return total / this.teams.length;
+    const scores = this.teams.map(team => team.total_points || 0);
+    return StatisticsUtils.calculateAverageScore(scores);
   }
 
   get highestScore(): number {
-    if (this.teams.length === 0) return 0;
     const scores = this.teams.map(team => team.total_points || 0);
-    return Math.max(...scores);
+    return StatisticsUtils.findHighestScore(scores);
   }
 }

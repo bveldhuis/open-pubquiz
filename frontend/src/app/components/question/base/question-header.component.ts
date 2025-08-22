@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Question } from '../../../models/question.model';
+import { QuestionUtils } from '../../../utils';
 
 @Component({
   selector: 'app-question-header',
@@ -18,7 +19,7 @@ import { Question } from '../../../models/question.model';
         </div>
         
         <div class="question-meta">
-          <span class="question-type">{{ getQuestionTypeLabel(question?.type || '') }}</span>
+          <span class="question-type-badge">{{ getQuestionTypeLabel(question?.type || '') }}</span>
           <span class="points">{{ question?.points || 0 }} point{{ (question?.points || 0) !== 1 ? 's' : '' }}</span>
         </div>
       </div>
@@ -136,26 +137,7 @@ export class QuestionHeaderComponent {
   @Output() onTimeChanged = new EventEmitter<number>();
 
   getQuestionTypeLabel(type: string): string {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'open_text':
-        return 'Open Text';
-      case 'sequence':
-        return 'Sequence';
-      case 'true_false':
-        return 'True/False';
-      case 'numerical':
-        return 'Numerical';
-      case 'image':
-        return 'Image';
-      case 'audio':
-        return 'Audio';
-      case 'video':
-        return 'Video';
-      default:
-        return 'Unknown';
-    }
+    return QuestionUtils.getQuestionTypeLabel(type);
   }
 
   getProgressPercentage(): number {

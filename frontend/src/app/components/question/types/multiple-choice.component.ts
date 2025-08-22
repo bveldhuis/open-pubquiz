@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Question } from '../../../models/question.model';
+import { QuestionUtils } from '../../../utils';
 
 @Component({
   selector: 'app-multiple-choice',
@@ -16,7 +17,7 @@ import { Question } from '../../../models/question.model';
           (click)="onOptionClick(option)">
           
           <div class="option-content">
-            <span class="option-letter">{{ getOptionLetter(i) }}</span>
+            <span class="option-letter">{{ QuestionUtils.getOptionLetter(i) }}</span>
             <span class="option-text">{{ option }}</span>
           </div>
           
@@ -171,9 +172,8 @@ export class MultipleChoiceComponent {
   
   @Output() answerSelected = new EventEmitter<string>();
 
-  getOptionLetter(index: number): string {
-    return String.fromCharCode(65 + index); // A = 65 in ASCII
-  }
+  // Expose utility class for template use
+  QuestionUtils = QuestionUtils;
 
   onOptionClick(option: string) {
     if (this.isInteractive && !this.isAnswerSubmitted) {

@@ -2,15 +2,16 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Question } from '../../models/question.model';
 import { Answer } from '../../models/answer.model';
 import { SequenceAnswer } from '../../models/sequence-answer.model';
+import { QuestionUtils } from '../../utils';
 
 @Component({
   selector: 'app-answer-review',
   template: `
-    <div class="answer-review" *ngIf="question">
+    <div class="answer-review quiz-component-card" *ngIf="question">
       <div class="review-header">
         <h2>Question {{ question.question_number }}: {{ question.question_text }}</h2>
         <div class="question-summary">
-          <span class="question-type">{{ getQuestionTypeLabel(question.type) }}</span>
+          <span class="question-type-badge">{{ getQuestionTypeLabel(question.type) }}</span>
           <span class="points">{{ question.points }} point{{ question.points !== 1 ? 's' : '' }}</span>
         </div>
       </div>
@@ -25,16 +26,14 @@ import { SequenceAnswer } from '../../models/sequence-answer.model';
         <h3>Team Answers ({{ answers.length }})</h3>
         
         <!-- Loading state -->
-        <div class="loading-state" *ngIf="isLoading">
-          <mat-spinner diameter="40"></mat-spinner>
-          <p>Loading answers...</p>
-        </div>
+        <app-loading-state *ngIf="isLoading" message="Loading answers..."></app-loading-state>
         
         <!-- No answers state -->
-        <div class="no-answers" *ngIf="!isLoading && answers.length === 0">
-          <mat-icon>info</mat-icon>
-          <p>No answers received for this question yet.</p>
-        </div>
+        <app-no-content-state 
+          *ngIf="!isLoading && answers.length === 0" 
+          icon="info" 
+          message="No answers received for this question yet.">
+        </app-no-content-state>
         
         <div class="answers-list" *ngIf="!isLoading && answers.length > 0">
           <div class="answer-item" *ngFor="let answer of answers">
@@ -152,7 +151,7 @@ import { SequenceAnswer } from '../../models/sequence-answer.model';
         </div>
       </div>
 
-      <div class="review-controls">
+      <div class="button-group">
         <button 
           mat-raised-button 
           color="primary" 
@@ -177,10 +176,6 @@ import { SequenceAnswer } from '../../models/sequence-answer.model';
   `,
   styles: [`
     .answer-review {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
 
     .review-header {
@@ -203,14 +198,7 @@ import { SequenceAnswer } from '../../models/sequence-answer.model';
       gap: 10px;
     }
 
-    .question-type {
-      background: #e3f2fd;
-      color: #1976d2;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
+
 
     .points {
       background: #4caf50;
@@ -251,31 +239,7 @@ import { SequenceAnswer } from '../../models/sequence-answer.model';
       font-size: 1.4rem;
     }
 
-    .loading-state,
-    .no-answers {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      padding: 40px 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      text-align: center;
-    }
 
-    .loading-state p,
-    .no-answers p {
-      margin: 0;
-      color: #666;
-      font-size: 1rem;
-    }
-
-    .no-answers mat-icon {
-      font-size: 48px;
-      color: #ccc;
-      width: 48px;
-      height: 48px;
-    }
 
     .answers-list {
       display: flex;
@@ -450,20 +414,9 @@ import { SequenceAnswer } from '../../models/sequence-answer.model';
       margin-right: 4px;
     }
 
-    .review-controls {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
+    .button-group {
       padding-top: 20px;
       border-top: 1px solid #e0e0e0;
-    }
-
-    .review-controls button {
-      padding: 12px 24px;
-    }
-
-    .review-controls mat-icon {
-      margin-right: 8px;
     }
 
     @media (max-width: 768px) {
@@ -497,13 +450,13 @@ import { SequenceAnswer } from '../../models/sequence-answer.model';
         align-items: flex-start;
       }
 
-      .review-controls {
-        flex-direction: column;
-      }
+              .button-group {
+          flex-direction: column;
+        }
 
-      .review-controls button {
-        width: 100%;
-      }
+        .button-group button {
+          width: 100%;
+        }
     }
   `]
 })
@@ -544,21 +497,11 @@ export class AnswerReviewComponent {
   }
 
   getQuestionTypeLabel(type: string): string {
-    const labels = {
-      'multiple_choice': 'Multiple Choice',
-      'open_text': 'Open Text',
-      'sequence': 'Sequence',
-      'true_false': 'True/False',
-      'numerical': 'Numerical',
-      'image': 'Image',
-      'audio': 'Audio',
-      'video': 'Video'
-    };
-    return labels[type as keyof typeof labels] || type;
+    return QuestionUtils.getQuestionTypeLabel(type);
   }
 
   getOptionLetter(index: number): string {
-    return String.fromCharCode(65 + index);
+    return QuestionUtils.getOptionLetter(index);
   }
 
   onScoreAnswer(answerId: string, points: number, isCorrect: boolean) {

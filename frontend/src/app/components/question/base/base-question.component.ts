@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { Question } from '../../../models/question.model';
+import { QuestionUtils } from '../../../utils';
 
 @Component({
   template: ''
@@ -8,71 +9,32 @@ export abstract class BaseQuestionComponent {
   @Input() question?: Question;
   @Input() timeRemaining = 0;
 
-  /**
-   * Get the display label for question types
-   */
+  // Delegate to utility functions for consistency
   getQuestionTypeLabel(type: string): string {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'open_text':
-        return 'Open Text';
-      case 'sequence':
-        return 'Sequence';
-      case 'true_false':
-        return 'True/False';
-      case 'numerical':
-        return 'Numerical';
-      case 'image':
-        return 'Image';
-      case 'audio':
-        return 'Audio';
-      case 'video':
-        return 'Video';
-      default:
-        return 'Unknown';
-    }
+    return QuestionUtils.getQuestionTypeLabel(type);
   }
 
-  /**
-   * Get option letter (A, B, C, D, etc.)
-   */
   getOptionLetter(index: number): string {
-    return String.fromCharCode(65 + index); // A = 65 in ASCII
+    return QuestionUtils.getOptionLetter(index);
   }
 
-  /**
-   * Format time in MM:SS format
-   */
   formatTime(seconds: number): string {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return QuestionUtils.formatTime(seconds);
   }
 
-  /**
-   * Check if time is running low (≤ 10 seconds)
-   */
   isTimeLow(): boolean {
-    return this.timeRemaining <= 10;
+    return QuestionUtils.isTimeLow(this.timeRemaining);
   }
 
-  /**
-   * Check if time is critical (≤ 5 seconds)
-   */
   isTimeCritical(): boolean {
-    return this.timeRemaining <= 5;
+    return QuestionUtils.isTimeCritical(this.timeRemaining);
   }
 
-  /**
-   * Get CSS classes for timer based on time remaining
-   */
   getTimerClasses(): string {
-    if (this.isTimeCritical()) {
-      return 'timer critical';
-    } else if (this.isTimeLow()) {
-      return 'timer warning';
-    }
-    return 'timer';
+    return QuestionUtils.getTimerClasses(this.timeRemaining);
+  }
+
+  getCorrectOptionLetter(): string {
+    return QuestionUtils.getCorrectOptionLetter(this.question || {});
   }
 }

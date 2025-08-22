@@ -67,6 +67,10 @@ import { VideoComponent } from './components/question/types/video.component';
 import { ReviewComponent } from './components/review/review.component';
 import { QrCodeComponent } from './components/qr-code/qr-code.component';
 
+// Shared Components
+import { LoadingStateComponent } from './components/shared/loading-state/loading-state.component';
+import { NoContentStateComponent } from './components/shared/no-content-state/no-content-state.component';
+
 // Services
 import { QuizService } from './services/quiz.service';
 import { QuizManagementService } from './services/quiz-management.service';
@@ -110,7 +114,11 @@ const routes: Routes = [
 
     // Legacy Components (to be implemented/updated)
     ReviewComponent,
-    QrCodeComponent
+    QrCodeComponent,
+
+    // Shared Components
+    LoadingStateComponent,
+    NoContentStateComponent
   ],
   imports: [
     BrowserModule,

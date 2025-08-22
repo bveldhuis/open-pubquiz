@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Question } from '../../models/question.model';
 import { ReviewAnswer } from '../../models/review-answer.model';
+import { QuestionUtils, StatisticsUtils } from '../../utils';
 
 @Component({
   selector: 'app-review',
@@ -11,7 +12,7 @@ import { ReviewAnswer } from '../../models/review-answer.model';
         <div class="question-info">
           <h2>Question {{ question.question_number }} Review</h2>
           <div class="question-meta">
-            <span class="question-type">{{ getQuestionTypeLabel(question.type) }}</span>
+            <span class="question-type-badge">{{ getQuestionTypeLabel(question.type) }}</span>
             <span class="points">{{ question.points }} points</span>
           </div>
         </div>
@@ -73,7 +74,7 @@ import { ReviewAnswer } from '../../models/review-answer.model';
       </div>
 
       <!-- Action Buttons -->
-      <div class="review-actions">
+      <div class="button-group">
         <button mat-raised-button (click)="toggleCorrectAnswer()">
           <mat-icon>{{ showCorrectAnswer ? 'visibility_off' : 'visibility' }}</mat-icon>
           {{ showCorrectAnswer ? 'Hide' : 'Show' }} Correct Answer
@@ -266,20 +267,7 @@ import { ReviewAnswer } from '../../models/review-answer.model';
       font-size: 0.8rem;
     }
 
-    .review-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
 
-    .review-actions button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 20px;
-      font-weight: 500;
-    }
 
     @media (max-width: 768px) {
       .review-container {
@@ -296,14 +284,14 @@ import { ReviewAnswer } from '../../models/review-answer.model';
         justify-content: space-around;
       }
 
-      .review-actions {
-        flex-direction: column;
-      }
+              .button-group {
+          flex-direction: column;
+        }
 
-      .review-actions button {
-        width: 100%;
-        justify-content: center;
-      }
+        .button-group button {
+          width: 100%;
+          justify-content: center;
+        }
     }
   `]
 })
@@ -318,33 +306,19 @@ export class ReviewComponent {
   showCorrectAnswer = false;
 
   getQuestionTypeLabel(type: string): string {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'open_text':
-        return 'Open Text';
-      case 'sequence':
-        return 'Sequence';
-      default:
-        return 'Unknown';
-    }
+    return QuestionUtils.getQuestionTypeLabel(type);
   }
 
   getCorrectCount(): number {
-    return this.answers.filter(answer => answer.is_correct).length;
+    return StatisticsUtils.countMatching(this.answers, answer => answer.is_correct);
   }
 
   getAccuracyPercentage(): number {
-    if (this.answers.length === 0) return 0;
-    return Math.round((this.getCorrectCount() / this.answers.length) * 100);
+    return StatisticsUtils.calculateAccuracyPercentage(this.getCorrectCount(), this.answers.length);
   }
 
   getCorrectOptionLetter(): string {
-    if (this.question?.type === 'multiple_choice' && this.question.options && this.question.correct_answer) {
-      const index = this.question.options.indexOf(this.question.correct_answer);
-      return index >= 0 ? String.fromCharCode(65 + index) : '';
-    }
-    return '';
+    return QuestionUtils.getCorrectOptionLetter(this.question || {});
   }
 
   toggleCorrectAnswer(): void {
