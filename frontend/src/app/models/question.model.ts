@@ -1,29 +1,21 @@
 export interface Question {
   id: string;
-  question_text: string;
-  type: 'multiple_choice' | 'open_text' | 'sequence' | 'true_false' | 'numerical' | 'image' | 'audio' | 'video';
-  points: number;
+  quiz_session_id: string;
+  round_number: number;
   question_number: number;
-  time_limit?: number;
+  type: 'multiple_choice' | 'open_text' | 'sequence' | 'true_false' | 'numerical' | 'image' | 'audio' | 'video';
+  question_text: string;
   fun_fact?: string;
-  
-  // Multiple choice specific
+  time_limit?: number;
+  points: number;
   options?: string[];
   correct_answer?: string;
-  
-  // Sequence specific
   sequence_items?: string[];
-  
-  // Media specific (image, audio, video)
   media_url?: string;
-  
-  // Numerical specific
   numerical_answer?: number;
   numerical_tolerance?: number;
-  
-  // Metadata
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface QuestionSubmission {

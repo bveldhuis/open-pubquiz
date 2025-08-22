@@ -3,7 +3,8 @@ import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../services/auth.service';
 import { SocketService } from '../../services/socket.service';
-import { QuizManagementService, Question } from '../../services/quiz-management.service';
+import { QuizManagementService } from '../../services/quiz-management.service';
+import { Question } from '../../models/question.model';
 import { Subscription, interval } from 'rxjs';
 
 @Component({

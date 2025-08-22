@@ -2,72 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export interface Question {
-  id: string;
-  quiz_session_id: string;
-  round_number: number;
-  question_number: number;
-  type: 'multiple_choice' | 'open_text' | 'sequence' | 'true_false' | 'numerical' | 'image' | 'audio' | 'video';
-  question_text: string;
-  fun_fact?: string;
-  time_limit?: number;
-  points: number;
-  options?: string[];
-  correct_answer?: string;
-  sequence_items?: string[];
-  media_url?: string;
-  numerical_answer?: number;
-  numerical_tolerance?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SampleQuestion {
-  round_number: number;
-  question_number: number;
-  type: 'multiple_choice' | 'open_text' | 'sequence' | 'true_false' | 'numerical' | 'image' | 'audio' | 'video';
-  question_text: string;
-  fun_fact?: string;
-  time_limit?: number;
-  points: number;
-  options?: string[];
-  correct_answer?: string;
-  sequence_items?: string[];
-  media_url?: string;
-  numerical_answer?: number;
-  numerical_tolerance?: number;
-}
-
-export interface CreateQuestionRequest {
-  sessionCode: string;
-  roundNumber: number;
-  questionNumber: number;
-  type: 'multiple_choice' | 'open_text' | 'sequence' | 'true_false' | 'numerical' | 'image' | 'audio' | 'video';
-  questionText: string;
-  funFact?: string;
-  timeLimit?: number;
-  points?: number;
-  options?: string[];
-  correctAnswer?: string;
-  sequenceItems?: string[];
-  mediaUrl?: string;
-  numericalAnswer?: number;
-  numericalTolerance?: number;
-}
-
-export interface LoadSampleQuestionsRequest {
-  sessionCode: string;
-  roundNumber: number;
-}
-
-export interface QuizState {
-  currentQuestion?: Question;
-  timeRemaining?: number;
-  isActive: boolean;
-  submissionsReceived: number;
-  totalTeams: number;
-}
+import { Question } from '../models/question.model';
+import { SampleQuestion } from '../models/sample-question.model';
+import { CreateQuestionRequest } from '../models/create-question-request.model';
+import { LoadSampleQuestionsRequest } from '../models/load-sample-questions-request.model';
 
 @Injectable({
   providedIn: 'root'

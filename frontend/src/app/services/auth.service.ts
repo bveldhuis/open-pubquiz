@@ -1,12 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Team } from './quiz.service';
-
-export interface UserSession {
-  teamId: string;
-  teamName: string;
-  sessionCode: string;
-}
+import { Team } from '../models/team.model';
+import { UserSession } from '../models/user-session.model';
 
 @Injectable({
   providedIn: 'root'

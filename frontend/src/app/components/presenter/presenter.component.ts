@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { QuizService, QuizSession } from '../../services/quiz.service';
-import { QuizManagementService, Question } from '../../services/quiz-management.service';
+import { QuizService } from '../../services/quiz.service';
+import { QuizManagementService } from '../../services/quiz-management.service';
+import { QuizSession } from '../../models/quiz-session.model';
+import { Question } from '../../models/question.model';
 import { SocketService } from '../../services/socket.service';
 import { Subscription, interval } from 'rxjs';
 

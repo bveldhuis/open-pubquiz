@@ -2,86 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export interface QuizSession {
-  id: string;
-  code: string;
-  name: string;
-  status: 'waiting' | 'active' | 'paused' | 'finished';
-  current_question_id?: string;
-  current_round: number;
-  created_at: string;
-  updated_at: string;
-  qrCode?: string;
-}
-
-export interface Question {
-  id: string;
-  quiz_session_id: string;
-  round_number: number;
-  question_number: number;
-  type: 'multiple_choice' | 'open_text' | 'sequence' | 'true_false' | 'numerical' | 'image' | 'audio' | 'video';
-  question_text: string;
-  fun_fact?: string;
-  time_limit?: number;
-  points: number;
-  options?: string[];
-  correct_answer?: string;
-  sequence_items?: string[];
-  media_url?: string;
-  numerical_answer?: number;
-  numerical_tolerance?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Team {
-  id: string;
-  quiz_session_id: string;
-  name: string;
-  total_points: number;
-  joined_at: string;
-  last_activity: string;
-}
-
-export interface Answer {
-  id: string;
-  question_id: string;
-  team_id: string;
-  answer_text: string;
-  is_correct?: boolean;
-  points_awarded: number;
-  submitted_at: string;
-  team?: Team;
-  sequenceAnswers?: SequenceAnswer[];
-}
-
-export interface SequenceAnswer {
-  id: string;
-  answer_id: string;
-  item_text: string;
-  position: number;
-}
-
-export interface CreateSessionRequest {
-  name: string;
-}
-
-export interface JoinSessionRequest {
-  sessionCode: string;
-  teamName: string;
-}
-
-export interface SubmitAnswerRequest {
-  questionId: string;
-  teamId: string;
-  answer: string | string[];
-}
-
-export interface ScoreAnswerRequest {
-  isCorrect: boolean;
-  pointsAwarded: number;
-}
+import { QuizSession } from '../models/quiz-session.model';
+import { Question } from '../models/question.model';
+import { Team } from '../models/team.model';
+import { Answer } from '../models/answer.model';
+import { CreateSessionRequest } from '../models/create-session-request.model';
+import { JoinSessionRequest } from '../models/join-session-request.model';
+import { SubmitAnswerRequest } from '../models/submit-answer-request.model';
+import { ScoreAnswerRequest } from '../models/score-answer-request.model';
 
 @Injectable({
   providedIn: 'root'

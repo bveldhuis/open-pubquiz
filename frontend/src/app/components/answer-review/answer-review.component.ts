@@ -1,27 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { Question } from '../../services/quiz-management.service';
-
-export interface SequenceAnswer {
-  id: string;
-  answer_id: string;
-  item_text: string;
-  position: number;
-}
-
-export interface Answer {
-  id: string;
-  team_id: string;
-  team?: {
-    id: string;
-    name: string;
-  };
-  question_id: string;
-  answer_text: string;
-  is_correct?: boolean;
-  points_awarded: number;
-  submitted_at: string;
-  sequenceAnswers?: SequenceAnswer[];
-}
+import { Question } from '../../models/question.model';
+import { Answer, SequenceAnswer } from '../../models/answer.model';
 
 @Component({
   selector: 'app-answer-review',
