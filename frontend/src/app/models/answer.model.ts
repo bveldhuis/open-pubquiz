@@ -1,4 +1,5 @@
 import { Team } from './team.model';
+import { SequenceAnswer } from './sequence-answer.model';
 
 export interface Answer {
   id: string;
@@ -10,11 +11,4 @@ export interface Answer {
   submitted_at: string;
   team?: Team;
   sequenceAnswers?: SequenceAnswer[];
-}
-
-export interface SequenceAnswer {
-  id: string;
-  answer_id: string;
-  item_text: string;
-  position: number;
 }

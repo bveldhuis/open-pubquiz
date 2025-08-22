@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Question } from '../../models/question.model';
-import { Answer, SequenceAnswer } from '../../models/answer.model';
+import { Answer } from '../../models/answer.model';
+import { SequenceAnswer } from '../../models/sequence-answer.model';
 
 @Component({
   selector: 'app-answer-review',

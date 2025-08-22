@@ -1,12 +1,5 @@
 import { Component, Input } from '@angular/core';
-
-export interface Team {
-  id: string;
-  name: string;
-  total_points: number;
-  answers_submitted: number;
-  correct_answers: number;
-}
+import { LeaderboardTeam } from '../../models/leaderboard-team.model';
 
 @Component({
   selector: 'app-leaderboard',
@@ -324,10 +317,10 @@ export interface Team {
   `]
 })
 export class LeaderboardComponent {
-  @Input() teams: Team[] = [];
+  @Input() teams: LeaderboardTeam[] = [];
   @Input() currentRound?: number;
 
-  get sortedTeams(): Team[] {
+  get sortedTeams(): LeaderboardTeam[] {
     return [...this.teams].sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
   }
 

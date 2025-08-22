@@ -5,18 +5,9 @@ import { environment } from '../../environments/environment';
 import { JoinSessionData } from '../models/join-session-data.model';
 import { SubmitAnswerData } from '../models/submit-answer-data.model';
 import { PresenterAction } from '../models/presenter-action.model';
-import { 
-  TeamJoinedEvent, 
-  TeamJoinedSessionEvent, 
-  ExistingTeamsEvent, 
-  QuestionStartedEvent, 
-  LeaderboardUpdatedEvent, 
-  ReviewAnswersEvent, 
-  AnswerReceivedEvent, 
-  RoundStartedEvent, 
-  SessionEndedEvent, 
-  SessionEndedErrorEvent 
-} from '../models/socket-events.model';
+import { TeamJoinedEvent, TeamJoinedSessionEvent, ExistingTeamsEvent } from '../models/team-events.model';
+import { QuestionStartedEvent, AnswerReceivedEvent, ReviewAnswersEvent } from '../models/question-events.model';
+import { LeaderboardUpdatedEvent, RoundStartedEvent, SessionEndedEvent, SessionEndedErrorEvent } from '../models/session-events.model';
 
 @Injectable({
   providedIn: 'root'

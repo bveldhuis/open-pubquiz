@@ -1,16 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Question } from '../../models/question.model';
-
-export interface ReviewAnswer {
-  id: string;
-  team_id: string;
-  team_name: string;
-  answer: string | string[];
-  is_correct: boolean;
-  points_awarded: number;
-  submitted_at: string;
-  time_taken?: number;
-}
+import { ReviewAnswer } from '../../models/review-answer.model';
 
 @Component({
   selector: 'app-review',
