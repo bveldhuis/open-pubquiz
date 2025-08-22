@@ -1,15 +1,4 @@
-export interface RoundConfiguration {
-  roundNumber: number;
-  themeId: string;
-  themeName: string;
-  questionTypes: {
-    type: string;
-    enabled: boolean;
-    questionCount: number;
-    maxAvailable: number;
-  }[];
-  totalQuestions: number;
-}
+import { RoundConfiguration } from './round-configuration.model';
 
 export interface SessionConfiguration {
   id: string;

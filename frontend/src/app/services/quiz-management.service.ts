@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Question } from '../models/question.model';
 import { Theme } from '../models/theme.model';
-import { SessionConfiguration, RoundConfiguration } from '../models/session-configuration.model';
+import { SessionConfiguration } from '../models/session-configuration.model';
+import { RoundConfiguration } from '../models/round-configuration.model';
 import { CreateQuestionRequest } from '../models/create-question-request.model';
 import { QuizState } from '../models/quiz-state.model';
 
