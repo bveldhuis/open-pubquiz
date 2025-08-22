@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
 
 // Angular Material imports
@@ -87,87 +87,77 @@ const routes: Routes = [
   { path: '**', redirectTo: '' }
 ];
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    HomeComponent,
-    PresenterComponent,
-    ParticipantComponent,
-    JoinComponent,
-    LeaderboardComponent,
-    AnswerReviewComponent,
-
-    // New Optimized Question Components
-    QuestionTimerComponent,
-    QuestionHeaderComponent,
-    QuestionContentComponent,
-    QuestionDisplayComponent,
-    QuestionAnswerComponent,
-    PresenterControlsComponent,
-    AnswerControlsComponent,
-    MultipleChoiceComponent,
-    OpenTextComponent,
-    SequenceComponent,
-    TrueFalseComponent,
-    NumericalComponent,
-    ImageComponent,
-    AudioComponent,
-    VideoComponent,
-
-    // Legacy Components (to be implemented/updated)
-    ReviewComponent,
-    QrCodeComponent,
-    SessionConfigComponent,
-
-    // Shared Components
-    LoadingStateComponent,
-    NoContentStateComponent
-  ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    ReactiveFormsModule,
-    FormsModule,
-    HttpClientModule,
-    RouterModule.forRoot(routes),
-    
-    // Angular Material modules
-    MatToolbarModule,
-    MatButtonModule,
-    MatCardModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-    MatListModule,
-    MatChipsModule,
-    MatDialogModule,
-    MatTabsModule,
-    MatExpansionModule,
-    MatBadgeModule,
-    MatDividerModule,
-    MatStepperModule,
-    MatRadioModule,
-    MatCheckboxModule,
-    MatSelectModule,
-    MatSlideToggleModule,
-    MatSliderModule,
-    MatProgressBarModule,
-    MatTooltipModule,
-    MatMenuModule,
-    MatSidenavModule,
-    MatGridListModule,
-    MatTableModule,
-    MatSortModule,
-    MatPaginatorModule
-  ],
-  providers: [
-    QuizService,
-    QuizManagementService,
-    SocketService,
-    AuthService
-  ],
-  bootstrap: [AppComponent]
-})
+@NgModule({ declarations: [
+        AppComponent,
+        HomeComponent,
+        PresenterComponent,
+        ParticipantComponent,
+        JoinComponent,
+        LeaderboardComponent,
+        AnswerReviewComponent,
+        // New Optimized Question Components
+        QuestionTimerComponent,
+        QuestionHeaderComponent,
+        QuestionContentComponent,
+        QuestionDisplayComponent,
+        QuestionAnswerComponent,
+        PresenterControlsComponent,
+        AnswerControlsComponent,
+        MultipleChoiceComponent,
+        OpenTextComponent,
+        SequenceComponent,
+        TrueFalseComponent,
+        NumericalComponent,
+        ImageComponent,
+        AudioComponent,
+        VideoComponent,
+        // Legacy Components (to be implemented/updated)
+        ReviewComponent,
+        QrCodeComponent,
+        SessionConfigComponent,
+        // Shared Components
+        LoadingStateComponent,
+        NoContentStateComponent
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        BrowserAnimationsModule,
+        ReactiveFormsModule,
+        FormsModule,
+        RouterModule.forRoot(routes),
+        // Angular Material modules
+        MatToolbarModule,
+        MatButtonModule,
+        MatCardModule,
+        MatInputModule,
+        MatFormFieldModule,
+        MatIconModule,
+        MatSnackBarModule,
+        MatProgressSpinnerModule,
+        MatListModule,
+        MatChipsModule,
+        MatDialogModule,
+        MatTabsModule,
+        MatExpansionModule,
+        MatBadgeModule,
+        MatDividerModule,
+        MatStepperModule,
+        MatRadioModule,
+        MatCheckboxModule,
+        MatSelectModule,
+        MatSlideToggleModule,
+        MatSliderModule,
+        MatProgressBarModule,
+        MatTooltipModule,
+        MatMenuModule,
+        MatSidenavModule,
+        MatGridListModule,
+        MatTableModule,
+        MatSortModule,
+        MatPaginatorModule], providers: [
+        QuizService,
+        QuizManagementService,
+        SocketService,
+        AuthService,
+        provideHttpClient(withInterceptorsFromDi())
+    ] })
 export class AppModule { }
