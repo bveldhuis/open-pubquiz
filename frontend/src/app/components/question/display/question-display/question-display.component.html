@@ -1,0 +1,51 @@
+<div class="question-display-container" *ngIf="question">
+  <app-question-header 
+    [question]="question"
+    [showTimer]="isActive"
+    [timeRemaining]="timeRemaining"
+    [totalTime]="totalTime"
+    [showProgress]="true"
+    (onTimeUp)="onTimeUp.emit()"
+    (onTimeChanged)="onTimeChanged.emit($event)">
+  </app-question-header>
+  
+  <app-question-content 
+    *ngIf="isActive || showCorrectAnswer"
+    [question]="question"
+    [showCorrectAnswer]="showCorrectAnswer"
+    [isInteractive]="false"
+    [isPresenter]="true"
+    [isActive]="isActive"
+    [@questionAnimation]="isActive ? 'show' : 'hide'">
+  </app-question-content>
+  
+  <!-- Show fun fact when question is not active -->
+  <div class="fun-fact-preview" *ngIf="!isActive && !showCorrectAnswer && question?.fun_fact">
+    <div class="fun-fact-content">
+      <mat-icon>lightbulb</mat-icon>
+      <div class="fun-fact-text">
+        <h4>Did you know?</h4>
+        <p>{{ question.fun_fact }}</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Show placeholder when question is not active and no fun fact -->
+  <div class="question-placeholder" *ngIf="!isActive && !showCorrectAnswer && !question?.fun_fact">
+    <div class="placeholder-content">
+      <mat-icon>visibility_off</mat-icon>
+      <h3>Question Hidden</h3>
+      <p>Question will be displayed when the presenter starts it.</p>
+    </div>
+  </div>
+  
+  <app-presenter-controls 
+    *ngIf="showControls"
+    [isActive]="isActive"
+    [canStart]="canStart"
+    [hasAnswers]="hasAnswers"
+    [submissionsReceived]="submissionsReceived"
+    [totalTeams]="totalTeams"
+    (endQuestion)="endQuestion.emit()">
+  </app-presenter-controls>
+</div>

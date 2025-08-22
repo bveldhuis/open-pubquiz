@@ -10,6 +10,8 @@ This document provides a comprehensive list of all error codes and responses tha
 
 ### 4xx Client Errors
 - **400 Bad Request**: Invalid request data or parameters
+- **401 Unauthorized**: Authentication required or invalid credentials
+- **403 Forbidden**: Insufficient permissions for the requested operation
 - **404 Not Found**: Requested resource not found
 - **429 Too Many Requests**: Rate limit exceeded
 
@@ -47,7 +49,7 @@ All error responses follow this standard format:
 }
 ```
 **Cause**: Question type is not one of the allowed values
-**Solution**: Use one of: `MULTIPLE_CHOICE`, `OPEN_TEXT`, `SEQUENCE`
+**Solution**: Use one of: `MULTIPLE_CHOICE`, `OPEN_TEXT`, `SEQUENCE`, `TRUE_FALSE`, `NUMERICAL`, `IMAGE`, `AUDIO`, `VIDEO`
 
 #### Invalid Multiple Choice Question
 ```json
@@ -94,6 +96,100 @@ All error responses follow this standard format:
 **Cause**: Session code doesn't match required format
 **Solution**: Use a 6-character alphanumeric session code
 
+#### Invalid Theme Configuration
+```json
+{
+  "error": "Theme name is required"
+}
+```
+**Cause**: Theme name is missing from request
+**Solution**: Include a theme name in the request
+
+#### Invalid Question Set Data
+```json
+{
+  "error": "Question text is required"
+}
+```
+**Cause**: Required question set field is missing
+**Solution**: Include all required fields for question sets
+
+#### Invalid Session Configuration
+```json
+{
+  "error": "At least one question type must be enabled per round"
+}
+```
+**Cause**: No question types are enabled for a round
+**Solution**: Enable at least one question type per round
+
+#### Insufficient Questions Available
+```json
+{
+  "error": "Not enough questions available for type MULTIPLE_CHOICE. Available: 3, Requested: 5"
+}
+```
+**Cause**: Requested question count exceeds available questions
+**Solution**: Reduce the requested question count or add more questions to the theme
+
+#### Invalid Difficulty Level
+```json
+{
+  "error": "Invalid difficulty level"
+}
+```
+**Cause**: Difficulty is not one of the allowed values
+**Solution**: Use one of: `easy`, `medium`, `hard`
+
+### 401 Unauthorized
+
+#### API Key Missing
+```json
+{
+  "error": "API key is required"
+}
+```
+**Cause**: API key header is missing from request
+**Solution**: Include `X-API-Key` header with valid API key
+
+#### Invalid API Key
+```json
+{
+  "error": "Invalid or inactive API key"
+}
+```
+**Cause**: API key is invalid or has been deactivated
+**Solution**: Use a valid, active API key
+
+### 403 Forbidden
+
+#### Insufficient Permissions
+```json
+{
+  "error": "Permission 'themes:write' required"
+}
+```
+**Cause**: API key doesn't have required permission
+**Solution**: Use an API key with the required permission
+
+#### Theme Management Permission Required
+```json
+{
+  "error": "Permission 'themes:read' required"
+}
+```
+**Cause**: API key lacks theme read permission
+**Solution**: Use an API key with `themes:read` permission
+
+#### Question Management Permission Required
+```json
+{
+  "error": "Permission 'questions:write' required"
+}
+```
+**Cause**: API key lacks question write permission
+**Solution**: Use an API key with `questions:write` permission
+
 ### 404 Not Found
 
 #### Session Not Found
@@ -132,6 +228,42 @@ All error responses follow this standard format:
 **Cause**: Answer with the provided ID doesn't exist
 **Solution**: Verify the answer ID is correct
 
+#### Theme Not Found
+```json
+{
+  "error": "Theme not found"
+}
+```
+**Cause**: Theme with the provided ID doesn't exist
+**Solution**: Verify the theme ID is correct
+
+#### Question Set Not Found
+```json
+{
+  "error": "Question set not found"
+}
+```
+**Cause**: Question set with the provided ID doesn't exist
+**Solution**: Verify the question set ID is correct
+
+#### Session Configuration Not Found
+```json
+{
+  "error": "Session configuration not found"
+}
+```
+**Cause**: Session configuration doesn't exist for the session
+**Solution**: Configure the session first using the session configuration endpoint
+
+#### Round Configuration Not Found
+```json
+{
+  "error": "Round configuration not found for round 1"
+}
+```
+**Cause**: Round configuration doesn't exist for the specified round
+**Solution**: Verify the round number and session configuration
+
 ### 429 Too Many Requests
 
 #### Rate Limit Exceeded
@@ -162,6 +294,24 @@ All error responses follow this standard format:
 ```
 **Cause**: Internal service error
 **Solution**: Check server logs and try again later
+
+#### Theme Creation Error
+```json
+{
+  "error": "Failed to create theme"
+}
+```
+**Cause**: Database error during theme creation
+**Solution**: Check server logs and database connectivity
+
+#### Question Generation Error
+```json
+{
+  "error": "Failed to generate questions for round"
+}
+```
+**Cause**: Error during question generation process
+**Solution**: Check server logs and verify session configuration
 
 ### 503 Service Unavailable
 
@@ -198,10 +348,27 @@ All error responses follow this standard format:
 - **Time Limit**: Integer ≥ 1 (in seconds)
 - **Round Number**: Integer ≥ 1
 - **Question Number**: Integer ≥ 1
+- **Question Count**: Integer ≥ 0
 
 ### Array Fields
 - **Options**: Array of strings, minimum 2 items for multiple choice
 - **Sequence Items**: Array of strings, minimum 2 items for sequence questions
+- **Permissions**: Array of strings (e.g., `["themes:read", "questions:write"]`)
+
+### Theme Fields
+- **Name**: String, unique, required
+- **Description**: String, optional
+- **Is Active**: Boolean, defaults to true
+
+### Question Set Fields
+- **Type**: One of the supported question types
+- **Difficulty**: `easy`, `medium`, or `hard`
+- **Is Active**: Boolean, defaults to true
+
+### Session Configuration Fields
+- **Total Rounds**: Integer ≥ 1
+- **Round Configurations**: Array of round configuration objects
+- **Question Types**: At least one enabled per round
 
 ## Best Practices
 
@@ -211,18 +378,26 @@ All error responses follow this standard format:
 3. Log detailed error information for debugging
 4. Implement retry logic for 5xx errors
 5. Respect rate limits and implement exponential backoff
+6. Handle authentication errors appropriately
 
 ### Request Validation
 1. Validate all required fields before sending
 2. Ensure data types match expected formats
 3. Check field constraints (min/max values, patterns)
 4. Handle validation errors gracefully in your application
+5. Verify API key permissions before making requests
 
 ### Rate Limiting
 1. Monitor your request frequency
 2. Implement caching where appropriate
 3. Use bulk endpoints for multiple operations
 4. Consider implementing request queuing for high-volume scenarios
+
+### Authentication
+1. Store API keys securely
+2. Use appropriate permissions for different operations
+3. Rotate API keys regularly
+4. Monitor API key usage
 
 ## Troubleshooting
 
@@ -248,6 +423,21 @@ All error responses follow this standard format:
    - Verify connection credentials
    - Check network connectivity
 
+5. **API Key Authentication Fails**
+   - Verify API key is correct and active
+   - Check API key has required permissions
+   - Ensure API key is included in request headers
+
+6. **Theme Management Issues**
+   - Verify API key has appropriate permissions
+   - Check theme name uniqueness
+   - Ensure all required fields are provided
+
+7. **Session Configuration Issues**
+   - Verify session exists before configuration
+   - Check question availability in selected themes
+   - Ensure at least one question type is enabled per round
+
 ### Debugging Tips
 
 1. **Enable Detailed Logging**
@@ -262,9 +452,14 @@ All error responses follow this standard format:
    - Use the interactive API documentation to test endpoints
    - Verify request format matches API specification
 
+4. **Check API Key Status**
+   - Verify API key is active and has required permissions
+   - Check API key usage logs
+
 ## Support
 
 For additional support:
 - Check the interactive API documentation at `/api/docs`
 - Review server logs for detailed error information
 - Contact support with error details and request context
+- Refer to [THEME_MANAGEMENT.md](THEME_MANAGEMENT.md) for theme management specific issues

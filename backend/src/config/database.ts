@@ -5,6 +5,10 @@ import { Team } from '../entities/Team';
 import { Answer } from '../entities/Answer';
 import { SequenceAnswer } from '../entities/SequenceAnswer';
 import { SessionEvent } from '../entities/SessionEvent';
+import { Theme } from '../entities/Theme';
+import { QuestionSet } from '../entities/QuestionSet';
+import { SessionConfiguration } from '../entities/SessionConfiguration';
+import { ApiKey } from '../entities/ApiKey';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -21,7 +25,11 @@ export const AppDataSource = new DataSource({
     Team,
     Answer,
     SequenceAnswer,
-    SessionEvent
+    SessionEvent,
+    Theme,
+    QuestionSet,
+    SessionConfiguration,
+    ApiKey
   ],
   migrations: ['src/database/migrations/*.ts'],
   subscribers: ['src/subscribers/*.ts'],

@@ -2,6 +2,9 @@ import 'reflect-metadata';
 import { AppDataSource } from '../config/database';
 import { QuizSession, QuizSessionStatus } from '../entities/QuizSession';
 import { Question, QuestionType } from '../entities/Question';
+import { Theme } from '../entities/Theme';
+import { QuestionSet, Difficulty } from '../entities/QuestionSet';
+import { ApiKey } from '../entities/ApiKey';
 import { v4 as uuidv4 } from 'uuid';
 
 async function seedDatabase() {
@@ -10,32 +13,409 @@ async function seedDatabase() {
     await AppDataSource.initialize();
     console.log('✅ Database connection established');
 
-    // Check if sample session already exists
-    const sessionRepository = AppDataSource.getRepository(QuizSession);
-    let session = await sessionRepository.findOne({ where: { code: 'SAMPLE' } });
+    // Clear existing data to make script re-executable
+    console.log('🧹 Clearing existing seed data...');
     
-    if (session) {
-      console.log('🔄 Sample session already exists, clearing old questions...');
-      // Delete existing questions for this session
-      const questionRepository = AppDataSource.getRepository(Question);
-      await questionRepository.delete({ quiz_session_id: session.id });
-      console.log('✅ Cleared existing questions');
-    } else {
-      // Create a new sample quiz session
-      session = sessionRepository.create({
-        id: uuidv4(),
-        code: 'SAMPLE',
-        name: 'Sample Pub Quiz',
-        status: QuizSessionStatus.WAITING,
-        current_round: 1
-      });
+    const questionRepository = AppDataSource.getRepository(Question);
+    const sessionRepository = AppDataSource.getRepository(QuizSession);
+    const themeRepository = AppDataSource.getRepository(Theme);
+    const questionSetRepository = AppDataSource.getRepository(QuestionSet);
+    const apiKeyRepository = AppDataSource.getRepository(ApiKey);
 
-      await sessionRepository.save(session);
-      console.log('✅ Created sample quiz session');
+    // Delete in correct order to respect foreign key constraints
+    // Use try-catch to handle cases where tables might not exist yet
+    try {
+      await questionRepository.createQueryBuilder().delete().execute();
+    } catch (error) {
+      console.log('ℹ️  Questions table not found or empty, skipping...');
+    }
+    
+    try {
+      await questionSetRepository.createQueryBuilder().delete().execute();
+    } catch (error) {
+      console.log('ℹ️  Question sets table not found or empty, skipping...');
+    }
+    
+    try {
+      await themeRepository.createQueryBuilder().delete().execute();
+    } catch (error) {
+      console.log('ℹ️  Themes table not found or empty, skipping...');
+    }
+    
+    try {
+      await sessionRepository.delete({ code: 'SAMPLE' });
+    } catch (error) {
+      console.log('ℹ️  Sample session not found, skipping...');
+    }
+    
+    try {
+      await apiKeyRepository.delete({ key_name: 'Default Admin Key' });
+    } catch (error) {
+      console.log('ℹ️  Default API key not found, skipping...');
     }
 
-    // Create sample questions
-    const questionRepository = AppDataSource.getRepository(Question);
+    console.log('✅ Cleared existing seed data');
+
+    // Create API Key
+    console.log('🔑 Creating default API key...');
+    const defaultApiKey = apiKeyRepository.create({
+      id: uuidv4(),
+      key_name: 'Default Admin Key',
+      api_key: 'admin-key-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+      permissions: ['themes:read', 'themes:write', 'questions:read', 'questions:write'],
+      is_active: true
+    });
+    const savedApiKey = await apiKeyRepository.save(defaultApiKey);
+    console.log(`✅ Created API key: ${savedApiKey.api_key}`);
+
+    // Create themes
+    console.log('🎨 Creating themes...');
+    const themes = [
+      {
+        id: uuidv4(),
+        name: 'General Knowledge',
+        description: 'General knowledge questions covering various topics'
+      },
+      {
+        id: uuidv4(),
+        name: 'Technology',
+        description: 'Questions about computers, software, and modern technology'
+      },
+      {
+        id: uuidv4(),
+        name: 'Nature',
+        description: 'Questions about animals, plants, and the natural world'
+      },
+      {
+        id: uuidv4(),
+        name: 'Music',
+        description: 'Questions about music, artists, and musical history'
+      },
+      {
+        id: uuidv4(),
+        name: 'History',
+        description: 'Historical events, figures, and important dates'
+      },
+      {
+        id: uuidv4(),
+        name: 'Science',
+        description: 'Scientific discoveries, theories, and facts'
+      }
+    ];
+
+    const createdThemes: Theme[] = [];
+    for (const themeData of themes) {
+      const theme = themeRepository.create(themeData);
+      const savedTheme = await themeRepository.save(theme);
+      createdThemes.push(savedTheme);
+      console.log(`✅ Created theme: ${savedTheme.name}`);
+    }
+
+    // Create question sets for each theme
+    console.log('❓ Creating question sets...');
+    const questionSets = [
+      // General Knowledge Questions
+      {
+        themeId: createdThemes[0].id,
+        type: QuestionType.MULTIPLE_CHOICE,
+        question_text: 'What is the capital of France?',
+        fun_fact: 'This city is known as the "City of Light" and has been a major center of art, fashion, and culture for centuries.',
+        time_limit: 30,
+        points: 1,
+        options: ['London', 'Berlin', 'Paris', 'Madrid'],
+        correct_answer: 'Paris',
+        difficulty: Difficulty.EASY
+      },
+      {
+        themeId: createdThemes[0].id,
+        type: QuestionType.TRUE_FALSE,
+        question_text: 'The Great Wall of China is visible from space with the naked eye.',
+        fun_fact: 'This popular belief has been widely circulated, but the truth might surprise you!',
+        time_limit: 20,
+        points: 1,
+        correct_answer: 'false',
+        difficulty: Difficulty.MEDIUM
+      },
+      {
+        themeId: createdThemes[0].id,
+        type: QuestionType.NUMERICAL,
+        question_text: 'What is the value of π (pi) to 2 decimal places?',
+        fun_fact: 'π is an irrational number, meaning it has infinite decimal places with no repeating pattern.',
+        time_limit: 30,
+        points: 2,
+        numerical_answer: 3.14,
+        numerical_tolerance: 0.01,
+        difficulty: Difficulty.EASY
+      },
+      {
+        themeId: createdThemes[0].id,
+        type: QuestionType.OPEN_TEXT,
+        question_text: 'What year did World War II end?',
+        fun_fact: 'This global conflict involved most of the world\'s nations and had profound effects on the 20th century.',
+        time_limit: 45,
+        points: 2,
+        correct_answer: '1945',
+        difficulty: Difficulty.MEDIUM
+      },
+
+      // Technology Questions
+      {
+        themeId: createdThemes[1].id,
+        type: QuestionType.MULTIPLE_CHOICE,
+        question_text: 'Which programming language was originally called "Oak"?',
+        fun_fact: 'This language had to be renamed due to trademark issues with an existing company.',
+        time_limit: 30,
+        points: 2,
+        options: ['Python', 'Java', 'C++', 'JavaScript'],
+        correct_answer: 'Java',
+        difficulty: Difficulty.MEDIUM
+      },
+      {
+        themeId: createdThemes[1].id,
+        type: QuestionType.TRUE_FALSE,
+        question_text: 'The first computer mouse was made of wood.',
+        fun_fact: 'The first computer mouse was invented by Douglas Engelbart in 1964 and had a very different design than modern mice.',
+        time_limit: 20,
+        points: 1,
+        correct_answer: 'true',
+        difficulty: Difficulty.MEDIUM
+      },
+      {
+        themeId: createdThemes[1].id,
+        type: QuestionType.SEQUENCE,
+        question_text: 'Put these programming languages in order of their creation (oldest to newest):',
+        fun_fact: 'Programming languages have evolved significantly over the decades, with each building upon the concepts of previous ones.',
+        time_limit: 60,
+        points: 3,
+        sequence_items: ['FORTRAN', 'COBOL', 'BASIC', 'C', 'Python', 'JavaScript'],
+        difficulty: Difficulty.HARD
+      },
+      {
+        themeId: createdThemes[1].id,
+        type: QuestionType.NUMERICAL,
+        question_text: 'In what year was the first iPhone released?',
+        fun_fact: 'This revolutionary device was introduced by Steve Jobs at Macworld and changed the smartphone industry forever.',
+        time_limit: 30,
+        points: 2,
+        numerical_answer: 2007,
+        numerical_tolerance: 0,
+        difficulty: Difficulty.MEDIUM
+      },
+
+      // Nature Questions
+      {
+        themeId: createdThemes[2].id,
+        type: QuestionType.MULTIPLE_CHOICE,
+        question_text: 'What is the largest mammal in the world?',
+        fun_fact: 'This massive creature can grow up to 100 feet long and weigh as much as 200 tons.',
+        time_limit: 30,
+        points: 1,
+        options: ['African Elephant', 'Blue Whale', 'Giraffe', 'Polar Bear'],
+        correct_answer: 'Blue Whale',
+        difficulty: Difficulty.EASY
+      },
+      {
+        themeId: createdThemes[2].id,
+        type: QuestionType.TRUE_FALSE,
+        question_text: 'Bees can see ultraviolet light.',
+        fun_fact: 'Bees have remarkable vision capabilities that help them navigate and find flowers.',
+        time_limit: 20,
+        points: 1,
+        correct_answer: 'true',
+        difficulty: Difficulty.MEDIUM
+      },
+      {
+        themeId: createdThemes[2].id,
+        type: QuestionType.OPEN_TEXT,
+        question_text: 'What is the process by which plants make their own food called?',
+        fun_fact: 'This process is one of the most important biological processes on Earth, providing oxygen for all living things.',
+        time_limit: 45,
+        points: 2,
+        correct_answer: 'photosynthesis',
+        difficulty: Difficulty.MEDIUM
+      },
+      {
+        themeId: createdThemes[2].id,
+        type: QuestionType.SEQUENCE,
+        question_text: 'Put these animals in order of their average lifespan (shortest to longest):',
+        fun_fact: 'Animal lifespans vary greatly, from just a few days to over 200 years for some species.',
+        time_limit: 60,
+        points: 3,
+        sequence_items: ['Housefly', 'Mouse', 'Dog', 'Human', 'Elephant', 'Giant Tortoise'],
+        difficulty: Difficulty.HARD
+      },
+
+      // Music Questions
+      {
+        themeId: createdThemes[3].id,
+        type: QuestionType.MULTIPLE_CHOICE,
+        question_text: 'Who is known as the "King of Pop"?',
+        fun_fact: 'This artist earned this title due to their immense popularity and influence on music and dance.',
+        time_limit: 30,
+        points: 1,
+        options: ['Elvis Presley', 'Michael Jackson', 'Prince', 'Madonna'],
+        correct_answer: 'Michael Jackson',
+        difficulty: Difficulty.EASY
+      },
+      {
+        themeId: createdThemes[3].id,
+        type: QuestionType.TRUE_FALSE,
+        question_text: 'The Beatles never learned to read music.',
+        fun_fact: 'The Beatles were largely self-taught musicians who developed their own unique approach to music.',
+        time_limit: 20,
+        points: 1,
+        correct_answer: 'true',
+        difficulty: Difficulty.MEDIUM
+      },
+      {
+        themeId: createdThemes[3].id,
+        type: QuestionType.NUMERICAL,
+        question_text: 'How many strings does a standard guitar have?',
+        fun_fact: 'The six-string guitar is the most common type, though there are also 12-string and other variations.',
+        time_limit: 30,
+        points: 1,
+        numerical_answer: 6,
+        numerical_tolerance: 0,
+        difficulty: Difficulty.EASY
+      },
+      {
+        themeId: createdThemes[3].id,
+        type: QuestionType.OPEN_TEXT,
+        question_text: 'What is the name of the famous opera house in Sydney, Australia?',
+        fun_fact: 'This iconic building is one of the most distinctive and famous buildings of the 20th century.',
+        time_limit: 45,
+        points: 2,
+        correct_answer: 'Sydney Opera House',
+        difficulty: Difficulty.MEDIUM
+      },
+
+      // History Questions
+      {
+        themeId: createdThemes[4].id,
+        type: QuestionType.MULTIPLE_CHOICE,
+        question_text: 'In what year did Christopher Columbus first reach the Americas?',
+        fun_fact: 'Columbus made four voyages to the Americas between 1492 and 1504.',
+        time_limit: 30,
+        points: 2,
+        options: ['1492', '1498', '1500', '1504'],
+        correct_answer: '1492',
+        difficulty: Difficulty.MEDIUM
+      },
+      {
+        themeId: createdThemes[4].id,
+        type: QuestionType.TRUE_FALSE,
+        question_text: 'The ancient Egyptians used hieroglyphics as their writing system.',
+        fun_fact: 'Hieroglyphics were used for over 3,000 years in ancient Egypt.',
+        time_limit: 20,
+        points: 1,
+        correct_answer: 'true',
+        difficulty: Difficulty.EASY
+      },
+      {
+        themeId: createdThemes[4].id,
+        type: QuestionType.SEQUENCE,
+        question_text: 'Put these historical events in chronological order:',
+        fun_fact: 'These events shaped the modern world and had lasting impacts on society.',
+        time_limit: 60,
+        points: 3,
+        sequence_items: ['Fall of Rome', 'Black Death', 'Renaissance', 'Industrial Revolution', 'World War I', 'Moon Landing'],
+        difficulty: Difficulty.HARD
+      },
+      {
+        themeId: createdThemes[4].id,
+        type: QuestionType.NUMERICAL,
+        question_text: 'In what year did the Berlin Wall fall?',
+        fun_fact: 'The fall of the Berlin Wall marked the end of the Cold War and the reunification of Germany.',
+        time_limit: 30,
+        points: 2,
+        numerical_answer: 1989,
+        numerical_tolerance: 0,
+        difficulty: Difficulty.MEDIUM
+      },
+
+      // Science Questions
+      {
+        themeId: createdThemes[5].id,
+        type: QuestionType.MULTIPLE_CHOICE,
+        question_text: 'What is the chemical symbol for gold?',
+        fun_fact: 'Gold is one of the least reactive chemical elements and has been used as currency throughout human history.',
+        time_limit: 30,
+        points: 1,
+        options: ['Ag', 'Au', 'Fe', 'Cu'],
+        correct_answer: 'Au',
+        difficulty: Difficulty.EASY
+      },
+      {
+        themeId: createdThemes[5].id,
+        type: QuestionType.TRUE_FALSE,
+        question_text: 'Light travels faster than sound.',
+        fun_fact: 'Light travels at about 300,000 km/s while sound travels at about 343 m/s in air.',
+        time_limit: 20,
+        points: 1,
+        correct_answer: 'true',
+        difficulty: Difficulty.EASY
+      },
+      {
+        themeId: createdThemes[5].id,
+        type: QuestionType.OPEN_TEXT,
+        question_text: 'What is the hardest natural substance on Earth?',
+        fun_fact: 'This substance scores 10 on the Mohs scale of mineral hardness.',
+        time_limit: 45,
+        points: 2,
+        correct_answer: 'diamond',
+        difficulty: Difficulty.MEDIUM
+      },
+      {
+        themeId: createdThemes[5].id,
+        type: QuestionType.NUMERICAL,
+        question_text: 'How many planets are in our solar system?',
+        fun_fact: 'There are 8 planets in our solar system, with Pluto being reclassified as a dwarf planet in 2006.',
+        time_limit: 30,
+        points: 1,
+        numerical_answer: 8,
+        numerical_tolerance: 0,
+        difficulty: Difficulty.EASY
+      }
+    ];
+
+    for (const questionData of questionSets) {
+      const questionSet = questionSetRepository.create({
+        id: uuidv4(),
+        theme_id: questionData.themeId,
+        type: questionData.type,
+        question_text: questionData.question_text,
+        fun_fact: questionData.fun_fact,
+        time_limit: questionData.time_limit,
+        points: questionData.points,
+        options: questionData.options || null,
+        correct_answer: questionData.correct_answer || null,
+        sequence_items: questionData.sequence_items || null,
+        media_url: (questionData as any).media_url || null,
+        numerical_answer: questionData.numerical_answer || null,
+        numerical_tolerance: questionData.numerical_tolerance || null,
+        difficulty: questionData.difficulty,
+        is_active: true
+      });
+      await questionSetRepository.save(questionSet);
+    }
+
+    console.log(`✅ Created ${questionSets.length} question sets`);
+
+    // Create a sample quiz session
+    console.log('🎯 Creating sample quiz session...');
+    const session = sessionRepository.create({
+      id: uuidv4(),
+      code: 'SAMPLE',
+      name: 'Sample Pub Quiz',
+      status: QuizSessionStatus.WAITING,
+      current_round: 1
+    });
+
+    await sessionRepository.save(session);
+    console.log('✅ Created sample quiz session');
+
+    // Create sample questions for the session
+    console.log('❓ Creating sample session questions...');
     const questions = [
       // Round 1 - General Knowledge
       {
@@ -43,7 +423,7 @@ async function seedDatabase() {
         questionNumber: 1,
         type: QuestionType.MULTIPLE_CHOICE,
         questionText: 'What is the capital of France?',
-        funFact: 'Paris is known as the "City of Light" and has been a major center of art, fashion, and culture for centuries.',
+        funFact: 'This city is known as the "City of Light" and has been a major center of art, fashion, and culture for centuries.',
         timeLimit: 30,
         points: 1,
         options: ['London', 'Berlin', 'Paris', 'Madrid'],
@@ -54,7 +434,7 @@ async function seedDatabase() {
         questionNumber: 2,
         type: QuestionType.OPEN_TEXT,
         questionText: 'What year did World War II end?',
-        funFact: 'The war ended with the surrender of Germany in May 1945 and Japan in September 1945.',
+        funFact: 'This global conflict involved most of the world\'s nations and had profound effects on the 20th century.',
         timeLimit: 45,
         points: 2,
         correctAnswer: '1945'
@@ -87,7 +467,7 @@ async function seedDatabase() {
         questionNumber: 2,
         type: QuestionType.OPEN_TEXT,
         questionText: 'What is the largest organ in the human body?',
-        funFact: 'The skin is not only the largest organ but also the heaviest, weighing about 8-10 pounds in adults.',
+        funFact: 'This organ is not only the largest but also the heaviest, weighing about 8-10 pounds in adults.',
         timeLimit: 45,
         points: 2,
         correctAnswer: 'Skin'
@@ -109,7 +489,7 @@ async function seedDatabase() {
         questionNumber: 1,
         type: QuestionType.MULTIPLE_CHOICE,
         questionText: 'Who played Iron Man in the Marvel Cinematic Universe?',
-        funFact: 'Robert Downey Jr. was initially considered a risky choice for the role due to his past legal issues.',
+        funFact: 'This actor was initially considered a risky choice for the role due to their past legal issues.',
         timeLimit: 30,
         points: 1,
         options: ['Chris Evans', 'Robert Downey Jr.', 'Chris Hemsworth', 'Mark Ruffalo'],
@@ -120,7 +500,7 @@ async function seedDatabase() {
         questionNumber: 2,
         type: QuestionType.OPEN_TEXT,
         questionText: 'What is the name of the fictional town where The Simpsons live?',
-        funFact: 'Springfield was chosen because it\'s a common town name in the United States, with over 30 states having a Springfield.',
+        funFact: 'This town name was chosen because it\'s a common town name in the United States, with over 30 states having one.',
         timeLimit: 45,
         points: 2,
         correctAnswer: 'Springfield'
@@ -142,7 +522,7 @@ async function seedDatabase() {
         questionNumber: 1,
         type: QuestionType.TRUE_FALSE,
         questionText: 'The Great Wall of China is visible from space with the naked eye.',
-        funFact: 'This is actually false! The Great Wall is not visible from space without aid, contrary to popular belief.',
+        funFact: 'This popular belief has been widely circulated, but the truth might surprise you!',
         timeLimit: 20,
         points: 1,
         correctAnswer: 'false'
@@ -163,7 +543,7 @@ async function seedDatabase() {
         questionNumber: 3,
         type: QuestionType.IMAGE,
         questionText: 'What landmark is shown in this image?',
-        funFact: 'This iconic tower was built for the 1889 World\'s Fair in Paris and stands 330 meters tall.',
+        funFact: 'This iconic tower was built for the 1889 World\'s Fair and stands 330 meters tall.',
         timeLimit: 45,
         points: 2,
         mediaUrl: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=500&h=400&fit=crop',
@@ -174,7 +554,7 @@ async function seedDatabase() {
         questionNumber: 4,
         type: QuestionType.AUDIO,
         questionText: 'Name the composer of this famous classical piece.',
-        funFact: 'This piece is "Eine kleine Nachtmusik" composed in 1787, one of Mozart\'s most recognizable works.',
+        funFact: 'This piece is one of the most recognizable works from the classical period.',
         timeLimit: 60,
         points: 3,
         mediaUrl: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
@@ -198,7 +578,7 @@ async function seedDatabase() {
         questionNumber: 1,
         type: QuestionType.NUMERICAL,
         questionText: 'What is the speed of light in vacuum? (Answer in km/s)',
-        funFact: 'The speed of light in a vacuum is exactly 299,792.458 km/s, one of the fundamental constants of physics.',
+        funFact: 'The speed of light in a vacuum is one of the fundamental constants of physics.',
         timeLimit: 45,
         points: 3,
         numericalAnswer: 299792.458,
@@ -209,7 +589,7 @@ async function seedDatabase() {
         questionNumber: 2,
         type: QuestionType.TRUE_FALSE,
         questionText: 'Bananas are berries, but strawberries are not.',
-        funFact: 'Botanically speaking, berries must have seeds inside their flesh. Bananas qualify, but strawberries have seeds on the outside!',
+        funFact: 'Botanically speaking, berries must have seeds inside their flesh. Some fruits that we call berries don\'t qualify!',
         timeLimit: 25,
         points: 2,
         correctAnswer: 'true'
@@ -219,7 +599,7 @@ async function seedDatabase() {
         questionNumber: 3,
         type: QuestionType.MULTIPLE_CHOICE,
         questionText: 'Which programming language was originally called "Oak"?',
-        funFact: 'Java was initially called Oak but had to be renamed due to trademark issues with Oak Technology.',
+        funFact: 'This language had to be renamed due to trademark issues with an existing company.',
         timeLimit: 30,
         points: 2,
         options: ['Python', 'Java', 'C++', 'JavaScript'],
@@ -250,8 +630,18 @@ async function seedDatabase() {
     }
 
     console.log('✅ Created sample questions');
-    console.log('🎯 Sample quiz session created with code: SAMPLE');
-    console.log('📝 You can now test the application with this sample data');
+    console.log('🎯 Database seeding completed successfully!');
+    console.log('📝 Summary:');
+    console.log(`   - Created ${themes.length} themes`);
+    console.log(`   - Created ${questionSets.length} question sets`);
+    console.log(`   - Created 1 API key: ${savedApiKey.api_key}`);
+    console.log(`   - Created 1 sample session with code: SAMPLE`);
+    console.log(`   - Created ${questions.length} sample questions`);
+    console.log('');
+    console.log('🚀 You can now:');
+    console.log('   1. Use the API key for admin operations');
+    console.log('   2. Configure sessions with themes and question types');
+    console.log('   3. Test the application with the sample session');
 
     await AppDataSource.destroy();
     console.log('✅ Database connection closed');

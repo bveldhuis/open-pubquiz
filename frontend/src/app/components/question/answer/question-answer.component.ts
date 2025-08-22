@@ -1,58 +1,11 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { Question } from '../../../models/question.model';
-import { BaseQuestionComponent } from '../base/base-question.component';
+import { BaseQuestionComponent } from '../base/base-question/base-question.component';
 
 @Component({
   selector: 'app-question-answer',
-  template: `
-    <div class="question-answer-container" *ngIf="question">
-      <app-question-header 
-        [question]="question"
-        [showTimer]="isActive"
-        [timeRemaining]="timeRemaining"
-        [totalTime]="totalTime"
-        [showProgress]="true"
-        (onTimeUp)="onTimeUp.emit()"
-        (onTimeChanged)="onTimeChanged.emit($event)">
-      </app-question-header>
-      
-      <app-question-content 
-        [question]="question"
-        [isInteractive]="true"
-        [selectedAnswer]="selectedAnswer"
-        [shuffledSequenceItems]="shuffledSequenceItems"
-        [isAnswerSubmitted]="isAnswerSubmitted"
-        [isPresenter]="false"
-        [isActive]="isActive"
-        (answerSelected)="onAnswerSelected($event)"
-        (answerChanged)="onAnswerChanged($event)"
-        (answerValid)="onAnswerValid($event)"
-        (sequenceReordered)="onSequenceReordered($event)">
-      </app-question-content>
-      
-      <app-answer-controls 
-        [isActive]="isActive"
-        [canSubmit]="canSubmit"
-        [isAnswerSubmitted]="isAnswerSubmitted"
-        [timeRemaining]="timeRemaining"
-        [questionType]="question.type"
-        (submitAnswer)="onSubmitAnswer()">
-      </app-answer-controls>
-    </div>
-  `,
-  styles: [`
-    .question-answer-container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    @media (max-width: 768px) {
-      .question-answer-container {
-        padding: 16px;
-      }
-    }
-  `]
+  templateUrl: './question-answer.component.html',
+  styleUrls: ['./question-answer.component.scss']
 })
 export class QuestionAnswerComponent extends BaseQuestionComponent implements OnInit {
   @Input() isActive = false;

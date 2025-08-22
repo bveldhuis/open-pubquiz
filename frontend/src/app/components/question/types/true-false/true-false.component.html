@@ -1,0 +1,32 @@
+<div class="true-false-question">
+  <div class="question-content">
+    <p class="question-text">{{ question?.question_text }}</p>
+    <div class="answer-options">
+      <button 
+        mat-raised-button 
+        [class.selected]="currentAnswer === 'true'"
+        [class.correct]="showCorrectAnswer && question?.correct_answer === 'true'"
+        [class.incorrect]="showCorrectAnswer && currentAnswer === 'true' && question?.correct_answer !== 'true'"
+        [disabled]="isDisabled"
+        (click)="selectAnswer('true')">
+        <mat-icon>check_circle</mat-icon>
+        True
+      </button>
+      
+      <button 
+        mat-raised-button 
+        [class.selected]="currentAnswer === 'false'"
+        [class.correct]="showCorrectAnswer && question?.correct_answer === 'false'"
+        [class.incorrect]="showCorrectAnswer && currentAnswer === 'false' && question?.correct_answer !== 'false'"
+        [disabled]="isDisabled"
+        (click)="selectAnswer('false')">
+        <mat-icon>cancel</mat-icon>
+        False
+      </button>
+    </div>
+    <div class="question-info">
+      <span class="points">Points: {{ question?.points || 0 }}</span>
+      <span class="time-limit" *ngIf="question?.time_limit">Time: {{ question?.time_limit }}s</span>
+    </div>
+  </div>
+</div>

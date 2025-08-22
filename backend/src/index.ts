@@ -14,6 +14,8 @@ import quizRoutes from './routes/quizRoutes';
 import { teamRoutes } from './routes/teamRoutes';
 import { questionRoutes } from './routes/questionRoutes';
 import { answerRoutes } from './routes/answerRoutes';
+import { adminRoutes } from './routes/adminRoutes';
+import { sessionConfigRoutes } from './routes/sessionConfigRoutes';
 import { ServiceFactory } from './services/ServiceFactory';
 import { checkDatabaseHealth } from './utils/databaseHealth';
 import { specs } from './config/swagger';
@@ -178,6 +180,8 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/answers', answerRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/session-config', sessionConfigRoutes);
 
 // Socket.IO setup
 setupSocketHandlers(io);

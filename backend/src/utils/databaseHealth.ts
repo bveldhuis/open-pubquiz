@@ -12,20 +12,28 @@ export interface DatabaseHealthStatus {
 }
 
 export async function checkDatabaseHealth(): Promise<DatabaseHealthStatus> {
-  try {
-    // Check if database is initialized and connected
-    if (!AppDataSource.isInitialized) {
-      return {
-        connected: false,
-        migrationsUpToDate: false,
-        error: 'Database not initialized'
-      };
-    }
+  // Check if database is initialized
+  if (!AppDataSource.isInitialized) {
+    return {
+      connected: false,
+      migrationsUpToDate: false,
+      error: 'Database not initialized'
+    };
+  }
 
-    // Test database connection
+  // Test database connection first
+  try {
     await AppDataSource.query('SELECT 1');
-    
-    // Check migration status using the migration manager
+  } catch (error) {
+    return {
+      connected: false,
+      migrationsUpToDate: false,
+      error: error instanceof Error ? error.message : 'Connection failed'
+    };
+  }
+
+  // If connection is successful, check migrations
+  try {
     const pendingMigrations = await AppDataSource.migrations;
     const executedMigrations = await AppDataSource.query(
       'SELECT name FROM migrations ORDER BY timestamp'
@@ -54,10 +62,11 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthStatus> {
       })
     };
   } catch (error) {
+    // Connection is successful, but migration check failed
     return {
-      connected: false,
+      connected: true,
       migrationsUpToDate: false,
-      error: error instanceof Error ? error.message : 'Unknown database error'
+      error: error instanceof Error ? error.message : String(error)
     };
   }
 }
