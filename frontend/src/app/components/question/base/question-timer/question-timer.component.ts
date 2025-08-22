@@ -1,9 +1,14 @@
-import { Component, Input, Output, EventEmitter, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnDestroy, OnInit  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
-  selector: 'app-question-timer',
-  templateUrl: './question-timer.component.html',
-  styleUrls: ['./question-timer.component.scss']
+    selector: 'app-question-timer',
+    templateUrl: './question-timer.component.html',
+    styleUrls: ['./question-timer.component.scss'],
+    standalone: true,
+    imports: [
+        MatIconModule
+    ]
 })
 export class QuestionTimerComponent implements OnInit, OnDestroy {
   @Input() timeRemaining = 0;
@@ -12,7 +17,7 @@ export class QuestionTimerComponent implements OnInit, OnDestroy {
   @Output() timeUp = new EventEmitter<void>();
   @Output() timeChanged = new EventEmitter<number>();
 
-  private interval?: any;
+  private interval?: NodeJS.Timeout;
 
   ngOnInit() {
     this.startTimer();

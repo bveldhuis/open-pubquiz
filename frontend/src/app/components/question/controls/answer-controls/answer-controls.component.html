@@ -1,38 +1,47 @@
 <div class="answer-controls">
-  <div class="submit-section" *ngIf="isActive && !isAnswerSubmitted">
-    <button 
-      mat-raised-button 
-      color="primary" 
-      (click)="submitAnswer.emit()"
-      [disabled]="!canSubmit"
-      class="submit-button">
-      <mat-icon>send</mat-icon>
-      <span>Submit Answer</span>
-    </button>
-    
-    <div class="submit-hint" *ngIf="!canSubmit">
-      <mat-icon>info</mat-icon>
-      <span>{{ getSubmitHint() }}</span>
+  @if (isActive && !isAnswerSubmitted) {
+    <div class="submit-section">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="submitAnswer.emit()"
+        [disabled]="!canSubmit"
+        class="submit-button">
+        <mat-icon>send</mat-icon>
+        <span>Submit Answer</span>
+      </button>
+      @if (!canSubmit) {
+        <div class="submit-hint">
+          <mat-icon>info</mat-icon>
+          <span>{{ getSubmitHint() }}</span>
+        </div>
+      }
     </div>
-  </div>
+  }
 
-  <div class="answer-status" *ngIf="isAnswerSubmitted">
-    <div class="submitted-message">
-      <mat-icon>check_circle</mat-icon>
-      <div class="status-content">
-        <h4>Answer Submitted!</h4>
-        <p>Your answer has been submitted successfully.</p>
+  @if (isAnswerSubmitted) {
+    <div class="answer-status">
+      <div class="submitted-message">
+        <mat-icon>check_circle</mat-icon>
+        <div class="status-content">
+          <h4>Answer Submitted!</h4>
+          <p>Your answer has been submitted successfully.</p>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
-  <div class="time-warning" *ngIf="isActive && timeRemaining <= 10 && timeRemaining > 0 && !isAnswerSubmitted">
-    <mat-icon>warning</mat-icon>
-    <span>Time is running out! Submit your answer quickly.</span>
-  </div>
+  @if (isActive && timeRemaining <= 10 && timeRemaining > 0 && !isAnswerSubmitted) {
+    <div class="time-warning">
+      <mat-icon>warning</mat-icon>
+      <span>Time is running out! Submit your answer quickly.</span>
+    </div>
+  }
 
-  <div class="time-up" *ngIf="isActive && timeRemaining === 0">
-    <mat-icon>timer_off</mat-icon>
-    <span>Time's up! Your answer has been automatically submitted.</span>
-  </div>
+  @if (isActive && timeRemaining === 0) {
+    <div class="time-up">
+      <mat-icon>timer_off</mat-icon>
+      <span>Time's up! Your answer has been automatically submitted.</span>
+    </div>
+  }
 </div>

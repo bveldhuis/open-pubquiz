@@ -1,10 +1,20 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { Question } from '../../../../models/question.model';
 
+
 @Component({
-  selector: 'app-sequence',
-  templateUrl: './sequence.component.html',
-  styleUrls: ['./sequence.component.scss']
+    selector: 'app-sequence',
+    templateUrl: './sequence.component.html',
+    styleUrls: ['./sequence.component.scss'],
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatCardModule,
+        MatChipsModule
+    ]
 })
 export class SequenceComponent implements OnInit {
   @Input() question?: Question;
@@ -65,7 +75,7 @@ export class SequenceComponent implements OnInit {
     }
   }
 
-  onDragEnd(event: DragEvent) {
+  onDragEnd() {
     this.draggedIndex = -1;
     this.dragOverIndex = -1;
   }

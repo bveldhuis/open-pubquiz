@@ -1,23 +1,4 @@
 /* You can add global styles to this file, and also import other style files */
-@use '@angular/material' as mat;
-
-@include mat.core();
-
-$primary-palette: mat.define-palette(mat.$indigo-palette);
-$accent-palette: mat.define-palette(mat.$pink-palette, A200, A100, A400);
-$warn-palette: mat.define-palette(mat.$red-palette);
-
-$theme: mat.define-light-theme((
-  color: (
-    primary: $primary-palette,
-    accent: $accent-palette,
-    warn: $warn-palette,
-  ),
-  typography: mat.define-typography-config(),
-  density: 0,
-));
-
-@include mat.all-component-themes($theme);
 
 /* Fix for Material Icons sizing and display issues */
 mat-icon {
@@ -112,6 +93,135 @@ body {
 .quiz-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+/* Standard quiz component card styling */
+.quiz-component-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  padding: 30px;
+}
+
+/* Large quiz card variant */
+.quiz-card-large {
+  @extend .quiz-component-card;
+  padding: 40px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+}
+
+/* Small quiz card variant */
+.quiz-card-small {
+  @extend .quiz-component-card;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Loading state styles */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.loading-state p {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+/* No content state styles */
+.no-content-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.no-content-state mat-icon {
+  font-size: 48px;
+  color: #ccc;
+  width: 48px;
+  height: 48px;
+}
+
+.no-content-state p {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+/* Question type badges */
+.question-type-badge {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Points badge */
+.points-badge {
+  background: #4caf50;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Common flex layouts */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex-gap {
+  display: flex;
+  gap: 12px;
+}
+
+.flex-gap-sm {
+  display: flex;
+  gap: 8px;
+}
+
+.flex-gap-lg {
+  display: flex;
+  gap: 16px;
+}
+
+/* Common button groups */
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.button-group button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-weight: 500;
 }
 
 .timer {

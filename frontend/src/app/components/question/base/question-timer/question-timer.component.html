@@ -1,7 +1,9 @@
 <div class="timer" [class]="getTimerClasses()">
   <mat-icon>timer</mat-icon>
   <span class="timer-text">{{ formatTime(timeRemaining) }}</span>
-  <div class="timer-progress" *ngIf="showProgress">
-    <div class="progress-bar" [style.width.%]="getProgressPercentage()"></div>
-  </div>
+  @if (showProgress) {
+    <div class="timer-progress">
+      <div class="progress-bar" [style.width.%]="getProgressPercentage()"></div>
+    </div>
+  }
 </div>

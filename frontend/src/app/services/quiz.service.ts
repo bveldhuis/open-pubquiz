@@ -1,95 +1,22 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-
-export interface QuizSession {
-  id: string;
-  code: string;
-  name: string;
-  status: 'waiting' | 'active' | 'paused' | 'finished';
-  current_question_id?: string;
-  current_round: number;
-  created_at: string;
-  updated_at: string;
-  qrCode?: string;
-}
-
-export interface Question {
-  id: string;
-  quiz_session_id: string;
-  round_number: number;
-  question_number: number;
-  type: 'multiple_choice' | 'open_text' | 'sequence' | 'true_false' | 'numerical' | 'image' | 'audio' | 'video';
-  question_text: string;
-  fun_fact?: string;
-  time_limit?: number;
-  points: number;
-  options?: string[];
-  correct_answer?: string;
-  sequence_items?: string[];
-  media_url?: string;
-  numerical_answer?: number;
-  numerical_tolerance?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Team {
-  id: string;
-  quiz_session_id: string;
-  name: string;
-  total_points: number;
-  joined_at: string;
-  last_activity: string;
-}
-
-export interface Answer {
-  id: string;
-  question_id: string;
-  team_id: string;
-  answer_text: string;
-  is_correct?: boolean;
-  points_awarded: number;
-  submitted_at: string;
-  team?: Team;
-  sequenceAnswers?: SequenceAnswer[];
-}
-
-export interface SequenceAnswer {
-  id: string;
-  answer_id: string;
-  item_text: string;
-  position: number;
-}
-
-export interface CreateSessionRequest {
-  name: string;
-}
-
-export interface JoinSessionRequest {
-  sessionCode: string;
-  teamName: string;
-}
-
-export interface SubmitAnswerRequest {
-  questionId: string;
-  teamId: string;
-  answer: string | string[];
-}
-
-export interface ScoreAnswerRequest {
-  isCorrect: boolean;
-  pointsAwarded: number;
-}
+import { QuizSession } from '../models/quiz-session.model';
+import { Question } from '../models/question.model';
+import { Team } from '../models/team.model';
+import { Answer } from '../models/answer.model';
+import { CreateSessionRequest } from '../models/create-session-request.model';
+import { JoinSessionRequest } from '../models/join-session-request.model';
+import { SubmitAnswerRequest } from '../models/submit-answer-request.model';
+import { ScoreAnswerRequest } from '../models/score-answer-request.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class QuizService {
+  private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
-
-  constructor(private http: HttpClient) {}
 
   // Session management
   createSession(request: CreateSessionRequest): Observable<{ session: QuizSession }> {
@@ -118,16 +45,16 @@ export class QuizService {
     return this.http.patch<{ success: boolean; status: string }>(`${this.apiUrl}/api/quiz/${code}/status`, { status });
   }
 
-  endSession(code: string): Observable<{ success: boolean; teams?: any[] }> {
-    return this.http.post<{ success: boolean; teams?: any[] }>(`${this.apiUrl}/api/quiz/${code}/end`, {});
+  endSession(code: string): Observable<{ success: boolean; teams?: unknown[] }> {
+    return this.http.post<{ success: boolean; teams?: unknown[] }>(`${this.apiUrl}/api/quiz/${code}/end`, {});
   }
 
   getLeaderboard(code: string): Observable<{ teams: Team[] }> {
     return this.http.get<{ teams: Team[] }>(`${this.apiUrl}/api/quiz/${code}/leaderboard`);
   }
 
-  getSessionEvents(code: string): Observable<{ events: any[] }> {
-    return this.http.get<{ events: any[] }>(`${this.apiUrl}/api/quiz/${code}/events`);
+  getSessionEvents(code: string): Observable<{ events: unknown[] }> {
+    return this.http.get<{ events: unknown[] }>(`${this.apiUrl}/api/quiz/${code}/events`);
   }
 
   // Team management
@@ -156,12 +83,12 @@ export class QuizService {
   }
 
   // Question management
-  createQuestion(request: any): Observable<{ question: Question }> {
+  createQuestion(request: unknown): Observable<{ question: Question }> {
     return this.http.post<{ question: Question }>(`${this.apiUrl}/api/questions`, request);
   }
 
   getQuestionsForSession(sessionCode: string, round?: number): Observable<{ questions: Question[] }> {
-    let params: any = {};
+    let params: Record<string, string> = {};
     if (round !== undefined) {
       params = { round: round.toString() };
     }
@@ -172,7 +99,7 @@ export class QuizService {
     return this.http.get<{ question: Question }>(`${this.apiUrl}/api/questions/${id}`);
   }
 
-  updateQuestion(id: string, request: any): Observable<{ question: Question }> {
+  updateQuestion(id: string, request: unknown): Observable<{ question: Question }> {
     return this.http.put<{ question: Question }>(`${this.apiUrl}/api/questions/${id}`, request);
   }
 
@@ -180,7 +107,7 @@ export class QuizService {
     return this.http.delete<{ success: boolean }>(`${this.apiUrl}/api/questions/${id}`);
   }
 
-  createQuestionsBulk(request: { sessionCode: string; questions: any[] }): Observable<{ questions: Question[] }> {
+  createQuestionsBulk(request: { sessionCode: string; questions: unknown[] }): Observable<{ questions: Question[] }> {
     return this.http.post<{ questions: Question[] }>(`${this.apiUrl}/api/questions/bulk`, request);
   }
 

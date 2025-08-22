@@ -1,27 +1,39 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { QuizService } from '../../services/quiz.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-  selector: 'app-join',
-  templateUrl: './join.component.html',
-  styleUrls: ['./join.component.scss']
+    selector: 'app-join',
+    templateUrl: './join.component.html',
+    styleUrls: ['./join.component.scss'],
+    standalone: true,
+    imports: [
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule,
+        MatProgressSpinnerModule
+    ]
 })
 export class JoinComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private quizService = inject(QuizService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private snackBar = inject(MatSnackBar);
+
   joinForm: FormGroup;
   isLoading = false;
 
-  constructor(
-    private fb: FormBuilder,
-    private quizService: QuizService,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute,
-    private snackBar: MatSnackBar
-  ) {
+  constructor() {
     this.joinForm = this.fb.group({
       sessionCode: ['', [Validators.required]],
       teamName: ['', [Validators.required, Validators.minLength(2)]]

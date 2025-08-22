@@ -23,8 +23,6 @@
     - [ ] XSS protection
 
 25. **Testing**
-    - [x] Unit tests for auto-scoring algorithm and fuzzy matching
-    - [ ] Unit tests for other backend logic
     - [ ] Integration tests
 
 ### Documentation

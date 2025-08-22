@@ -1,8 +1,4 @@
 .leaderboard {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 
 .leaderboard-header {
@@ -98,10 +94,6 @@
 .medal mat-icon {
   font-size: 1.5rem;
   color: #ff9800;
-  width: 1.5rem !important;
-  height: 1.5rem !important;
-  min-width: 1.5rem !important;
-  min-height: 1.5rem !important;
 }
 
 .team-info {
@@ -131,10 +123,6 @@
 .stat mat-icon {
   font-size: 1rem;
   color: #ff9800;
-  width: 1rem !important;
-  height: 1rem !important;
-  min-width: 1rem !important;
-  min-height: 1rem !important;
 }
 
 .points-display {
@@ -155,27 +143,6 @@
   color: #666;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.no-teams {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-}
-
-.no-teams mat-icon {
-  font-size: 4rem;
-  color: #e0e0e0;
-  margin-bottom: 15px;
-  width: 4rem !important;
-  height: 4rem !important;
-  min-width: 4rem !important;
-  min-height: 4rem !important;
-}
-
-.no-teams p {
-  margin: 0;
-  font-size: 1.1rem;
 }
 
 .leaderboard-footer {

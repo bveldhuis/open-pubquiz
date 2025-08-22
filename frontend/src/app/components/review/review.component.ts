@@ -1,21 +1,23 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { Question } from '../../models/question.model';
-
-export interface ReviewAnswer {
-  id: string;
-  team_id: string;
-  team_name: string;
-  answer: string | string[];
-  is_correct: boolean;
-  points_awarded: number;
-  submitted_at: string;
-  time_taken?: number;
-}
+import { ReviewAnswer } from '../../models/review-answer.model';
+import { QuestionUtils, StatisticsUtils } from '../../utils';
 
 @Component({
-  selector: 'app-review',
-  templateUrl: './review.component.html',
-  styleUrls: ['./review.component.scss']
+    selector: 'app-review',
+    templateUrl: './review.component.html',
+    styleUrls: ['./review.component.scss'],
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatButtonModule,
+        MatCardModule,
+        MatChipsModule
+    ]
 })
 export class ReviewComponent {
   @Input() question?: Question;
@@ -28,33 +30,19 @@ export class ReviewComponent {
   showCorrectAnswer = false;
 
   getQuestionTypeLabel(type: string): string {
-    switch (type) {
-      case 'multiple_choice':
-        return 'Multiple Choice';
-      case 'open_text':
-        return 'Open Text';
-      case 'sequence':
-        return 'Sequence';
-      default:
-        return 'Unknown';
-    }
+    return QuestionUtils.getQuestionTypeLabel(type);
   }
 
   getCorrectCount(): number {
-    return this.answers.filter(answer => answer.is_correct).length;
+    return StatisticsUtils.countMatching(this.answers, answer => answer.is_correct);
   }
 
   getAccuracyPercentage(): number {
-    if (this.answers.length === 0) return 0;
-    return Math.round((this.getCorrectCount() / this.answers.length) * 100);
+    return StatisticsUtils.calculateAccuracyPercentage(this.getCorrectCount(), this.answers.length);
   }
 
   getCorrectOptionLetter(): string {
-    if (this.question?.type === 'multiple_choice' && this.question.options && this.question.correct_answer) {
-      const index = this.question.options.indexOf(this.question.correct_answer);
-      return index >= 0 ? String.fromCharCode(65 + index) : '';
-    }
-    return '';
+    return QuestionUtils.getCorrectOptionLetter(this.question || {});
   }
 
   toggleCorrectAnswer(): void {

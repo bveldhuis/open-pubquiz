@@ -1,23 +1,80 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { QuizService, QuizSession } from '../../services/quiz.service';
-import { QuizManagementService, Question } from '../../services/quiz-management.service';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TitleCasePipe } from '@angular/common';
+import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
+import { QuestionDisplayComponent } from '../question/display/question-display/question-display.component';
+
+import { SessionConfigComponent } from '../session-config/session-config.component';
+import { QrCodeComponent } from '../qr-code/qr-code.component';
+import { AnswerReviewComponent } from '../answer-review/answer-review.component';
+import { QuizService } from '../../services/quiz.service';
+import { QuizManagementService } from '../../services/quiz-management.service';
+import { QuizSession } from '../../models/quiz-session.model';
+import { SessionConfiguration } from '../../models/session-configuration.model';
+import { Question } from '../../models/question.model';
+
 import { SocketService } from '../../services/socket.service';
 import { Subscription, interval } from 'rxjs';
 
+// Internal interfaces for component use
+interface TeamInfo {
+  id: string;
+  name: string;
+  total_points: number;
+  answers_submitted: number;
+  correct_answers: number;
+}
+
+interface AnswerInfo {
+  id: string;
+  question_id: string;
+  team_id: string;
+  answer_text: string;
+  is_correct?: boolean;
+  points_awarded: number;
+  submitted_at: string;
+}
+
 @Component({
-  selector: 'app-presenter',
-  templateUrl: './presenter.component.html',
-  styleUrls: ['./presenter.component.scss']
+    selector: 'app-presenter',
+    templateUrl: './presenter.component.html',
+    styleUrls: ['./presenter.component.scss'],
+    standalone: true,
+    imports: [
+        ReactiveFormsModule,
+        MatIconModule,
+        MatButtonModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatProgressSpinnerModule,
+        TitleCasePipe,
+        LeaderboardComponent,
+        QuestionDisplayComponent,
+        SessionConfigComponent,
+        QrCodeComponent,
+        AnswerReviewComponent
+    ]
 })
 export class PresenterComponent implements OnInit, OnDestroy {
+  private fb = inject(FormBuilder);
+  private snackBar = inject(MatSnackBar);
+  private quizService = inject(QuizService);
+  private quizManagementService = inject(QuizManagementService);
+  private socketService = inject(SocketService);
   createForm: FormGroup;
   currentSession: QuizSession | null = null;
   isCreating = false;
   isConnected = false;
-  teams: any[] = [];
-  leaderboardTeams: any[] = [];
+  teams: TeamInfo[] = [];
+  leaderboardTeams: TeamInfo[] = [];
   
   // Quiz state
   questions: Question[] = [];
@@ -28,24 +85,18 @@ export class PresenterComponent implements OnInit, OnDestroy {
   submissionsReceived = 0;
   showReview = false;
   showLeaderboard = false;
-  currentAnswers: any[] = [];
+  currentAnswers: AnswerInfo[] = [];
   isLoadingAnswers = false;
-  sessionConfiguration: any = null;
+  sessionConfiguration: SessionConfiguration | null = null;
   showConfigurationForm = false;
   
   private subscriptions: Subscription[] = [];
   private timerSubscription?: Subscription;
 
-  constructor(
-    private fb: FormBuilder,
-    private quizService: QuizService,
-    private quizManagementService: QuizManagementService,
-    public socketService: SocketService,
-    private snackBar: MatSnackBar
-  ) {
-    this.createForm = this.fb.group({
-      sessionName: ['', [Validators.required, Validators.minLength(3)]]
-    });
+  constructor() {
+this.createForm = this.fb.group({
+sessionName: ['', [Validators.required, Validators.minLength(3)]]
+  });
   }
 
   ngOnInit(): void {
@@ -70,7 +121,10 @@ export class PresenterComponent implements OnInit, OnDestroy {
           if (!existingTeam) {
             this.teams.push({
               id: event.teamId,
-              name: event.teamName
+              name: event.teamName,
+              total_points: 0,
+              answers_submitted: 0,
+              correct_answers: 0
             });
             console.log('🎮 Added team to list:', event.teamName);
           } else {
@@ -88,7 +142,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
       this.socketService.existingTeams$.subscribe(event => {
         if (this.currentSession) {
           console.log('📋 Loading existing teams:', event.teams);
-          this.teams = event.teams;
+          this.teams = event.teams as TeamInfo[];
           if (event.teams.length > 0) {
             this.snackBar.open(`${event.teams.length} existing teams loaded!`, 'Close', {
               duration: 3000
@@ -107,17 +161,17 @@ export class PresenterComponent implements OnInit, OnDestroy {
           // Add the answer to the current answers list
           const team = this.teams.find(t => t.id === event.teamId);
           if (team) {
-            const newAnswer = {
+            const newAnswer: AnswerInfo = {
               id: `${event.teamId}-${event.questionId}`,
-              teamId: event.teamId,
-              teamName: event.teamName,
-              questionId: event.questionId,
-              answer: 'Submitted', // We don't have the actual answer text here
-              submittedAt: new Date()
+              team_id: event.teamId,
+              question_id: event.questionId,
+              answer_text: 'Submitted', // We don't have the actual answer text here
+              points_awarded: 0,
+              submitted_at: new Date().toISOString()
             };
             
             // Check if this team has already answered this question
-            const existingAnswer = this.currentAnswers.find(a => a.teamId === event.teamId && a.questionId === event.questionId);
+            const existingAnswer = this.currentAnswers.find(a => a.team_id === event.teamId && a.question_id === event.questionId);
             if (!existingAnswer) {
               this.currentAnswers.push(newAnswer);
               this.submissionsReceived = this.currentAnswers.length; // Update the counter
@@ -133,7 +187,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
       this.socketService.leaderboardUpdated$.subscribe(event => {
         console.log('📊 Leaderboard updated via socket:', event);
         if (this.currentSession && this.showLeaderboard) {
-          this.leaderboardTeams = event.teams;
+          this.leaderboardTeams = event.teams as TeamInfo[];
         }
       })
     );
@@ -180,7 +234,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
             duration: 3000
           });
         },
-        error: (error) => {
+        error: () => {
           this.isCreating = false;
           this.snackBar.open('Failed to create session', 'Close', {
             duration: 5000
@@ -203,7 +257,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
         
         // Show final leaderboard and keep it displayed
         if (response.teams) {
-          this.leaderboardTeams = response.teams;
+          this.leaderboardTeams = response.teams as TeamInfo[];
           this.showLeaderboard = true;
           this.showReview = false;
           this.isQuestionActive = false;
@@ -213,7 +267,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
           this.createForm.reset();
         }
       },
-      error: (error: any) => {
+      error: () => {
         this.snackBar.open('Failed to end session', 'Close', {
           duration: 5000
         });
@@ -247,7 +301,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
     this.showConfigurationForm = true;
   }
 
-  onSessionConfigured(configuration: any): void {
+  onSessionConfigured(configuration: SessionConfiguration): void {
     this.sessionConfiguration = configuration;
     this.showConfigurationForm = false;
     this.snackBar.open('Session configured successfully!', 'Close', {
@@ -454,7 +508,13 @@ export class PresenterComponent implements OnInit, OnDestroy {
     
     this.quizService.getLeaderboard(this.currentSession.code).subscribe({
       next: (response) => {
-        this.leaderboardTeams = response.teams;
+        this.leaderboardTeams = response.teams.map(team => ({
+          id: team.id,
+          name: team.name,
+          total_points: team.total_points || 0,
+          answers_submitted: 0, // Default value since Team model doesn't have this
+          correct_answers: 0 // Default value since Team model doesn't have this
+        }));
         console.log('Leaderboard data refreshed:', this.leaderboardTeams);
       },
       error: (error) => {
@@ -537,9 +597,10 @@ export class PresenterComponent implements OnInit, OnDestroy {
     });
   }
 
-  onQrError(error: string): void {
-    console.error('QR code error:', error);
-    this.snackBar.open(`QR code error: ${error}`, 'Close', {
+  onQrError(error: string | ErrorEvent): void {
+    const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
+    console.error('QR code error:', errorMessage);
+    this.snackBar.open(`QR code error: ${errorMessage}`, 'Close', {
       duration: 5000
     });
   }
@@ -636,7 +697,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
       next: (response) => {
         try {
           console.log('Answers response:', response);
-          this.currentAnswers = response.answers || [];
+          this.currentAnswers = (response.answers || []) as AnswerInfo[];
         } catch (error) {
           console.error('Error parsing answers response:', error);
           this.currentAnswers = [];

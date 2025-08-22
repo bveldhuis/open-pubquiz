@@ -2,30 +2,38 @@
   <div class="text-answer">
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Your Answer</mat-label>
-      <textarea 
-        matInput 
+      <textarea
+        matInput
         [formControl]="answerControl"
         placeholder="Type your answer here..."
         rows="4"
         [maxlength]="maxLength"
         (input)="onInputChange()">
       </textarea>
-      <mat-hint *ngIf="showCharacterCount">
-        {{ answerControl.value?.length || 0 }} / {{ maxLength }} characters
-      </mat-hint>
-      <mat-error *ngIf="answerControl.hasError('required')">
-        Answer is required
-      </mat-error>
-      <mat-error *ngIf="answerControl.hasError('minlength')">
-        Answer must be at least {{ minLength }} characters
-      </mat-error>
+      @if (showCharacterCount) {
+        <mat-hint>
+          {{ answerControl.value?.length || 0 }} / {{ maxLength }} characters
+        </mat-hint>
+      }
+      @if (answerControl.hasError('required')) {
+        <mat-error>
+          Answer is required
+        </mat-error>
+      }
+      @if (answerControl.hasError('minlength')) {
+        <mat-error>
+          Answer must be at least {{ minLength }} characters
+        </mat-error>
+      }
     </mat-form-field>
   </div>
 
-  <div class="answer-preview" *ngIf="showPreview && answerControl.value">
-    <h4>Your Answer:</h4>
-    <div class="preview-content">
-      {{ answerControl.value }}
+  @if (showPreview && answerControl.value) {
+    <div class="answer-preview">
+      <h4>Your Answer:</h4>
+      <div class="preview-content">
+        {{ answerControl.value }}
+      </div>
     </div>
-  </div>
+  }
 </div>

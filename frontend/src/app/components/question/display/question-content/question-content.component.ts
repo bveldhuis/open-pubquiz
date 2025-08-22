@@ -1,10 +1,30 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter  } from '@angular/core';
+import { MultipleChoiceComponent } from '../../types/multiple-choice/multiple-choice.component';
+import { OpenTextComponent } from '../../types/open-text/open-text.component';
+import { SequenceComponent } from '../../types/sequence/sequence.component';
+import { TrueFalseComponent } from '../../types/true-false/true-false.component';
+import { NumericalComponent } from '../../types/numerical/numerical.component';
+import { ImageComponent } from '../../types/image/image.component';
+import { AudioComponent } from '../../types/audio/audio.component';
+import { VideoComponent } from '../../types/video/video.component';
 import { Question } from '../../../../models/question.model';
 
+
 @Component({
-  selector: 'app-question-content',
-  templateUrl: './question-content.component.html',
-  styleUrls: ['./question-content.component.scss']
+    selector: 'app-question-content',
+    templateUrl: './question-content.component.html',
+    styleUrls: ['./question-content.component.scss'],
+    standalone: true,
+    imports: [
+        MultipleChoiceComponent,
+        OpenTextComponent,
+        SequenceComponent,
+        TrueFalseComponent,
+        NumericalComponent,
+        ImageComponent,
+        AudioComponent,
+        VideoComponent
+    ]
 })
 export class QuestionContentComponent {
   @Input() question?: Question;

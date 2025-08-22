@@ -1,27 +1,37 @@
 <div class="multiple-choice-container">
   <div class="options">
-    <div 
-      class="option" 
-      *ngFor="let option of question?.options; let i = index"
-      [class.selected]="isInteractive && selectedAnswer === option"
-      [class.correct]="showCorrectAnswer && option === question?.correct_answer"
-      [class.incorrect]="showCorrectAnswer && selectedAnswer === option && option !== question?.correct_answer"
-      [class.disabled]="!isInteractive || isAnswerSubmitted"
-      (click)="onOptionClick(option)">
-      
-      <div class="option-content">
-        <span class="option-letter">{{ getOptionLetter(i) }}</span>
-        <span class="option-text">{{ option }}</span>
+    @for (option of question?.options; track option; let i = $index) {
+      <div
+        class="option"
+        [class.selected]="isInteractive && selectedAnswer === option"
+        [class.correct]="showCorrectAnswer && option === question?.correct_answer"
+        [class.incorrect]="showCorrectAnswer && selectedAnswer === option && option !== question?.correct_answer"
+        [class.disabled]="!isInteractive || isAnswerSubmitted"
+        (click)="onOptionClick(option)"
+        (keydown.enter)="onOptionClick(option)"
+        (keydown.space)="onOptionClick(option)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="'Select option ' + getOptionLetter(i) + ': ' + option">
+        <div class="option-content">
+          <span class="option-letter">{{ getOptionLetter(i) }}</span>
+          <span class="option-text">{{ option }}</span>
+        </div>
+        @if (showCorrectAnswer) {
+          <div class="option-status">
+            @if (option === question?.correct_answer) {
+              <mat-icon class="correct-icon">
+                check_circle
+              </mat-icon>
+            }
+            @if (selectedAnswer === option && option !== question?.correct_answer) {
+              <mat-icon class="incorrect-icon">
+                cancel
+              </mat-icon>
+            }
+          </div>
+        }
       </div>
-      
-      <div class="option-status" *ngIf="showCorrectAnswer">
-        <mat-icon *ngIf="option === question?.correct_answer" class="correct-icon">
-          check_circle
-        </mat-icon>
-        <mat-icon *ngIf="selectedAnswer === option && option !== question?.correct_answer" class="incorrect-icon">
-          cancel
-        </mat-icon>
-      </div>
-    </div>
+    }
   </div>
 </div>

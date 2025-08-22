@@ -1,20 +1,29 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { Question } from '../../../models/question.model';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges  } from '@angular/core';
+import { QuestionHeaderComponent } from '../base/question-header/question-header.component';
+import { QuestionContentComponent } from '../display/question-content/question-content.component';
+import { AnswerControlsComponent } from '../controls/answer-controls/answer-controls.component';
+
 import { BaseQuestionComponent } from '../base/base-question/base-question.component';
 
 @Component({
-  selector: 'app-question-answer',
-  templateUrl: './question-answer.component.html',
-  styleUrls: ['./question-answer.component.scss']
+    selector: 'app-question-answer',
+    templateUrl: './question-answer.component.html',
+    styleUrls: ['./question-answer.component.scss'],
+    standalone: true,
+    imports: [
+        QuestionHeaderComponent,
+        QuestionContentComponent,
+        AnswerControlsComponent
+    ]
 })
-export class QuestionAnswerComponent extends BaseQuestionComponent implements OnInit {
+export class QuestionAnswerComponent extends BaseQuestionComponent implements OnInit, OnChanges {
   @Input() isActive = false;
   @Input() isAnswerSubmitted = false;
   @Input() totalTime = 0;
   
   @Output() answerSubmitted = new EventEmitter<string | string[]>();
-  @Output() onTimeUp = new EventEmitter<void>();
-  @Output() onTimeChanged = new EventEmitter<number>();
+  @Output() timeUp = new EventEmitter<void>();
+  @Output() timeChanged = new EventEmitter<number>();
   
   // Interactive state
   selectedAnswer?: string;

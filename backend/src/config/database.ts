@@ -10,9 +10,11 @@ import { QuestionSet } from '../entities/QuestionSet';
 import { SessionConfiguration } from '../entities/SessionConfiguration';
 import { ApiKey } from '../entities/ApiKey';
 
+
+
 export const AppDataSource = new DataSource({
   type: 'mysql',
-  host: process.env.DB_HOST || '192.168.1.199',
+  host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
   username: process.env.DB_USERNAME || 'pubquiz_user',
   password: process.env.DB_PASSWORD || 'pubquiz_password',

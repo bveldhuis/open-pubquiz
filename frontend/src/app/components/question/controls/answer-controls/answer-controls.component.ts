@@ -1,9 +1,16 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
-  selector: 'app-answer-controls',
-  templateUrl: './answer-controls.component.html',
-  styleUrls: ['./answer-controls.component.scss']
+    selector: 'app-answer-controls',
+    templateUrl: './answer-controls.component.html',
+    styleUrls: ['./answer-controls.component.scss'],
+    standalone: true,
+    imports: [
+        MatIconModule,
+        MatButtonModule
+    ]
 })
 export class AnswerControlsComponent {
   @Input() isActive = false;

@@ -1,19 +1,30 @@
 # 🎯 Open Pub Quiz
 
-A self-hosted pub quiz web application with real-time updates, multiple question types, and professional UI.
+A comprehensive, self-hosted pub quiz application that transforms traditional pub quizzes into an interactive, digital experience with real-time updates, 8 different question types, and professional presenter controls.
 
 ## ✨ Features
 
+### 🎮 Interactive Quiz Experience
 - **Real-time Updates**: Live question updates, timers, and leaderboards via Socket.IO
-- **Multiple Question Types**: Multiple choice, open text, and drag-and-drop sequence questions
+- **8 Question Types**: Multiple choice, open text, sequence (drag-and-drop), true/false, numerical, image, audio, and video questions
 - **QR Code Join**: Participants can join sessions by scanning QR codes
-- **Professional UI**: Responsive Angular Material design
-- **Timer Support**: Configurable time limits for questions
-- **Review Phase**: Display correct answers and participant submissions
-- **Fun Facts**: Interesting facts displayed with each question
-- **Docker Ready**: Easy deployment with Docker and docker-compose
+- **Timer Support**: Configurable time limits for questions with visual countdown
+- **Fun Facts**: Educational tidbits displayed with each question
 
-## 🏗 Architecture
+### 🎯 Presenter Controls
+- **Professional Interface**: Complete control over quiz flow and participant management
+- **Live Scoring**: Real-time scoring with automatic and manual scoring options
+- **Review Phase**: Display correct answers and participant submissions after each question
+- **Multi-Round Support**: Organize questions into rounds with different themes
+- **Session Management**: Create, manage, and archive quiz sessions
+
+### 📱 User Experience
+- **Responsive Design**: Professional UI that works on desktop, tablet, and mobile
+- **Team Management**: Support for multiple teams with real-time join/leave functionality
+- **Live Leaderboards**: Real-time scoring updates and team rankings
+- **Auto & Manual Scoring**: Automatic scoring for objective questions, manual override for subjective answers
+
+### 🏗 Architecture
 
 - **Frontend**: Angular PWA with Angular Material
 - **Backend**: Node.js + Express + Socket.IO
@@ -24,7 +35,7 @@ A self-hosted pub quiz web application with real-time updates, multiple question
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js 18+ (for development)
+- Node.js 22+ (for development)
 
 ### API Documentation
 The Open Pub Quiz API is fully documented with:
@@ -82,21 +93,67 @@ cd frontend
 npm start
 ```
 
+### Running Tests Locally
+
+#### Backend Tests
+```bash
+cd backend
+npm test                    # Run all tests
+npm run test:watch         # Run tests in watch mode
+npm run test:coverage      # Run tests with coverage report
+```
+
+#### Frontend Tests
+```bash
+cd frontend
+npm test                   # Run all tests
+npm test -- --watch       # Run tests in watch mode
+npm test -- --coverage    # Run tests with coverage report
+```
+
 ## 📱 Usage
 
 ### Presenter Mode
 1. Go to http://localhost:4200/presenter
-2. Create a new quiz session
+2. Create a new quiz session with custom configuration
 3. Share the QR code with participants
 4. Control the quiz flow: start questions, show timers, display leaderboard
+5. Review answers and manually score subjective responses
+6. Manage rounds and end sessions
 
 ### Participant Mode
 1. Scan the QR code or go to http://localhost:4200/join
 2. Enter the session code and team name
-3. Answer questions in real-time
-4. View leaderboard and review phases
+3. Answer questions in real-time with various formats
+4. View live leaderboard and review phases
+5. See fun facts and educational content
 
 ## 🛠 Development
+
+### CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration and deployment:
+
+#### Pull Request Checks
+When a PR is created against the `main` branch, the following checks run automatically:
+- **Backend Unit Tests**: Runs Jest tests with MySQL test database
+- **Frontend Unit Tests**: Runs Angular tests with code coverage
+- **Lint Checks**: Validates code style for both frontend and backend
+- **Build Validation**: Ensures both applications build successfully
+- **Docker Build Validation**: Verifies Docker images can be built (without pushing)
+
+#### Main Branch Deployment
+When code is merged to `main`, the following additional steps run:
+- **Docker Image Building**: Builds and pushes Docker images to GitHub Container Registry
+- **Image Tagging**: Tags images as `latest` for production deployment
+
+### Technology Stack
+- **Node.js**: 22.x
+- **Angular**: 20.x
+- **Express**: 4.18.2
+- **MySQL**: 8.4
+- **TypeScript**: 5.8.x
+- **Docker**: Latest Alpine images
 
 ### Project Structure
 ```

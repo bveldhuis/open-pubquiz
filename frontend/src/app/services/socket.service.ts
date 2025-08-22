@@ -1,80 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable  } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
+import { Subject, BehaviorSubject } from 'rxjs';
+
 import { environment } from '../../environments/environment';
-
-export interface JoinSessionData {
-  sessionCode: string;
-  teamName: string;
-}
-
-export interface SubmitAnswerData {
-  sessionCode: string;
-  teamId: string;
-  questionId: string;
-  answer: string | string[];
-}
-
-export interface PresenterAction {
-  sessionCode: string;
-  action: 'start_question' | 'end_question' | 'show_leaderboard' | 'show_review' | 'next_round';
-  questionId?: string;
-}
-
-export interface TeamJoinedEvent {
-  teamId: string;
-  teamName: string;
-  sessionStatus: string;
-}
-
-export interface TeamJoinedSessionEvent {
-  teamId: string;
-  teamName: string;
-}
-
-export interface ExistingTeamsEvent {
-  teams: Array<{
-    id: string;
-    name: string;
-  }>;
-}
-
-export interface QuestionStartedEvent {
-  question: any;
-  timeLimit?: number;
-}
-
-export interface LeaderboardUpdatedEvent {
-  teams: any[];
-}
-
-export interface ReviewAnswersEvent {
-  questionId: string;
-  answers: Array<{
-    teamName: string;
-    answer: string;
-    isCorrect?: boolean;
-    pointsAwarded: number;
-  }>;
-}
-
-export interface AnswerReceivedEvent {
-  teamId: string;
-  teamName: string;
-  questionId: string;
-}
-
-export interface RoundStartedEvent {
-  roundNumber: number;
-}
-
-export interface SessionEndedEvent {
-  teams: any[];
-}
-
-export interface SessionEndedErrorEvent {
-  message: string;
-}
+import { JoinSessionData } from '../models/join-session-data.model';
+import { SubmitAnswerData } from '../models/submit-answer-data.model';
+import { PresenterAction } from '../models/presenter-action.model';
+import { TeamJoinedEvent, TeamJoinedSessionEvent, ExistingTeamsEvent } from '../models/team-events.model';
+import { QuestionStartedEvent, AnswerReceivedEvent, ReviewAnswersEvent } from '../models/question-events.model';
+import { LeaderboardUpdatedEvent, RoundStartedEvent, SessionEndedEvent, SessionEndedErrorEvent } from '../models/session-events.model';
 
 @Injectable({
   providedIn: 'root'
@@ -112,8 +46,6 @@ export class SocketService {
   public sessionEndedError$ = this.sessionEndedErrorSubject.asObservable();
   public error$ = this.errorSubject.asObservable();
   public connectionStatus$ = this.connectionStatusSubject.asObservable();
-
-  constructor() {}
 
   connect(): void {
     if (this.socket && this.connected) {

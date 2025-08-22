@@ -1,14 +1,23 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
-import { FormControl, Validators } from '@angular/forms';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges  } from '@angular/core';
+import { FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { Question } from '../../../../models/question.model';
+
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 @Component({
-  selector: 'app-open-text',
-  templateUrl: './open-text.component.html',
-  styleUrls: ['./open-text.component.scss']
+    selector: 'app-open-text',
+    templateUrl: './open-text.component.html',
+    styleUrls: ['./open-text.component.scss'],
+    standalone: true,
+    imports: [
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule
+    ]
 })
-export class OpenTextComponent implements OnInit, OnDestroy {
+export class OpenTextComponent implements OnInit, OnDestroy, OnChanges {
   @Input() question?: Question;
   @Input() isInteractive = false;
   @Input() isAnswerSubmitted = false;

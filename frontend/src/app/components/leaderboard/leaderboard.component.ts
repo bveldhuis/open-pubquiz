@@ -1,35 +1,40 @@
-import { Component, Input } from '@angular/core';
-
-export interface Team {
-  id: string;
-  name: string;
-  total_points: number;
-  answers_submitted: number;
-  correct_answers: number;
-}
+import { Component, Input  } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { NoContentStateComponent } from '../shared/no-content-state/no-content-state.component';
+import { LeaderboardTeam } from '../../models/leaderboard-team.model';
+import { StatisticsUtils } from '../../utils';
 
 @Component({
-  selector: 'app-leaderboard',
-  templateUrl: './leaderboard.component.html',
-  styleUrls: ['./leaderboard.component.scss']
+    selector: 'app-leaderboard',
+    templateUrl: './leaderboard.component.html',
+    styleUrls: ['./leaderboard.component.scss'],
+    standalone: true,
+    imports: [
+        DecimalPipe,
+        MatIconModule,
+        MatCardModule,
+        MatChipsModule,
+        NoContentStateComponent
+    ]
 })
 export class LeaderboardComponent {
-  @Input() teams: Team[] = [];
+  @Input() teams: LeaderboardTeam[] = [];
   @Input() currentRound?: number;
 
-  get sortedTeams(): Team[] {
+  get sortedTeams(): LeaderboardTeam[] {
     return [...this.teams].sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
   }
 
   get averageScore(): number {
-    if (this.teams.length === 0) return 0;
-    const total = this.teams.reduce((sum, team) => sum + (team.total_points || 0), 0);
-    return total / this.teams.length;
+    const scores = this.teams.map(team => team.total_points || 0);
+    return StatisticsUtils.calculateAverageScore(scores);
   }
 
   get highestScore(): number {
-    if (this.teams.length === 0) return 0;
     const scores = this.teams.map(team => team.total_points || 0);
-    return Math.max(...scores);
+    return StatisticsUtils.findHighestScore(scores);
   }
 }

@@ -1,30 +1,35 @@
 <div class="presenter-controls">
-  <div class="submissions-info" *ngIf="isActive">
-    <div class="submissions-counter">
-      <mat-icon>group</mat-icon>
-      <span class="counter-text">{{ submissionsReceived }} / {{ totalTeams }} teams answered</span>
+  @if (isActive) {
+    <div class="submissions-info">
+      <div class="submissions-counter">
+        <mat-icon>group</mat-icon>
+        <span class="counter-text">{{ submissionsReceived }} / {{ totalTeams }} teams answered</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="getSubmissionPercentage()"></div>
+      </div>
     </div>
-    <div class="progress-bar">
-      <div class="progress-fill" [style.width.%]="getSubmissionPercentage()"></div>
-    </div>
-  </div>
+  }
 
   <div class="control-buttons">
-    <button 
-      mat-raised-button 
-      color="warn" 
-      *ngIf="isActive"
-      (click)="endQuestion.emit()"
-      class="control-button">
-      <mat-icon>stop</mat-icon>
-      <span>End Question</span>
-    </button>
+    @if (isActive) {
+      <button
+        mat-raised-button
+        color="warn"
+        (click)="endQuestion.emit()"
+        class="control-button">
+        <mat-icon>stop</mat-icon>
+        <span>End Question</span>
+      </button>
+    }
   </div>
 
-  <div class="question-status" *ngIf="!isActive">
-    <div class="status-indicator" [class]="getStatusClass()">
-      <mat-icon>{{ getStatusIcon() }}</mat-icon>
-      <span>{{ getStatusText() }}</span>
+  @if (!isActive) {
+    <div class="question-status">
+      <div class="status-indicator" [class]="getStatusClass()">
+        <mat-icon>{{ getStatusIcon() }}</mat-icon>
+        <span>{{ getStatusText() }}</span>
+      </div>
     </div>
-  </div>
+  }
 </div>

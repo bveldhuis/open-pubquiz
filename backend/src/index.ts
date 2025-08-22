@@ -1,3 +1,14 @@
+// Load environment variables FIRST, before any other imports
+import dotenv from 'dotenv';
+import path from 'path';
+
+const envPath = path.resolve(process.cwd(), '.env');
+console.log('🔍 Looking for .env file at:', envPath);
+console.log('🔍 Current directory:', process.cwd());
+console.log('🔍 File exists:', require('fs').existsSync(envPath));
+dotenv.config({ path: envPath });
+
+// Now import everything else after environment variables are loaded
 import 'reflect-metadata';
 import express from 'express';
 import { createServer } from 'http';
@@ -6,7 +17,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { AppDataSource } from './config/database';
 import { setupSocketHandlers } from './socket/socketHandlers';
@@ -19,9 +29,6 @@ import { sessionConfigRoutes } from './routes/sessionConfigRoutes';
 import { ServiceFactory } from './services/ServiceFactory';
 import { checkDatabaseHealth } from './utils/databaseHealth';
 import { specs } from './config/swagger';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const server = createServer(app);
