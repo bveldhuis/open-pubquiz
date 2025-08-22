@@ -1,7 +1,9 @@
 import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, FormControl, AbstractControl, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { QuizManagementService, Theme, SessionConfiguration } from '../../services/quiz-management.service';
+import { QuizManagementService } from '../../services/quiz-management.service';
+import { Theme } from '../../models/theme.model';
+import { SessionConfiguration } from '../../models/session-configuration.model';
 
 @Component({
   selector: 'app-session-config',
