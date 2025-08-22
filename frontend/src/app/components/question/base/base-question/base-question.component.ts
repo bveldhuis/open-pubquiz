@@ -3,7 +3,8 @@ import { Question } from '../../../../models/question.model';
 import { QuestionUtils } from '../../../../utils';
 
 @Component({
-  template: ''
+    template: '',
+    standalone: false
 })
 export abstract class BaseQuestionComponent {
   @Input() question?: Question;

@@ -5,9 +5,10 @@ import { SequenceAnswer } from '../../models/sequence-answer.model';
 import { QuestionUtils } from '../../utils';
 
 @Component({
-  selector: 'app-answer-review',
-  templateUrl: './answer-review.component.html',
-  styleUrls: ['./answer-review.component.scss']
+    selector: 'app-answer-review',
+    templateUrl: './answer-review.component.html',
+    styleUrls: ['./answer-review.component.scss'],
+    standalone: false
 })
 export class AnswerReviewComponent {
   @Input() question?: Question;

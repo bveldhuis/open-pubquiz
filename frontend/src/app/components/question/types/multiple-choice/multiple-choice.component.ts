@@ -3,9 +3,10 @@ import { Question } from '../../../../models/question.model';
 import { QuestionUtils } from '../../../../utils';
 
 @Component({
-  selector: 'app-multiple-choice',
-  templateUrl: './multiple-choice.component.html',
-  styleUrls: ['./multiple-choice.component.scss']
+    selector: 'app-multiple-choice',
+    templateUrl: './multiple-choice.component.html',
+    styleUrls: ['./multiple-choice.component.scss'],
+    standalone: false
 })
 export class MultipleChoiceComponent {
   @Input() question?: Question;

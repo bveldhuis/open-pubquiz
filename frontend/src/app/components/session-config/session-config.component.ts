@@ -6,9 +6,10 @@ import { Theme } from '../../models/theme.model';
 import { SessionConfiguration } from '../../models/session-configuration.model';
 
 @Component({
-  selector: 'app-session-config',
-  templateUrl: './session-config.component.html',
-  styleUrls: ['./session-config.component.scss']
+    selector: 'app-session-config',
+    templateUrl: './session-config.component.html',
+    styleUrls: ['./session-config.component.scss'],
+    standalone: false
 })
 export class SessionConfigComponent implements OnInit, OnChanges {
   @Input() sessionCode: string = '';

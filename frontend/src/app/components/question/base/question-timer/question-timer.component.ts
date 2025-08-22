@@ -1,9 +1,10 @@
 import { Component, Input, Output, EventEmitter, OnDestroy, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'app-question-timer',
-  templateUrl: './question-timer.component.html',
-  styleUrls: ['./question-timer.component.scss']
+    selector: 'app-question-timer',
+    templateUrl: './question-timer.component.html',
+    styleUrls: ['./question-timer.component.scss'],
+    standalone: false
 })
 export class QuestionTimerComponent implements OnInit, OnDestroy {
   @Input() timeRemaining = 0;

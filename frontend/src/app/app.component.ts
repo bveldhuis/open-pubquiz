@@ -2,8 +2,8 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-root',
-  template: `
+    selector: 'app-root',
+    template: `
     <mat-toolbar color="primary" class="toolbar">
       <span class="toolbar-title" (click)="goHome()">🎯 Open Pub Quiz</span>
       <span class="toolbar-spacer"></span>
@@ -21,7 +21,7 @@ import { Router } from '@angular/router';
       <router-outlet></router-outlet>
     </div>
   `,
-  styles: [`
+    styles: [`
     .toolbar {
       position: fixed;
       top: 0;
@@ -78,7 +78,8 @@ import { Router } from '@angular/router';
         min-height: calc(100vh - 56px);
       }
     }
-  `]
+  `],
+    standalone: false
 })
 export class AppComponent {
   constructor(private router: Router) {}

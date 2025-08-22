@@ -3,9 +3,10 @@ import { Question } from '../../../../models/question.model';
 import { QuestionUtils } from '../../../../utils';
 
 @Component({
-  selector: 'app-question-header',
-  templateUrl: './question-header.component.html',
-  styleUrls: ['./question-header.component.scss']
+    selector: 'app-question-header',
+    templateUrl: './question-header.component.html',
+    styleUrls: ['./question-header.component.scss'],
+    standalone: false
 })
 export class QuestionHeaderComponent {
   @Input() question?: Question;

@@ -6,9 +6,10 @@ import { QuizService } from '../../services/quiz.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-  selector: 'app-join',
-  templateUrl: './join.component.html',
-  styleUrls: ['./join.component.scss']
+    selector: 'app-join',
+    templateUrl: './join.component.html',
+    styleUrls: ['./join.component.scss'],
+    standalone: false
 })
 export class JoinComponent implements OnInit {
   joinForm: FormGroup;

@@ -8,9 +8,10 @@ import { Question } from '../../models/question.model';
 import { Subscription, interval } from 'rxjs';
 
 @Component({
-  selector: 'app-participant',
-  templateUrl: './participant.component.html',
-  styleUrls: ['./participant.component.scss']
+    selector: 'app-participant',
+    templateUrl: './participant.component.html',
+    styleUrls: ['./participant.component.scss'],
+    standalone: false
 })
 export class ParticipantComponent implements OnInit, OnDestroy {
   teamName: string = '';

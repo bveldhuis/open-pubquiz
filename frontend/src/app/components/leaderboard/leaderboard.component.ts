@@ -3,9 +3,10 @@ import { LeaderboardTeam } from '../../models/leaderboard-team.model';
 import { StatisticsUtils } from '../../utils';
 
 @Component({
-  selector: 'app-leaderboard',
-  templateUrl: './leaderboard.component.html',
-  styleUrls: ['./leaderboard.component.scss']
+    selector: 'app-leaderboard',
+    templateUrl: './leaderboard.component.html',
+    styleUrls: ['./leaderboard.component.scss'],
+    standalone: false
 })
 export class LeaderboardComponent {
   @Input() teams: LeaderboardTeam[] = [];

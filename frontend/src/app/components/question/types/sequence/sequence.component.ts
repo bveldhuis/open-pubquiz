@@ -2,9 +2,10 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { Question } from '../../../../models/question.model';
 
 @Component({
-  selector: 'app-sequence',
-  templateUrl: './sequence.component.html',
-  styleUrls: ['./sequence.component.scss']
+    selector: 'app-sequence',
+    templateUrl: './sequence.component.html',
+    styleUrls: ['./sequence.component.scss'],
+    standalone: false
 })
 export class SequenceComponent implements OnInit {
   @Input() question?: Question;

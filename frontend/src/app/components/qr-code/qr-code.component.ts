@@ -2,9 +2,10 @@ import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, 
 import * as QRCode from 'qrcode';
 
 @Component({
-  selector: 'app-qr-code',
-  templateUrl: './qr-code.component.html',
-  styleUrls: ['./qr-code.component.scss']
+    selector: 'app-qr-code',
+    templateUrl: './qr-code.component.html',
+    styleUrls: ['./qr-code.component.scss'],
+    standalone: false
 })
 export class QrCodeComponent implements OnInit, OnDestroy {
   @Input() sessionCode: string = '';

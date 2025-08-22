@@ -3,9 +3,10 @@ import { Question } from '../../../models/question.model';
 import { BaseQuestionComponent } from '../base/base-question/base-question.component';
 
 @Component({
-  selector: 'app-question-answer',
-  templateUrl: './question-answer.component.html',
-  styleUrls: ['./question-answer.component.scss']
+    selector: 'app-question-answer',
+    templateUrl: './question-answer.component.html',
+    styleUrls: ['./question-answer.component.scss'],
+    standalone: false
 })
 export class QuestionAnswerComponent extends BaseQuestionComponent implements OnInit {
   @Input() isActive = false;

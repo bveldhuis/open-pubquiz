@@ -4,9 +4,10 @@ import { ReviewAnswer } from '../../models/review-answer.model';
 import { QuestionUtils, StatisticsUtils } from '../../utils';
 
 @Component({
-  selector: 'app-review',
-  templateUrl: './review.component.html',
-  styleUrls: ['./review.component.scss']
+    selector: 'app-review',
+    templateUrl: './review.component.html',
+    styleUrls: ['./review.component.scss'],
+    standalone: false
 })
 export class ReviewComponent {
   @Input() question?: Question;

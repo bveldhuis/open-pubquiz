@@ -1,9 +1,10 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: 'app-presenter-controls',
-  templateUrl: './presenter-controls.component.html',
-  styleUrls: ['./presenter-controls.component.scss']
+    selector: 'app-presenter-controls',
+    templateUrl: './presenter-controls.component.html',
+    styleUrls: ['./presenter-controls.component.scss'],
+    standalone: false
 })
 export class PresenterControlsComponent {
   @Input() isActive = false;

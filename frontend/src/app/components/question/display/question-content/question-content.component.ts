@@ -2,9 +2,10 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Question } from '../../../../models/question.model';
 
 @Component({
-  selector: 'app-question-content',
-  templateUrl: './question-content.component.html',
-  styleUrls: ['./question-content.component.scss']
+    selector: 'app-question-content',
+    templateUrl: './question-content.component.html',
+    styleUrls: ['./question-content.component.scss'],
+    standalone: false
 })
 export class QuestionContentComponent {
   @Input() question?: Question;

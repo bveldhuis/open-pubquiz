@@ -4,27 +4,28 @@ import { Question } from '../../../../models/question.model';
 import { BaseQuestionComponent } from '../../base/base-question/base-question.component';
 
 @Component({
-  selector: 'app-question-display',
-  templateUrl: './question-display.component.html',
-  styleUrls: ['./question-display.component.scss'],
-  animations: [
-    trigger('questionAnimation', [
-      state('hide', style({
-        opacity: 0,
-        transform: 'translateY(-20px)'
-      })),
-      state('show', style({
-        opacity: 1,
-        transform: 'translateY(0)'
-      })),
-      transition('hide => show', [
-        animate('0.5s ease-out')
-      ]),
-      transition('show => hide', [
-        animate('0.3s ease-in')
-      ])
-    ])
-  ]
+    selector: 'app-question-display',
+    templateUrl: './question-display.component.html',
+    styleUrls: ['./question-display.component.scss'],
+    animations: [
+        trigger('questionAnimation', [
+            state('hide', style({
+                opacity: 0,
+                transform: 'translateY(-20px)'
+            })),
+            state('show', style({
+                opacity: 1,
+                transform: 'translateY(0)'
+            })),
+            transition('hide => show', [
+                animate('0.5s ease-out')
+            ]),
+            transition('show => hide', [
+                animate('0.3s ease-in')
+            ])
+        ])
+    ],
+    standalone: false
 })
 export class QuestionDisplayComponent extends BaseQuestionComponent {
   @Input() isActive = false;

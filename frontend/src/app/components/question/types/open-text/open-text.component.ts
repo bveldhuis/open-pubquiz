@@ -4,9 +4,10 @@ import { Question } from '../../../../models/question.model';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 
 @Component({
-  selector: 'app-open-text',
-  templateUrl: './open-text.component.html',
-  styleUrls: ['./open-text.component.scss']
+    selector: 'app-open-text',
+    templateUrl: './open-text.component.html',
+    styleUrls: ['./open-text.component.scss'],
+    standalone: false
 })
 export class OpenTextComponent implements OnInit, OnDestroy {
   @Input() question?: Question;

@@ -1,9 +1,10 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
-  selector: 'app-answer-controls',
-  templateUrl: './answer-controls.component.html',
-  styleUrls: ['./answer-controls.component.scss']
+    selector: 'app-answer-controls',
+    templateUrl: './answer-controls.component.html',
+    styleUrls: ['./answer-controls.component.scss'],
+    standalone: false
 })
 export class AnswerControlsComponent {
   @Input() isActive = false;

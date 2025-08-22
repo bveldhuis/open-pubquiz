@@ -2,9 +2,10 @@ import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ViewChild, E
 import { Question } from '../../../../models/question.model';
 
 @Component({
-  selector: 'app-audio',
-  templateUrl: './audio.component.html',
-  styleUrls: ['./audio.component.scss']
+    selector: 'app-audio',
+    templateUrl: './audio.component.html',
+    styleUrls: ['./audio.component.scss'],
+    standalone: false
 })
 export class AudioComponent implements OnInit, OnDestroy, AfterViewInit, OnChanges {
   @Input() question?: Question;

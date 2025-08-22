@@ -9,9 +9,10 @@ import { SocketService } from '../../services/socket.service';
 import { Subscription, interval } from 'rxjs';
 
 @Component({
-  selector: 'app-presenter',
-  templateUrl: './presenter.component.html',
-  styleUrls: ['./presenter.component.scss']
+    selector: 'app-presenter',
+    templateUrl: './presenter.component.html',
+    styleUrls: ['./presenter.component.scss'],
+    standalone: false
 })
 export class PresenterComponent implements OnInit, OnDestroy {
   createForm: FormGroup;
