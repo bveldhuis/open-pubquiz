@@ -20,7 +20,7 @@
       </app-question-content>
     }
     <!-- Show fun fact when question is not active -->
-    @if (!isActive && !showCorrectAnswer && question?.fun_fact) {
+    @if (!isActive && !showCorrectAnswer && question.fun_fact) {
       <div class="fun-fact-preview">
         <div class="fun-fact-content">
           <mat-icon>lightbulb</mat-icon>
@@ -32,7 +32,7 @@
       </div>
     }
     <!-- Show placeholder when question is not active and no fun fact -->
-    @if (!isActive && !showCorrectAnswer && !question?.fun_fact) {
+    @if (!isActive && !showCorrectAnswer && !question.fun_fact) {
       <div class="question-placeholder">
         <div class="placeholder-content">
           <mat-icon>visibility_off</mat-icon>
