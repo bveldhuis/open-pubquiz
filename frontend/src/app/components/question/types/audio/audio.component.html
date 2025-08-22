@@ -1,0 +1,39 @@
+<div class="audio-question">
+  <div class="audio-container" *ngIf="isPresenter">
+    <audio 
+      #audioElement
+      [src]="question?.media_url || ''"
+      [controls]="isPresenter"
+      [autoplay]="isPresenter && isActive"
+      [loop]="isPresenter && isActive"
+      class="question-audio"
+      (error)="onAudioError($event)"
+      (ended)="onAudioEnded()">
+      Your browser does not support the audio element.
+    </audio>
+  </div>
+  
+  <!-- Show message for participants that audio is controlled by presenter -->
+  <div class="presenter-control-message" *ngIf="!isPresenter && question?.media_url">
+    <mat-icon>volume_up</mat-icon>
+    <span>Audio will be played by the presenter</span>
+  </div>
+  <div class="question-content">
+    <p class="question-text">{{ question?.question_text }}</p>
+    <div class="answer-input">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Your Answer</mat-label>
+        <input 
+          matInput 
+          [(ngModel)]="currentAnswer" 
+          placeholder="Enter your answer"
+          [disabled]="isDisabled"
+          (input)="onInputChange()">
+      </mat-form-field>
+    </div>
+    <div class="question-info">
+      <span class="points">Points: {{ question?.points || 0 }}</span>
+      <span class="time-limit" *ngIf="question?.time_limit">Time: {{ question?.time_limit }}s</span>
+    </div>
+  </div>
+</div>

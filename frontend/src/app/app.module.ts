@@ -46,22 +46,22 @@ import { LeaderboardComponent } from './components/leaderboard/leaderboard.compo
 import { AnswerReviewComponent } from './components/answer-review/answer-review.component';
 
 // New Optimized Question Components
-import { BaseQuestionComponent } from './components/question/base/base-question.component';
-import { QuestionTimerComponent } from './components/question/base/question-timer.component';
-import { QuestionHeaderComponent } from './components/question/base/question-header.component';
-import { QuestionContentComponent } from './components/question/display/question-content.component';
-import { QuestionDisplayComponent } from './components/question/display/question-display.component';
+import { BaseQuestionComponent } from './components/question/base/base-question/base-question.component';
+import { QuestionTimerComponent } from './components/question/base/question-timer/question-timer.component';
+import { QuestionHeaderComponent } from './components/question/base/question-header/question-header.component';
+import { QuestionContentComponent } from './components/question/display/question-content/question-content.component';
+import { QuestionDisplayComponent } from './components/question/display/question-display/question-display.component';
 import { QuestionAnswerComponent } from './components/question/answer/question-answer.component';
-import { PresenterControlsComponent } from './components/question/controls/presenter-controls.component';
-import { AnswerControlsComponent } from './components/question/controls/answer-controls.component';
-import { MultipleChoiceComponent } from './components/question/types/multiple-choice.component';
-import { OpenTextComponent } from './components/question/types/open-text.component';
-import { SequenceComponent } from './components/question/types/sequence.component';
-import { TrueFalseComponent } from './components/question/types/true-false.component';
-import { NumericalComponent } from './components/question/types/numerical.component';
-import { ImageComponent } from './components/question/types/image.component';
-import { AudioComponent } from './components/question/types/audio.component';
-import { VideoComponent } from './components/question/types/video.component';
+import { PresenterControlsComponent } from './components/question/controls/presenter-controls/presenter-controls.component';
+import { AnswerControlsComponent } from './components/question/controls/answer-controls/answer-controls.component';
+import { MultipleChoiceComponent } from './components/question/types/multiple-choice/multiple-choice.component';
+import { OpenTextComponent } from './components/question/types/open-text/open-text.component';
+import { SequenceComponent } from './components/question/types/sequence/sequence.component';
+import { TrueFalseComponent } from './components/question/types/true-false/true-false.component';
+import { NumericalComponent } from './components/question/types/numerical/numerical.component';
+import { ImageComponent } from './components/question/types/image/image.component';
+import { AudioComponent } from './components/question/types/audio/audio.component';
+import { VideoComponent } from './components/question/types/video/video.component';
 
 // Legacy Components (to be implemented/updated)
 import { ReviewComponent } from './components/review/review.component';

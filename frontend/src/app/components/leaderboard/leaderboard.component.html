@@ -1,0 +1,68 @@
+<div class="leaderboard">
+  <div class="leaderboard-header">
+    <h2>🏆 Leaderboard</h2>
+    <div class="round-info" *ngIf="currentRound">
+      <span class="round-label">Round {{ currentRound }}</span>
+    </div>
+  </div>
+
+  <div class="teams-list">
+    <div 
+      class="team-item" 
+      *ngFor="let team of sortedTeams; let i = index"
+      [class.top-three]="i < 3">
+      
+      <div class="position">
+        <div class="position-number" [class.top-three]="i < 3">
+          {{ i + 1 }}
+        </div>
+        <div class="medal" *ngIf="i < 3">
+          <mat-icon *ngIf="i === 0">emoji_events</mat-icon>
+          <mat-icon *ngIf="i === 1">military_tech</mat-icon>
+          <mat-icon *ngIf="i === 2">workspace_premium</mat-icon>
+        </div>
+      </div>
+
+      <div class="team-info">
+        <div class="team-name">{{ team.name }}</div>
+        <div class="team-stats">
+          <span class="stat">
+            <mat-icon>star</mat-icon>
+            {{ team.total_points || 0 }} pts
+          </span>
+          <span class="stat">
+            <mat-icon>quiz</mat-icon>
+            {{ team.correct_answers || 0 }}/{{ team.answers_submitted || 0 }} correct
+          </span>
+        </div>
+      </div>
+
+      <div class="points-display">
+        <span class="points">{{ team.total_points || 0 }}</span>
+        <span class="points-label">points</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="no-teams" *ngIf="teams.length === 0">
+    <mat-icon>group_off</mat-icon>
+    <p>No teams have joined yet</p>
+  </div>
+
+  <div class="leaderboard-footer">
+    <div class="stats-summary">
+      <div class="stat-item">
+        <span class="stat-label">Total Teams:</span>
+        <span class="stat-value">{{ teams.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Average Score:</span>
+        <span class="stat-value">{{ averageScore | number:'1.1-1' }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Highest Score:</span>
+        <span class="stat-value">{{ highestScore }}</span>
+      </div>
+    </div>
+  </div>
+</div>

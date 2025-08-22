@@ -1,0 +1,40 @@
+<div class="video-question">
+  <div class="video-container" *ngIf="isPresenter">
+    <video 
+      #videoElement
+      [src]="question?.media_url || ''"
+      [controls]="isPresenter"
+      [autoplay]="isPresenter && isActive"
+      [loop]="isPresenter && isActive"
+      [muted]="isPresenter && isActive"
+      class="question-video"
+      (error)="onVideoError($event)"
+      (ended)="onVideoEnded()">
+      Your browser does not support the video element.
+    </video>
+  </div>
+  
+  <!-- Show message for participants that video is controlled by presenter -->
+  <div class="presenter-control-message" *ngIf="!isPresenter && question?.media_url">
+    <mat-icon>play_circle</mat-icon>
+    <span>Video will be played by the presenter</span>
+  </div>
+  <div class="question-content">
+    <p class="question-text">{{ question?.question_text }}</p>
+    <div class="answer-input">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Your Answer</mat-label>
+        <input 
+          matInput 
+          [(ngModel)]="currentAnswer" 
+          placeholder="Enter your answer"
+          [disabled]="isDisabled"
+          (input)="onInputChange()">
+      </mat-form-field>
+    </div>
+    <div class="question-info">
+      <span class="points">Points: {{ question?.points || 0 }}</span>
+      <span class="time-limit" *ngIf="question?.time_limit">Time: {{ question?.time_limit }}s</span>
+    </div>
+  </div>
+</div>

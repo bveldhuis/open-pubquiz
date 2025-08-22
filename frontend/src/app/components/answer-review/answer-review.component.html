@@ -1,0 +1,168 @@
+<div class="answer-review" *ngIf="question">
+  <div class="review-header">
+    <h2>Question {{ question.question_number }}: {{ question.question_text }}</h2>
+    <div class="question-summary">
+      <span class="question-type">{{ getQuestionTypeLabel(question.type) }}</span>
+      <span class="points">{{ question.points }} point{{ question.points !== 1 ? 's' : '' }}</span>
+    </div>
+  </div>
+
+  <!-- Show correct answer for reference -->
+  <div class="correct-answer-reference" *ngIf="question.correct_answer || (question.type === 'numerical' && question.numerical_answer !== null) || (question.type === 'sequence' && question.sequence_items)">
+    <mat-icon>check_circle</mat-icon>
+    <span><strong>Correct Answer:</strong> {{ getFormattedCorrectAnswer() }}</span>
+  </div>
+
+  <div class="answers-section">
+    <h3>Team Answers ({{ answers.length }})</h3>
+    
+    <!-- Loading state -->
+    <div class="loading-state" *ngIf="isLoading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading answers...</p>
+    </div>
+    
+    <!-- No answers state -->
+    <div class="no-answers" *ngIf="!isLoading && answers.length === 0">
+      <mat-icon>info</mat-icon>
+      <p>No answers received for this question yet.</p>
+    </div>
+    
+    <div class="answers-list" *ngIf="!isLoading && answers.length > 0">
+      <div class="answer-item" *ngFor="let answer of answers">
+        <div class="answer-header">
+          <div class="team-info">
+            <mat-icon>group</mat-icon>
+            <span class="team-name">{{ answer.team?.name || 'Unknown Team' }}</span>
+          </div>
+          
+          <div class="answer-status">
+            <!-- Manual scoring display -->
+            <div class="manual-scoring-display" *ngIf="editingAnswerId === answer.id">
+              <mat-form-field appearance="outline" class="points-input">
+                <mat-label>Points</mat-label>
+                <input 
+                  matInput 
+                  type="number" 
+                  [min]="0" 
+                  [max]="question.points" 
+                  [(ngModel)]="editingPoints"
+                  (keyup.enter)="saveManualScore(answer.id)"
+                  (blur)="saveManualScore(answer.id)">
+                <mat-hint>/ {{ question.points }} max</mat-hint>
+              </mat-form-field>
+              <button 
+                mat-icon-button 
+                color="primary" 
+                (click)="saveManualScore(answer.id)"
+                matTooltip="Save points">
+                <mat-icon>check</mat-icon>
+              </button>
+              <button 
+                mat-icon-button 
+                color="warn" 
+                (click)="cancelManualScore()"
+                matTooltip="Cancel">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            
+            <!-- Regular points display -->
+            <div class="points-display-container" *ngIf="editingAnswerId !== answer.id">
+              <span class="points-display" [class.correct]="answer.is_correct" [class.incorrect]="answer.is_correct === false">
+                {{ answer.points_awarded }} / {{ question.points }} pts
+              </span>
+              <button 
+                mat-icon-button 
+                color="accent" 
+                (click)="startManualScore(answer)"
+                matTooltip="Edit points manually"
+                class="edit-points-btn">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+            
+            <mat-icon *ngIf="answer.is_correct" class="status-icon correct">check_circle</mat-icon>
+            <mat-icon *ngIf="answer.is_correct === false" class="status-icon incorrect">cancel</mat-icon>
+            <mat-icon *ngIf="answer.is_correct === undefined" class="status-icon pending">pending</mat-icon>
+          </div>
+        </div>
+
+        <div class="answer-content">
+          <div class="answer-text">
+            <strong>Answer:</strong> 
+            <span *ngIf="question.type === 'sequence'">{{ getSequenceAnswerText(answer) }}</span>
+            <span *ngIf="question.type !== 'sequence'">{{ answer.answer_text }}</span>
+          </div>
+
+          <!-- Quick scoring buttons for open text questions -->
+          <div class="scoring-section" *ngIf="question.type === 'open_text' && answer.is_correct === undefined">
+            <div class="scoring-controls">
+              <button 
+                mat-icon-button 
+                color="primary" 
+                (click)="onScoreAnswer(answer.id, question.points, true)"
+                matTooltip="Mark as correct">
+                <mat-icon>check_circle</mat-icon>
+              </button>
+              
+              <button 
+                mat-icon-button 
+                color="warn" 
+                (click)="onScoreAnswer(answer.id, 0, false)"
+                matTooltip="Mark as incorrect">
+                <mat-icon>cancel</mat-icon>
+              </button>
+              
+              <button 
+                mat-icon-button 
+                color="accent" 
+                (click)="onScorePartial(answer.id)"
+                matTooltip="Award partial points">
+                <mat-icon>star_half</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Auto-scored questions with manual override option -->
+          <div class="auto-scored" *ngIf="isAutoScoredQuestion()">
+            <span class="auto-label">Auto-scored</span>
+            <span class="result" [class.correct]="answer.is_correct" [class.incorrect]="answer.is_correct === false">
+              {{ getAutoScoreResultText(answer) }}
+            </span>
+            <button 
+              mat-stroked-button 
+              color="accent" 
+              (click)="startManualScore(answer)"
+              class="override-btn">
+              <mat-icon>edit</mat-icon>
+              Override Score
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="review-controls">
+    <button 
+      mat-raised-button 
+      color="primary" 
+      (click)="showLeaderboard.emit()"
+      [disabled]="hasUnscoredAnswers"
+      *ngIf="isLastQuestion">
+      <mat-icon>leaderboard</mat-icon>
+      Show Leaderboard
+    </button>
+    
+    <button 
+      mat-raised-button 
+      color="accent" 
+      (click)="nextQuestion.emit()"
+      [disabled]="hasUnscoredAnswers"
+      *ngIf="!isLastQuestion">
+      <mat-icon>arrow_forward</mat-icon>
+      Next Question
+    </button>
+  </div>
+</div>

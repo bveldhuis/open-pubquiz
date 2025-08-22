@@ -1,0 +1,34 @@
+<div class="question-answer-container" *ngIf="question">
+  <app-question-header 
+    [question]="question"
+    [showTimer]="isActive"
+    [timeRemaining]="timeRemaining"
+    [totalTime]="totalTime"
+    [showProgress]="true"
+    (onTimeUp)="onTimeUp.emit()"
+    (onTimeChanged)="onTimeChanged.emit($event)">
+  </app-question-header>
+  
+  <app-question-content 
+    [question]="question"
+    [isInteractive]="true"
+    [selectedAnswer]="selectedAnswer"
+    [shuffledSequenceItems]="shuffledSequenceItems"
+    [isAnswerSubmitted]="isAnswerSubmitted"
+    [isPresenter]="false"
+    [isActive]="isActive"
+    (answerSelected)="onAnswerSelected($event)"
+    (answerChanged)="onAnswerChanged($event)"
+    (answerValid)="onAnswerValid($event)"
+    (sequenceReordered)="onSequenceReordered($event)">
+  </app-question-content>
+  
+  <app-answer-controls 
+    [isActive]="isActive"
+    [canSubmit]="canSubmit"
+    [isAnswerSubmitted]="isAnswerSubmitted"
+    [timeRemaining]="timeRemaining"
+    [questionType]="question.type"
+    (submitAnswer)="onSubmitAnswer()">
+  </app-answer-controls>
+</div>

@@ -1,0 +1,45 @@
+<div class="sequence-container">
+  <div class="sequence-instructions" *ngIf="isInteractive">
+    <mat-icon>drag_indicator</mat-icon>
+    <p>Drag and drop the items to arrange them in the correct order:</p>
+  </div>
+  
+  <div class="sequence-items">
+    <div 
+      class="sequence-item" 
+      *ngFor="let item of displayItems; let i = index"
+      [draggable]="isInteractive && !isAnswerSubmitted"
+      (dragstart)="onDragStart($event, i)"
+      (dragover)="onDragOver($event)"
+      (drop)="onDrop($event, i)"
+      (dragend)="onDragEnd($event)"
+      [class.dragging]="draggedIndex === i"
+      [class.drag-over]="dragOverIndex === i"
+      [class.correct-position]="showCorrectAnswer && isCorrectPosition(i, item)"
+      [class.incorrect-position]="showCorrectAnswer && !isCorrectPosition(i, item)">
+      
+      <div class="sequence-number">{{ i + 1 }}</div>
+      <div class="sequence-content">
+        <span class="sequence-text">{{ item }}</span>
+      </div>
+      <div class="sequence-status" *ngIf="showCorrectAnswer">
+        <mat-icon *ngIf="isCorrectPosition(i, item)" class="correct-icon">
+          check_circle
+        </mat-icon>
+        <mat-icon *ngIf="!isCorrectPosition(i, item)" class="incorrect-icon">
+          cancel
+        </mat-icon>
+      </div>
+      <mat-icon class="drag-handle" *ngIf="isInteractive && !isAnswerSubmitted">
+        drag_indicator
+      </mat-icon>
+    </div>
+  </div>
+
+  <div class="sequence-feedback" *ngIf="showCorrectAnswer">
+    <div class="feedback-message">
+      <mat-icon>info</mat-icon>
+      <span>{{ getFeedbackMessage() }}</span>
+    </div>
+  </div>
+</div>

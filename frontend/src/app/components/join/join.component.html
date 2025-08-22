@@ -1,0 +1,41 @@
+<div class="container">
+  <div class="join-card">
+    <h1 class="join-title">Join Quiz Session</h1>
+    
+    <form [formGroup]="joinForm" (ngSubmit)="onSubmit()" class="join-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Session Code</mat-label>
+        <input matInput formControlName="sessionCode" placeholder="Enter session code">
+        <mat-error *ngIf="joinForm.get('sessionCode')?.hasError('required')">
+          Session code is required
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Team Name</mat-label>
+        <input matInput formControlName="teamName" placeholder="Enter your team name">
+        <mat-error *ngIf="joinForm.get('teamName')?.hasError('required')">
+          Team name is required
+        </mat-error>
+        <mat-error *ngIf="joinForm.get('teamName')?.hasError('minlength')">
+          Team name must be at least 2 characters
+        </mat-error>
+      </mat-form-field>
+
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        class="join-button"
+        [disabled]="joinForm.invalid || isLoading">
+        <mat-spinner *ngIf="isLoading" diameter="20" class="spinner"></mat-spinner>
+        <span *ngIf="!isLoading">Join Session</span>
+      </button>
+    </form>
+
+    <div class="join-info">
+      <p>Don't have a session code? Ask your quiz presenter for the code.</p>
+      <p>The session code is usually displayed on the presenter's screen.</p>
+    </div>
+  </div>
+</div>
