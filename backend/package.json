@@ -7,11 +7,11 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "typeorm": "typeorm-ts-node-commonjs",
+    "typeorm": "npx typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm migration:generate -- -d src/config/database.ts",
     "migration:run": "npm run typeorm migration:run -- -d src/config/database.ts",
     "migration:revert": "npm run typeorm migration:revert -- -d src/config/database.ts",
-    "seed": "ts-node src/database/seed.ts",
+    "seed": "npx ts-node src/database/seed.ts",
 
     "setup:db": "npm run migration:run && npm run seed",
     "test:health": "node test-health.js",
