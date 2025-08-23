@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MySQL Database
   mysql:
@@ -15,7 +13,6 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - pubquiz-network
 
@@ -35,6 +32,7 @@ services:
       DB_DATABASE: pubquiz
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       PORT: 3000
+      SEED_DATABASE: false
     ports:
       - "3000:3000"
     depends_on:

@@ -12,7 +12,7 @@
     "migration:run": "dotenv -e .env -- npm run typeorm migration:run -- -d src/config/database.ts",
     "migration:revert": "dotenv -e .env -- npm run typeorm migration:revert -- -d src/config/database.ts",
     "seed": "dotenv -e .env -- ts-node src/database/seed.ts",
-    "create-tables": "dotenv -e .env -- ts-node src/database/createTables.ts",
+
     "setup:db": "npm run migration:run && npm run seed",
     "test:health": "node test-health.js",
     "test": "dotenv -e .env -- jest",

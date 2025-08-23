@@ -42,6 +42,9 @@ const io = new Server(server, {
 // Make Socket.IO instance available to routes
 app.set('io', io);
 
+// Trust proxy for rate limiting behind nginx
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3000;
 
 // Security middleware
@@ -141,7 +144,7 @@ app.get('/health', async (req, res) => {
   try {
     const dbHealth = await checkDatabaseHealth();
     
-    const overallStatus = dbHealth.connected && dbHealth.migrationsUpToDate ? 'OK' : 'DEGRADED';
+    const overallStatus = dbHealth.connected && dbHealth.tablesExist ? 'OK' : 'DEGRADED';
     const statusCode = dbHealth.connected ? 200 : 503;
     
     res.status(statusCode).json({ 
@@ -150,9 +153,9 @@ app.get('/health', async (req, res) => {
       uptime: process.uptime(),
       database: {
         connected: dbHealth.connected,
-        migrationsUpToDate: dbHealth.migrationsUpToDate,
+        tablesExist: dbHealth.tablesExist,
         ...(dbHealth.error && { error: dbHealth.error }),
-        ...(dbHealth.migrationDetails && { migrationDetails: dbHealth.migrationDetails })
+        ...(dbHealth.tableDetails && { tableDetails: dbHealth.tableDetails })
       }
     });
   } catch (error) {
@@ -162,7 +165,7 @@ app.get('/health', async (req, res) => {
       uptime: process.uptime(),
       database: {
         connected: false,
-        migrationsUpToDate: false,
+        tablesExist: false,
         error: error instanceof Error ? error.message : 'Unknown error during health check'
       }
     });

@@ -1,54 +1,50 @@
-# 🎯 Open Pub Quiz
+# Open Pub Quiz
 
-A comprehensive, self-hosted pub quiz application that transforms traditional pub quizzes into an interactive, digital experience with real-time updates, 8 different question types, and professional presenter controls.
+A real-time pub quiz application built with Angular frontend and Node.js backend, featuring live participant interaction, QR code joining, and comprehensive quiz management.
 
-## ✨ Features
+## Features
 
-### 🎮 Interactive Quiz Experience
-- **Real-time Updates**: Live question updates, timers, and leaderboards via Socket.IO
-- **8 Question Types**: Multiple choice, open text, sequence (drag-and-drop), true/false, numerical, image, audio, and video questions
-- **QR Code Join**: Participants can join sessions by scanning QR codes
-- **Timer Support**: Configurable time limits for questions with visual countdown
-- **Fun Facts**: Educational tidbits displayed with each question
+- **Real-time Quiz Sessions**: Create and manage live quiz sessions with real-time updates
+- **QR Code Joining**: Participants can join sessions by scanning QR codes
+- **Multiple Question Types**: Support for various question formats (multiple choice, text, numerical, etc.)
+- **Live Leaderboard**: Real-time scoring and team rankings
+- **Responsive Design**: Works on desktop and mobile devices
+- **Session Management**: Comprehensive presenter controls and participant monitoring
 
-### 🎯 Presenter Controls
-- **Professional Interface**: Complete control over quiz flow and participant management
-- **Live Scoring**: Real-time scoring with automatic and manual scoring options
-- **Review Phase**: Display correct answers and participant submissions after each question
-- **Multi-Round Support**: Organize questions into rounds with different themes
-- **Session Management**: Create, manage, and archive quiz sessions
+## Tech Stack
 
-### 📱 User Experience
-- **Responsive Design**: Professional UI that works on desktop, tablet, and mobile
-- **Team Management**: Support for multiple teams with real-time join/leave functionality
-- **Live Leaderboards**: Real-time scoring updates and team rankings
-- **Auto & Manual Scoring**: Automatic scoring for objective questions, manual override for subjective answers
+### Frontend
+- **Angular 20**: Modern frontend framework
+- **Angular Material**: UI component library
+- **Socket.io Client**: Real-time communication
+- **QR Code Generation**: For session joining
 
-### 🏗 Architecture
+### Backend
+- **Node.js**: Runtime environment
+- **Express.js**: Web framework
+- **Socket.io**: Real-time bidirectional communication
+- **TypeORM**: Database ORM
+- **MySQL**: Database
+- **JWT**: Authentication
 
-- **Frontend**: Angular PWA with Angular Material
-- **Backend**: Node.js + Express + Socket.IO
-- **Database**: MySQL with TypeORM
-- **Containerization**: Docker + docker-compose
+### Testing
+- **Playwright**: End-to-end testing
+- **Jest**: Unit testing
+- **Karma**: Frontend testing
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
+
+- Node.js 20+
 - Docker and Docker Compose
-- Node.js 22+ (for development)
+- Git
 
-### API Documentation
-The Open Pub Quiz API is fully documented with:
-- **Interactive Swagger UI**: Available at `/api/docs` when the server is running
-- **Comprehensive Documentation**: See [API_DOCUMENTATION.md](backend/API_DOCUMENTATION.md)
-- **Error Codes Reference**: See [API_ERROR_CODES.md](backend/API_ERROR_CODES.md)
-- **Health Check**: Available at `/health` endpoint
-
-### Running with Docker
+### Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/bveldhuis/open-pubquiz.git
 cd open-pubquiz
 ```
 
@@ -60,133 +56,147 @@ docker-compose up -d
 3. Access the application:
 - Frontend: http://localhost:4200
 - Backend API: http://localhost:3000
-- Health Check: http://localhost:3000/health
 
-### Development Setup
+## Development
 
-1. Install dependencies:
+### Project Structure
+
+```
+open-pubquiz/
+├── frontend/          # Angular application
+├── backend/           # Node.js API server
+├── e2e/              # End-to-end tests
+├── scripts/          # Utility scripts
+└── docker-compose.yml
+```
+
+### Running Tests
+
+#### End-to-End Tests
+
+**Windows (PowerShell):**
+```powershell
+# Run all E2E tests
+.\scripts\run-e2e-tests.ps1
+
+# Run tests in headed mode (see browser)
+.\scripts\run-e2e-tests.ps1 -TestMode headed
+```
+
+**Linux/macOS (Bash):**
 ```bash
-# Frontend
+# Make script executable first
+chmod +x scripts/run-e2e-tests.sh
+
+# Run all E2E tests
+./scripts/run-e2e-tests.sh
+```
+
+#### Unit Tests
+
+```bash
+# Backend tests
+cd backend
+npm test
+
+# Frontend tests
 cd frontend
-npm install
-
-# Backend
-cd ../backend
-npm install
+npm test
 ```
 
-2. Set up the database:
-```bash
-# Create .env file in backend directory
-cp backend/.env.example backend/.env
-# Edit the database configuration
-```
+### Development Workflow
 
-3. Run the application:
+1. **Start development servers:**
 ```bash
-# Terminal 1 - Backend
+# Backend (with hot reload)
 cd backend
 npm run dev
 
-# Terminal 2 - Frontend
+# Frontend (with hot reload)
 cd frontend
 npm start
 ```
 
-### Running Tests Locally
-
-#### Backend Tests
+2. **Database management:**
 ```bash
+# Run migrations
 cd backend
-npm test                    # Run all tests
-npm run test:watch         # Run tests in watch mode
-npm run test:coverage      # Run tests with coverage report
+npm run migration:run
+
+# Seed database
+npm run seed
 ```
 
-#### Frontend Tests
+## Testing
+
+The project includes comprehensive testing at multiple levels:
+
+### Unit Tests
+- **Backend**: Jest-based tests for services and routes
+- **Frontend**: Karma-based tests for components and services
+
+### End-to-End Tests
+- **Playwright**: Complete user workflow testing
+- **Multi-browser support**: Chrome, Firefox, Safari
+- **Mobile testing**: Responsive design validation
+- **CI/CD integration**: Automated testing in GitHub Actions
+
+### Test Coverage
+- Backend: Unit tests for all services and routes
+- Frontend: Component and service testing
+- E2E: Complete user journey validation
+
+## Deployment
+
+### Docker Deployment
+
+The application is containerized and ready for deployment:
+
 ```bash
-cd frontend
-npm test                   # Run all tests
-npm test -- --watch       # Run tests in watch mode
-npm test -- --coverage    # Run tests with coverage report
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
 ```
 
-## 📱 Usage
+### Environment Configuration
 
-### Presenter Mode
-1. Go to http://localhost:4200/presenter
-2. Create a new quiz session with custom configuration
-3. Share the QR code with participants
-4. Control the quiz flow: start questions, show timers, display leaderboard
-5. Review answers and manually score subjective responses
-6. Manage rounds and end sessions
+Create environment files for different deployments:
 
-### Participant Mode
-1. Scan the QR code or go to http://localhost:4200/join
-2. Enter the session code and team name
-3. Answer questions in real-time with various formats
-4. View live leaderboard and review phases
-5. See fun facts and educational content
+```bash
+# Backend
+cp backend/env.example backend/.env
 
-## 🛠 Development
-
-### CI/CD Pipeline
-
-The project uses GitHub Actions for continuous integration and deployment:
-
-#### Pull Request Checks
-When a PR is created against the `main` branch, the following checks run automatically:
-- **Backend Unit Tests**: Runs Jest tests with MySQL test database
-- **Frontend Unit Tests**: Runs Angular tests with code coverage
-- **Lint Checks**: Validates code style for both frontend and backend
-- **Build Validation**: Ensures both applications build successfully
-- **Docker Build Validation**: Verifies Docker images can be built (without pushing)
-
-#### Main Branch Deployment
-When code is merged to `main`, the following additional steps run:
-- **Docker Image Building**: Builds and pushes Docker images to GitHub Container Registry
-- **Image Tagging**: Tags images as `latest` for production deployment
-
-### Technology Stack
-- **Node.js**: 22.x
-- **Angular**: 20.x
-- **Express**: 4.18.2
-- **MySQL**: 8.4
-- **TypeScript**: 5.8.x
-- **Docker**: Latest Alpine images
-
-### Project Structure
-```
-open-pubquiz/
-├── frontend/          # Angular PWA application
-├── backend/           # Node.js Express server
-│   └── HEALTH_ENDPOINT.md # Health endpoint documentation
-├── docker-compose.yml # Docker orchestration
-└── README.md         # This file
+# Frontend
+cp frontend/environment.example.ts frontend/src/environments/environment.ts
 ```
 
-### Adding Questions
-Questions are stored in the MySQL database. You can add them via:
-- API endpoints (POST /api/questions)
-- Database seeding scripts
-- Admin interface (future enhancement)
-
-### Customization
-- **Theming**: Modify Angular Material theme in `frontend/src/styles/`
-- **Question Types**: Extend the question type system in the backend
-- **UI Components**: Customize Angular Material components
-
-## 📄 License
-
-MIT License - see LICENSE file for details.
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Submit a pull request
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
 
-## 🐛 Issues
+### Development Guidelines
 
-Please report bugs and feature requests through the GitHub issues page.
+- Follow Angular and Node.js best practices
+- Write tests for new features
+- Use TypeScript for type safety
+- Follow the existing code style
+- Update documentation as needed
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For support and questions:
+- Create an issue in the repository

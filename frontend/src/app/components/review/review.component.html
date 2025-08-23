@@ -55,6 +55,12 @@
                   <p>{{ question.correct_answer }}</p>
                 </div>
               }
+              <!-- Numerical -->
+              @case ('numerical') {
+                <div class="numerical-answer">
+                  <p>{{ question.numerical_answer }}{{ question.numerical_tolerance ? ' (±' + question.numerical_tolerance + ')' : '' }}</p>
+                </div>
+              }
               <!-- Sequence -->
               @case ('sequence') {
                 <div class="sequence-answer">

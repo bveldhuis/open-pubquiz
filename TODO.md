@@ -22,9 +22,6 @@
     - [ ] SQL injection prevention
     - [ ] XSS protection
 
-25. **Testing**
-    - [ ] Integration tests
-
 ### Documentation
 
 27. **User Documentation**

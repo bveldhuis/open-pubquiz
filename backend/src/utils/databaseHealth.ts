@@ -1,13 +1,12 @@
 import { AppDataSource } from '../config/database';
-import { MigrationInterface } from 'typeorm';
 
 export interface DatabaseHealthStatus {
   connected: boolean;
-  migrationsUpToDate: boolean;
+  tablesExist: boolean;
   error?: string;
-  migrationDetails?: {
-    pendingMigrations: string[];
-    executedMigrations: string[];
+  tableDetails?: {
+    existingTables: string[];
+    missingTables: string[];
   };
 }
 
@@ -16,7 +15,7 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthStatus> {
   if (!AppDataSource.isInitialized) {
     return {
       connected: false,
-      migrationsUpToDate: false,
+      tablesExist: false,
       error: 'Database not initialized'
     };
   }
@@ -27,45 +26,54 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealthStatus> {
   } catch (error) {
     return {
       connected: false,
-      migrationsUpToDate: false,
+      tablesExist: false,
       error: error instanceof Error ? error.message : 'Connection failed'
     };
   }
 
-  // If connection is successful, check migrations
+  // If connection is successful, check if required tables exist
   try {
-    const pendingMigrations = await AppDataSource.migrations;
-    const executedMigrations = await AppDataSource.query(
-      'SELECT name FROM migrations ORDER BY timestamp'
+    const requiredTables = [
+      'quiz_sessions',
+      'questions', 
+      'teams',
+      'answers',
+      'sequence_answers',
+      'session_events',
+      'session_configurations',
+      'question_sets',
+      'themes',
+      'api_keys'
+    ];
+
+    const existingTablesResult = await AppDataSource.query(
+      `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
+       WHERE TABLE_SCHEMA = '${AppDataSource.options.database}' 
+       AND TABLE_NAME IN (${requiredTables.map(() => '?').join(',')})`,
+      requiredTables
     );
     
-    // Get the list of executed migration names
-    const executedMigrationNames = executedMigrations.map((migration: any) => migration.name);
+    const existingTables = existingTablesResult.map((row: any) => row.TABLE_NAME);
+    const missingTables = requiredTables.filter(table => !existingTables.includes(table));
     
-    // Find pending migrations (migrations that exist but haven't been executed)
-    const pendingMigrationNames = pendingMigrations
-      .filter((migration: MigrationInterface) => migration.name && !executedMigrationNames.includes(migration.name))
-      .map((migration: MigrationInterface) => migration.name!)
-      .filter(Boolean);
-    
-    const migrationsUpToDate = pendingMigrationNames.length === 0;
+    const tablesExist = missingTables.length === 0;
     
     return {
       connected: true,
-      migrationsUpToDate,
-      migrationDetails: {
-        pendingMigrations: pendingMigrationNames,
-        executedMigrations: executedMigrationNames
+      tablesExist,
+      tableDetails: {
+        existingTables,
+        missingTables
       },
-      ...(pendingMigrationNames.length > 0 && {
-        error: `Found ${pendingMigrationNames.length} pending migration(s)`
+      ...(missingTables.length > 0 && {
+        error: `Missing tables: ${missingTables.join(', ')}`
       })
     };
   } catch (error) {
-    // Connection is successful, but migration check failed
+    // Connection is successful, but table check failed
     return {
       connected: true,
-      migrationsUpToDate: false,
+      tablesExist: false,
       error: error instanceof Error ? error.message : String(error)
     };
   }

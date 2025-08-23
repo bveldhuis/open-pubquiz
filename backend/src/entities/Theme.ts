@@ -1,8 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { QuestionSet } from './QuestionSet';
 
 @Entity('themes')
-@Index(['name'])
 export class Theme {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
