@@ -3,19 +3,12 @@ import { PWAService } from './pwa.service';
 
 describe('PWAService', () => {
   let service: PWAService;
-  let mockWindow: any;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [PWAService]
     });
     service = TestBed.inject(PWAService);
-    
-    // Mock window object
-    mockWindow = {
-      addEventListener: jasmine.createSpy('addEventListener'),
-      removeEventListener: jasmine.createSpy('removeEventListener')
-    };
     
     // Mock global properties
     Object.defineProperty(window, 'Notification', {

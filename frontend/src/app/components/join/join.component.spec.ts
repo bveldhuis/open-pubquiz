@@ -3,8 +3,6 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
 
 import { JoinComponent } from './join.component';
 import { AuthService } from '../../services/auth.service';
@@ -15,8 +13,6 @@ describe('JoinComponent', () => {
   let component: JoinComponent;
   let fixture: ComponentFixture<JoinComponent>;
   let mockRouter: jasmine.SpyObj<Router>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockSocketService: jasmine.SpyObj<SocketService>;
   let mockPwaService: jasmine.SpyObj<PWAService>;
   let mockMatSnackBar: jasmine.SpyObj<MatSnackBar>;
 
@@ -48,8 +44,6 @@ describe('JoinComponent', () => {
     fixture = TestBed.createComponent(JoinComponent);
     component = fixture.componentInstance;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
     mockPwaService = TestBed.inject(PWAService) as jasmine.SpyObj<PWAService>;
     mockMatSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
   });

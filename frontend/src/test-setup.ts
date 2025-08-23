@@ -6,12 +6,12 @@ import {
   platformBrowserDynamicTesting
 } from '@angular/platform-browser-dynamic/testing';
 
-declare const require: {
-  context(path: string, deep?: boolean, filter?: RegExp): {
-    <T>(id: string): T;
-    keys(): string[];
-  };
-};
+// declare const require: {
+//   context(path: string, deep?: boolean, filter?: RegExp): {
+//     <T>(id: string): T;
+//     keys(): string[];
+//   };
+// };
 
 // First, initialize the Angular testing environment.
 getTestBed().initTestEnvironment(
@@ -37,16 +37,23 @@ beforeEach(() => {
   });
 
   // Mock IntersectionObserver
-  global.IntersectionObserver = class IntersectionObserver {
-    constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {}
+  (global as typeof globalThis).IntersectionObserver = class MockIntersectionObserver {
+    root: Element | null = null;
+    rootMargin = '';
+    thresholds: readonly number[] = [];
+    
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+    constructor(_callback: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
     observe() { return null; }
     disconnect() { return null; }
     unobserve() { return null; }
+    takeRecords(): IntersectionObserverEntry[] { return []; }
   };
 
   // Mock ResizeObserver
   global.ResizeObserver = class ResizeObserver {
-    constructor(callback: ResizeObserverCallback) {}
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+    constructor(_callback: ResizeObserverCallback) {}
     observe() { return null; }
     disconnect() { return null; }
     unobserve() { return null; }
@@ -79,8 +86,10 @@ beforeEach(() => {
     value: class MockNotification {
       static permission = 'default';
       static requestPermission = jasmine.createSpy('requestPermission').and.returnValue(Promise.resolve('granted'));
-      constructor(title: string, options?: NotificationOptions) {}
-      close() {}
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+      constructor(_title: string, _options?: NotificationOptions) {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      close(): void {}
     }
   });
 
@@ -101,8 +110,7 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// Suppress Angular animations for faster testing
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+// Angular animations are suppressed by using NoopAnimationsModule in individual tests
 
 // Helper function to create mock services
 export function createMockService<T>(methods: (keyof T)[], properties?: Partial<T>): jasmine.SpyObj<T> {
@@ -111,7 +119,7 @@ export function createMockService<T>(methods: (keyof T)[], properties?: Partial<
 }
 
 // Helper function to create mock component dependencies
-export function createMockDependencies() {
+export function createMockDependencies(): Record<string, unknown> {
   return {
     router: jasmine.createSpyObj('Router', ['navigate']),
     snackBar: jasmine.createSpyObj('MatSnackBar', ['open']),
@@ -133,7 +141,7 @@ export function createMockDependencies() {
 
 // Test data factories
 export const TestDataFactory = {
-  createMockQuestion: (overrides: Partial<any> = {}) => ({
+  createMockQuestion: (overrides: Record<string, unknown> = {}) => ({
     id: '1',
     question_text: 'Test Question',
     question_type: 'multiple_choice',
@@ -144,7 +152,7 @@ export const TestDataFactory = {
     ...overrides
   }),
 
-  createMockSession: (overrides: Partial<any> = {}) => ({
+  createMockSession: (overrides: Record<string, unknown> = {}) => ({
     teamName: 'Test Team',
     sessionCode: 'TEST123',
     ...overrides
@@ -159,9 +167,11 @@ export const TestDataFactory = {
 
 // Custom matchers for better test assertions
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jasmine {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface Matchers<T> {
-      toHaveBeenCalledWithObjectContaining(expected: any): boolean;
+      toHaveBeenCalledWithObjectContaining(expected: Record<string, unknown>): boolean;
     }
   }
 }
@@ -169,12 +179,12 @@ declare global {
 beforeEach(() => {
   jasmine.addMatchers({
     toHaveBeenCalledWithObjectContaining: () => ({
-      compare: (actual: jasmine.Spy, expected: any) => {
+      compare: (actual: jasmine.Spy, expected: Record<string, unknown>) => {
         const calls = actual.calls.all();
         const match = calls.some(call => 
           call.args.some(arg => 
             typeof arg === 'object' && 
-            Object.keys(expected).every(key => arg[key] === expected[key])
+            Object.keys(expected).every(key => (arg as Record<string, unknown>)[key] === expected[key])
           )
         );
         
@@ -206,7 +216,7 @@ export const TestUtils = {
   },
 
   // Mock reduced motion preference
-  mockReducedMotion: (enabled: boolean = true) => {
+  mockReducedMotion: (enabled = true) => {
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: jasmine.createSpy('matchMedia').and.callFake((query: string) => ({
@@ -223,18 +233,29 @@ export const TestUtils = {
   },
 
   // Helper to trigger keyboard events
-  createKeyboardEvent: (key: string, type: string = 'keydown') => {
+  createKeyboardEvent: (key: string, type = 'keydown') => {
     return new KeyboardEvent(type, { key });
   },
 
   // Helper to trigger touch events
   createTouchEvent: (type: string, element: HTMLElement) => {
+    const touch = {
+      target: element,
+      clientX: 100,
+      clientY: 100,
+      identifier: 0,
+      pageX: 100,
+      pageY: 100,
+      screenX: 100,
+      screenY: 100,
+      radiusX: 1,
+      radiusY: 1,
+      rotationAngle: 0,
+      force: 1
+    } as unknown as Touch;
+    
     const event = new TouchEvent(type, {
-      touches: [{
-        target: element,
-        clientX: 100,
-        clientY: 100
-      } as Touch]
+      touches: [touch]
     });
     return event;
   }

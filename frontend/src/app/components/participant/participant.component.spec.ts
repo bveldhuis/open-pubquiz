@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { of, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import { ParticipantComponent } from './participant.component';
 import { AuthService } from '../../services/auth.service';
@@ -17,7 +17,6 @@ describe('ParticipantComponent', () => {
   let fixture: ComponentFixture<ParticipantComponent>;
   let mockAuthService: jasmine.SpyObj<AuthService>;
   let mockSocketService: jasmine.SpyObj<SocketService>;
-  let mockQuizManagementService: jasmine.SpyObj<QuizManagementService>;
   let mockPwaService: jasmine.SpyObj<PWAService>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockMatSnackBar: jasmine.SpyObj<MatSnackBar>;
@@ -61,7 +60,7 @@ describe('ParticipantComponent', () => {
     const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
 
     // Mock socket service 'on' method to return observables
-    socketServiceSpy.on.and.callFake((event: string) => {
+    socketServiceSpy.on.and.callFake(() => {
       return new Subject().asObservable();
     });
 
@@ -81,7 +80,6 @@ describe('ParticipantComponent', () => {
     component = fixture.componentInstance;
     mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
     mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
-    mockQuizManagementService = TestBed.inject(QuizManagementService) as jasmine.SpyObj<QuizManagementService>;
     mockPwaService = TestBed.inject(PWAService) as jasmine.SpyObj<PWAService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     mockMatSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;

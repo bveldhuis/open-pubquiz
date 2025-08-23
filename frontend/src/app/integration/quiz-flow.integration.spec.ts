@@ -1,7 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { Location } from '@angular/common';
-import { Component } from '@angular/core';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { of, Subject } from 'rxjs';
 
@@ -13,15 +11,8 @@ import { SocketService } from '../services/socket.service';
 import { PWAService } from '../services/pwa.service';
 import { Question } from '../models/question.model';
 
-// Mock component for routing tests
-@Component({
-  template: '<router-outlet></router-outlet>'
-})
-class TestAppComponent { }
-
 describe('Quiz Flow Integration Tests', () => {
   let router: Router;
-  let location: Location;
   let mockAuthService: jasmine.SpyObj<AuthService>;
   let mockSocketService: jasmine.SpyObj<SocketService>;
   let mockPwaService: jasmine.SpyObj<PWAService>;
@@ -66,7 +57,7 @@ describe('Quiz Flow Integration Tests', () => {
     });
 
     // Mock socket service 'on' method
-    socketServiceSpy.on.and.callFake((event: string) => {
+    socketServiceSpy.on.and.callFake(() => {
       return new Subject().asObservable();
     });
 
@@ -85,7 +76,6 @@ describe('Quiz Flow Integration Tests', () => {
     }).compileComponents();
 
     router = TestBed.inject(Router);
-    location = TestBed.inject(Location);
     mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
     mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
     mockPwaService = TestBed.inject(PWAService) as jasmine.SpyObj<PWAService>;
@@ -183,7 +173,6 @@ describe('Quiz Flow Integration Tests', () => {
       mockPwaService.notifyQuizEnded.and.returnValue(Promise.resolve());
       
       const participantFixture = TestBed.createComponent(ParticipantComponent);
-      const participantComponent = participantFixture.componentInstance;
       
       // Mock session
       mockAuthService.getCurrentSession.and.returnValue({
@@ -218,7 +207,6 @@ describe('Quiz Flow Integration Tests', () => {
 
     it('should handle socket connection failures', async () => {
       const participantFixture = TestBed.createComponent(ParticipantComponent);
-      const participantComponent = participantFixture.componentInstance;
       
       // Mock no session
       mockAuthService.getCurrentSession.and.returnValue(null);
@@ -331,7 +319,6 @@ describe('Quiz Flow Integration Tests', () => {
   describe('Real-time Communication Integration', () => {
     it('should handle socket events properly', () => {
       const participantFixture = TestBed.createComponent(ParticipantComponent);
-      const participantComponent = participantFixture.componentInstance;
       
       // Mock session
       mockAuthService.getCurrentSession.and.returnValue({
