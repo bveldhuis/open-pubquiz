@@ -59,13 +59,5 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'docker-compose -f docker-compose.yml -f docker-compose.e2e.yml up -d',
-    url: 'http://localhost:4200',
-    reuseExistingServer: false,
-    timeout: 60 * 1000, // Reduced timeout
-    stdout: 'pipe', // Pipe stdout for better debugging
-    stderr: 'pipe', // Pipe stderr for better debugging
-  },
+  /* Application is started by GitHub Actions workflow */
 });

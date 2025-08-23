@@ -346,6 +346,21 @@ jobs:
             sleep 1
           done
 
+      - name: Start application containers
+        run: |
+          echo "Starting application containers..."
+          docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d
+          
+          echo "Waiting for application to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:4200 >/dev/null 2>&1; then
+              echo "Application is ready!"
+              break
+            fi
+            echo "Attempt $i: Application not ready yet, waiting..."
+            sleep 2
+          done
+
       - name: Run E2E tests
         working-directory: ./e2e
         run: npm run test:ci
