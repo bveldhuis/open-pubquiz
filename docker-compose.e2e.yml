@@ -1,6 +1,9 @@
 services:
   backend:
-    command: sh -c "npm run migration:run && npm start"
+    build:
+      context: ./backend
+      target: builder
+    command: sh -c "npm run migration:run && npm run seed && npm run dev"
     environment:
       SEED_DATABASE: true
       NODE_ENV: test
