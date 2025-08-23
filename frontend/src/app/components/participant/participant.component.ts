@@ -162,8 +162,8 @@ export class ParticipantComponent implements OnInit, OnDestroy {
 
     this.socketService.on('question-started')
       .pipe(takeUntil(this.destroy$))
-      .subscribe((question: Question) => {
-        this.handleNewQuestion(question);
+      .subscribe((data: unknown) => {
+        this.handleNewQuestion(data as Question);
       });
 
     this.socketService.on('question-ended')
@@ -174,14 +174,16 @@ export class ParticipantComponent implements OnInit, OnDestroy {
 
     this.socketService.on('session-ended')
       .pipe(takeUntil(this.destroy$))
-      .subscribe((data: { leaderboard: LeaderboardTeam[] }) => {
-        this.handleSessionEnded(data.leaderboard);
+      .subscribe((data: unknown) => {
+        const sessionData = data as { leaderboard: LeaderboardTeam[] };
+        this.handleSessionEnded(sessionData.leaderboard);
       });
 
     this.socketService.on('timer-update')
       .pipe(takeUntil(this.destroy$))
-      .subscribe((data: { timeRemaining: number }) => {
-        this.updateTimer(data.timeRemaining);
+      .subscribe((data: unknown) => {
+        const timerData = data as { timeRemaining: number };
+        this.updateTimer(timerData.timeRemaining);
       });
   }
 
@@ -265,7 +267,8 @@ export class ParticipantComponent implements OnInit, OnDestroy {
   }
 
   // Enhanced user interactions with animations
-  async onAnswerSubmitted(): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async onAnswerSubmitted(_answerData: unknown): Promise<void> {
     this.answerSubmitted = true;
     this.showSuccessFeedback('Answer submitted successfully!');
     

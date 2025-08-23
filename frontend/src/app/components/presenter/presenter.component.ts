@@ -214,20 +214,20 @@ export class PresenterComponent implements OnInit, OnDestroy {
     // Enhanced socket listeners with animations and notifications
     this.socketService.on('team-joined')
       .pipe(takeUntil(this.destroy$))
-      .subscribe((team: TeamInfo) => {
-        this.handleTeamJoined(team);
+      .subscribe((data: unknown) => {
+        this.handleTeamJoined(data as TeamInfo);
       });
 
     this.socketService.on('answer-submitted')
       .pipe(takeUntil(this.destroy$))
-      .subscribe((answer: AnswerInfo) => {
-        this.handleAnswerSubmitted(answer);
+      .subscribe((data: unknown) => {
+        this.handleAnswerSubmitted(data as AnswerInfo);
       });
 
     this.socketService.on('session-error')
       .pipe(takeUntil(this.destroy$))
-      .subscribe((error: { message?: string }) => {
-        this.handleSessionError(error);
+      .subscribe((data: unknown) => {
+        this.handleSessionError(data as { message?: string });
       });
   }
 
@@ -670,7 +670,8 @@ export class PresenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  scoreAnswer(): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  scoreAnswer(_answerId: string, _points: number, _isCorrect: boolean): void {
     this.showSuccessFeedback('Answer scored!');
   }
 
@@ -704,7 +705,8 @@ export class PresenterComponent implements OnInit, OnDestroy {
     this.timeRemaining = timeRemaining;
   }
 
-  onQrGenerated(): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onQrGenerated(_joinUrl: string): void {
     this.showSuccessFeedback('QR code generated successfully!');
   }
 
