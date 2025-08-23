@@ -1,51 +1,267 @@
-<div class="container">
-  <div class="join-card quiz-card-large">
-    <h1 class="join-title">Join Quiz Session</h1>
+<div class="join-container" @fadeInUp>
+  <!-- Skip link for accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <form [formGroup]="joinForm" (ngSubmit)="onSubmit()" class="join-form">
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Session Code</mat-label>
-        <input matInput formControlName="sessionCode" placeholder="Enter session code">
-        @if (joinForm.get('sessionCode')?.hasError('required')) {
-          <mat-error>
-            Session code is required
-          </mat-error>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Team Name</mat-label>
-        <input matInput formControlName="teamName" placeholder="Enter your team name">
-        @if (joinForm.get('teamName')?.hasError('required')) {
-          <mat-error>
-            Team name is required
-          </mat-error>
-        }
-        @if (joinForm.get('teamName')?.hasError('minlength')) {
-          <mat-error>
-            Team name must be at least 2 characters
-          </mat-error>
-        }
-      </mat-form-field>
-
-      <button
-        mat-raised-button
-        color="primary"
-        type="submit"
-        class="join-button"
-        [disabled]="joinForm.invalid || isLoading">
-        @if (isLoading) {
-          <mat-spinner diameter="20" class="spinner"></mat-spinner>
-        }
-        @if (!isLoading) {
-          <span>Join Session</span>
-        }
-      </button>
-    </form>
-
-    <div class="join-info">
-      <p>Don't have a session code? Ask your quiz presenter for the code.</p>
-      <p>The session code is usually displayed on the presenter's screen.</p>
+  <!-- PWA Install Banner -->
+  @if (showInstallPrompt) {
+    <div class="install-banner" @slideInFromRight>
+      <div class="banner-content">
+        <mat-icon aria-hidden="true">install_mobile</mat-icon>
+        <span>Install the quiz app for a better experience!</span>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          class="touch-friendly"
+          [@buttonPress]="buttonStates['install']"
+          (click)="installPWA()"
+          [attr.aria-label]="'Install Progressive Web App'"
+          matTooltip="Install app on your device">
+          Install
+        </button>
+      </div>
     </div>
+  }
+
+  <main id="main-content" class="join-content">
+    <!-- Header Section -->
+    <header class="join-header" @scaleIn>
+      <div class="logo-section">
+        <mat-icon class="quiz-icon" aria-hidden="true">quiz</mat-icon>
+        <h1>Join Quiz Session</h1>
+      </div>
+      <p class="subtitle">Enter your session code and team name to get started</p>
+    </header>
+
+    <!-- Main Join Form -->
+    <section 
+      class="join-form-card touch-friendly"
+      [@cardHover]="cardStates['main']"
+      (mouseenter)="onCardHover('main', true)"
+      (mouseleave)="onCardHover('main', false)"
+      @fadeInUp>
+      
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon aria-hidden="true">login</mat-icon>
+            Session Details
+          </mat-card-title>
+          <mat-card-subtitle>Fill in your information to join the quiz</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <form [formGroup]="joinForm" (ngSubmit)="joinSession()" novalidate>
+            <!-- Session Code Field -->
+            <div class="form-field-container">
+              <mat-form-field 
+                appearance="outline" 
+                class="full-width"
+                [class.error-state]="formStates['sessionCode'] === 'error'"
+                [class.success-state]="formStates['sessionCode'] === 'success'">
+                <mat-label>Session Code</mat-label>
+                <input 
+                  #sessionCodeInput
+                  matInput 
+                  formControlName="sessionCode"
+                  placeholder="Enter session code"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  spellcheck="false"
+                  maxlength="10"
+                  class="touch-friendly"
+                  (input)="onSessionCodeInput($event)"
+                  [attr.aria-describedby]="sessionCodeError ? 'sessionCode-error' : null"
+                  [attr.aria-invalid]="formStates['sessionCode'] === 'error'"
+                  matTooltip="Enter the 4-10 character session code provided by your quiz host">
+                <mat-icon matSuffix aria-hidden="true">meeting_room</mat-icon>
+                @if (sessionCodeError) {
+                  <mat-error id="sessionCode-error" role="alert">{{ sessionCodeError }}</mat-error>
+                }
+              </mat-form-field>
+
+              <!-- QR Code Scan Button -->
+              <button 
+                type="button"
+                mat-icon-button 
+                color="primary"
+                class="scan-button touch-friendly"
+                [@buttonPress]="buttonStates['scan']"
+                (click)="scanQRCode()"
+                [attr.aria-label]="'Scan QR code to automatically fill session code'"
+                matTooltip="Scan QR code"
+                [disabled]="isJoining">
+                <mat-icon>qr_code_scanner</mat-icon>
+              </button>
+            </div>
+
+            <!-- Team Name Field -->
+            <mat-form-field 
+              appearance="outline" 
+              class="full-width"
+              [class.error-state]="formStates['teamName'] === 'error'"
+              [class.success-state]="formStates['teamName'] === 'success'">
+              <mat-label>Team Name</mat-label>
+              <input 
+                #teamNameInput
+                matInput 
+                formControlName="teamName"
+                placeholder="Enter your team name"
+                autocomplete="username"
+                spellcheck="false"
+                maxlength="50"
+                class="touch-friendly"
+                (input)="onTeamNameInput($event)"
+                [attr.aria-describedby]="teamNameError ? 'teamName-error' : null"
+                [attr.aria-invalid]="formStates['teamName'] === 'error'"
+                matTooltip="Choose a unique name for your team (2-50 characters)">
+              <mat-icon matSuffix aria-hidden="true">group</mat-icon>
+              @if (teamNameError) {
+                <mat-error id="teamName-error" role="alert">{{ teamNameError }}</mat-error>
+              }
+            </mat-form-field>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+              <button 
+                type="submit"
+                mat-raised-button 
+                color="primary"
+                class="join-button touch-friendly"
+                [@buttonPress]="buttonStates['join']"
+                [disabled]="!canJoin"
+                [attr.aria-label]="'Join quiz session with entered details'"
+                matTooltip="Join the quiz session">
+                                 @if (isJoining) {
+                   <mat-spinner diameter="20" color="accent"></mat-spinner>
+                   <span>Joining...</span>
+                 } @else {
+                   <ng-container>
+                     <mat-icon aria-hidden="true">play_arrow</mat-icon>
+                     <span>Join Session</span>
+                   </ng-container>
+                 }
+              </button>
+
+              @if (joinForm.get('sessionCode')?.value) {
+                <button 
+                  type="button"
+                  mat-stroked-button 
+                  color="accent"
+                  class="share-button touch-friendly"
+                  (click)="shareSession()"
+                  [attr.aria-label]="'Share session link with others'"
+                  matTooltip="Share session link">
+                  <mat-icon aria-hidden="true">{{ canShare ? 'share' : 'content_copy' }}</mat-icon>
+                  <span>{{ canShare ? 'Share' : 'Copy Link' }}</span>
+                </button>
+              }
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </section>
+
+    <!-- Features Section -->
+    <section 
+      class="features-section"
+      [@cardHover]="cardStates['features']"
+      (mouseenter)="onCardHover('features', true)"
+      (mouseleave)="onCardHover('features', false)"
+      @fadeInUp
+      [attr.aria-labelledby]="'features-heading'">
+      
+      <h2 id="features-heading" class="features-title">What to Expect</h2>
+      
+      <div class="features-grid" role="list">
+        <article class="feature-item touch-friendly" role="listitem" @scaleIn>
+          <mat-icon class="feature-icon" aria-hidden="true">timer</mat-icon>
+          <h3>Real-time Questions</h3>
+          <p>Answer questions as they appear with live timers</p>
+        </article>
+
+        <article class="feature-item touch-friendly" role="listitem" @scaleIn>
+          <mat-icon class="feature-icon" aria-hidden="true">leaderboard</mat-icon>
+          <h3>Live Leaderboard</h3>
+          <p>See your team's ranking update in real-time</p>
+        </article>
+
+        <article class="feature-item touch-friendly" role="listitem" @scaleIn>
+          <mat-icon class="feature-icon" aria-hidden="true">devices</mat-icon>
+          <h3>Multi-device Support</h3>
+          <p>Play on any device - phone, tablet, or computer</p>
+        </article>
+
+        <article class="feature-item touch-friendly" role="listitem" @scaleIn>
+          <mat-icon class="feature-icon" aria-hidden="true">offline_bolt</mat-icon>
+          <h3>Offline Ready</h3>
+          <p>Continue playing even with poor connection</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Instructions Section -->
+    <section class="instructions-section" @fadeInUp [attr.aria-labelledby]="'instructions-heading'">
+      <h2 id="instructions-heading" class="instructions-title">How to Join</h2>
+      
+      <div class="instructions-list" role="list">
+        <div class="instruction-item" role="listitem">
+          <span class="step-number" aria-hidden="true">1</span>
+          <div class="step-content">
+            <h3>Get Session Code</h3>
+            <p>Ask your quiz host for the session code or scan the QR code they display</p>
+          </div>
+        </div>
+
+        <div class="instruction-item" role="listitem">
+          <span class="step-number" aria-hidden="true">2</span>
+          <div class="step-content">
+            <h3>Choose Team Name</h3>
+            <p>Pick a unique name for your team (you can play solo too!)</p>
+          </div>
+        </div>
+
+        <div class="instruction-item" role="listitem">
+          <span class="step-number" aria-hidden="true">3</span>
+          <div class="step-content">
+            <h3>Start Playing</h3>
+            <p>Wait for questions to start and compete for the top spot!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feedback Animation Container -->
+    @if (feedbackState) {
+      <div class="feedback-container">
+        @if (feedbackState === 'loading') {
+          <div class="feedback-animation loading" @scaleIn>
+            <mat-spinner diameter="60" color="primary"></mat-spinner>
+          </div>
+        }
+        @if (feedbackState === 'success') {
+          <div class="feedback-animation success" @successPop>
+            <mat-icon>check_circle</mat-icon>
+          </div>
+        }
+        @if (feedbackState === 'error') {
+          <div class="feedback-animation error" @errorShake>
+            <mat-icon>error</mat-icon>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions" @fadeInUp>
+    <a 
+      routerLink="/"
+      mat-fab 
+      color="accent"
+      class="action-fab touch-friendly"
+      [attr.aria-label]="'Return to home page'"
+      matTooltip="Back to home">
+      <mat-icon>home</mat-icon>
+    </a>
   </div>
 </div>
