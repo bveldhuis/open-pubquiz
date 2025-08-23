@@ -90,9 +90,15 @@ export class CleanupService {
       }
 
       // Log cleanup statistics
-      const stats = await this.sessionService.getCleanupStats();
-      if (this.config.logCleanup) {
-        console.log(`📊 Session stats: ${stats.activeSessions} active, ${stats.finishedSessions} finished, ${stats.inactiveSessions} inactive`);
+      try {
+        const stats = await this.sessionService.getCleanupStats();
+        if (this.config.logCleanup && stats) {
+          console.log(`📊 Session stats: ${stats.activeSessions} active, ${stats.finishedSessions} finished, ${stats.inactiveSessions} inactive`);
+        }
+      } catch (statsError) {
+        if (this.config.logCleanup) {
+          console.log('📊 Unable to retrieve session statistics');
+        }
       }
     } catch (error) {
       console.error('❌ Error during cleanup:', error);

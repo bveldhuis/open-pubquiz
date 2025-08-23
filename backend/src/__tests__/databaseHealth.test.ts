@@ -1,5 +1,4 @@
 import { checkDatabaseHealth, DatabaseHealthStatus } from '../utils/databaseHealth';
-import { MigrationInterface } from 'typeorm';
 import { AppDataSource } from '../config/database';
 
 // Mock AppDataSource
@@ -7,7 +6,9 @@ jest.mock('../config/database', () => ({
   AppDataSource: {
     isInitialized: true,
     query: jest.fn(),
-    migrations: [] as any[],
+    options: {
+      database: 'test_db'
+    }
   }
 }));
 
@@ -15,35 +16,36 @@ describe('databaseHealth', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (AppDataSource as any).isInitialized = true;
-    (AppDataSource as any).migrations = [];
+    (AppDataSource as any).options = { database: 'test_db' };
   });
 
   describe('checkDatabaseHealth', () => {
-    it('should return healthy status when database is connected and migrations are up to date', async () => {
-      const mockExecutedMigrations = [
-        { name: 'CreateTables1755701597437' },
-        { name: 'UpdateEventTypeEnum1755701600000' }
-      ];
-
-      const mockMigrations: MigrationInterface[] = [
-        { name: 'CreateTables1755701597437', up: jest.fn(), down: jest.fn() },
-        { name: 'UpdateEventTypeEnum1755701600000', up: jest.fn(), down: jest.fn() }
+    it('should return healthy status when database is connected and all tables exist', async () => {
+      const mockTables = [
+        { TABLE_NAME: 'quiz_sessions' },
+        { TABLE_NAME: 'questions' },
+        { TABLE_NAME: 'teams' },
+        { TABLE_NAME: 'answers' },
+        { TABLE_NAME: 'sequence_answers' },
+        { TABLE_NAME: 'session_events' },
+        { TABLE_NAME: 'session_configurations' },
+        { TABLE_NAME: 'question_sets' },
+        { TABLE_NAME: 'themes' },
+        { TABLE_NAME: 'api_keys' }
       ];
 
       (AppDataSource as any).query
         .mockResolvedValueOnce([1]) // SELECT 1 for connection test
-        .mockResolvedValueOnce(mockExecutedMigrations); // migration query
-
-      (AppDataSource as any).migrations = mockMigrations;
+        .mockResolvedValueOnce(mockTables); // table existence query
 
       const result = await checkDatabaseHealth();
 
       expect(result).toEqual({
         connected: true,
-        migrationsUpToDate: true,
-        migrationDetails: {
-          pendingMigrations: [],
-          executedMigrations: ['CreateTables1755701597437', 'UpdateEventTypeEnum1755701600000']
+        tablesExist: true,
+        tableDetails: {
+          existingTables: ['quiz_sessions', 'questions', 'teams', 'answers', 'sequence_answers', 'session_events', 'session_configurations', 'question_sets', 'themes', 'api_keys'],
+          missingTables: []
         }
       });
     });
@@ -55,7 +57,7 @@ describe('databaseHealth', () => {
 
       expect(result).toEqual({
         connected: false,
-        migrationsUpToDate: false,
+        tablesExist: false,
         error: 'Database not initialized'
       });
 
@@ -70,84 +72,60 @@ describe('databaseHealth', () => {
 
       expect(result).toEqual({
         connected: false,
-        migrationsUpToDate: false,
+        tablesExist: false,
         error: 'Connection timeout'
       });
     });
 
-    it('should detect pending migrations', async () => {
-      const mockExecutedMigrations = [
-        { name: 'CreateTables1755701597437' }
-      ];
-
-      const mockMigrations: MigrationInterface[] = [
-        { name: 'CreateTables1755701597437', up: jest.fn(), down: jest.fn() },
-        { name: 'UpdateEventTypeEnum1755701600000', up: jest.fn(), down: jest.fn() },
-        { name: 'AddNewQuestionTypes1755787374620', up: jest.fn(), down: jest.fn() }
+    it('should detect missing tables', async () => {
+      const mockTables = [
+        { TABLE_NAME: 'quiz_sessions' },
+        { TABLE_NAME: 'questions' },
+        { TABLE_NAME: 'teams' }
+        // Missing: answers, sequence_answers, session_events, session_configurations, question_sets, themes, api_keys
       ];
 
       (AppDataSource as any).query
         .mockResolvedValueOnce([1]) // SELECT 1 for connection test
-        .mockResolvedValueOnce(mockExecutedMigrations); // migration query
-
-      (AppDataSource as any).migrations = mockMigrations;
+        .mockResolvedValueOnce(mockTables); // table existence query
 
       const result = await checkDatabaseHealth();
 
       expect(result).toEqual({
         connected: true,
-        migrationsUpToDate: false,
-        error: 'Found 2 pending migration(s)',
-        migrationDetails: {
-          pendingMigrations: ['UpdateEventTypeEnum1755701600000', 'AddNewQuestionTypes1755787374620'],
-          executedMigrations: ['CreateTables1755701597437']
+        tablesExist: false,
+        error: 'Missing tables: answers, sequence_answers, session_events, session_configurations, question_sets, themes, api_keys',
+        tableDetails: {
+          existingTables: ['quiz_sessions', 'questions', 'teams'],
+          missingTables: ['answers', 'sequence_answers', 'session_events', 'session_configurations', 'question_sets', 'themes', 'api_keys']
         }
       });
     });
 
-    it('should handle empty migrations list', async () => {
+    it('should handle table query errors', async () => {
       (AppDataSource as any).query
         .mockResolvedValueOnce([1]) // SELECT 1 for connection test
-        .mockResolvedValueOnce([]); // no executed migrations
-
-      (AppDataSource as any).migrations = [];
+        .mockRejectedValueOnce(new Error('Table query failed')); // table query fails
 
       const result = await checkDatabaseHealth();
 
       expect(result).toEqual({
         connected: true,
-        migrationsUpToDate: true,
-        migrationDetails: {
-          pendingMigrations: [],
-          executedMigrations: []
-        }
+        tablesExist: false,
+        error: 'Table query failed'
       });
     });
 
-    it('should handle migration query errors', async () => {
+    it('should handle non-Error objects in table query', async () => {
       (AppDataSource as any).query
         .mockResolvedValueOnce([1]) // SELECT 1 for connection test
-        .mockRejectedValueOnce(new Error('Migration table not found')); // migration query fails
+        .mockRejectedValueOnce('Non-Error object'); // table query fails with non-Error
 
       const result = await checkDatabaseHealth();
 
       expect(result).toEqual({
         connected: true,
-        migrationsUpToDate: false,
-        error: 'Migration table not found'
-      });
-    });
-
-    it('should handle non-Error objects in migration query', async () => {
-      (AppDataSource as any).query
-        .mockResolvedValueOnce([1]) // SELECT 1 for connection test
-        .mockRejectedValueOnce('Non-Error object'); // migration query fails with non-Error
-
-      const result = await checkDatabaseHealth();
-
-      expect(result).toEqual({
-        connected: true,
-        migrationsUpToDate: false,
+        tablesExist: false,
         error: 'Non-Error object'
       });
     });
@@ -159,7 +137,7 @@ describe('databaseHealth', () => {
 
       expect(result).toEqual({
         connected: false,
-        migrationsUpToDate: false,
+        tablesExist: false,
         error: 'Connection failed'
       });
     });
