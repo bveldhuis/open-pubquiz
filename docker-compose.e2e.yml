@@ -3,10 +3,15 @@ services:
     build:
       context: ./backend
       target: builder
-    command: sh -c "npm run migration:run && npm run seed && npm run dev"
+    command: npm run dev
     environment:
       SEED_DATABASE: true
       NODE_ENV: test
+      DB_HOST: host.docker.internal
+      DB_PORT: 3306
+      DB_USERNAME: test_user
+      DB_PASSWORD: test_password
+      DB_DATABASE: pubquiz_test
       JWT_SECRET: test-jwt-secret
       JWT_EXPIRES_IN: 24h
       CORS_ORIGIN: http://localhost:4200
@@ -15,3 +20,24 @@ services:
       MAX_FILE_SIZE: 5242880
       UPLOAD_PATH: ./uploads
       CLEANUP_ENABLED: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - pubquiz-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pubquiz-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - pubquiz-network
+
+networks:
+  pubquiz-network:
+    driver: bridge
