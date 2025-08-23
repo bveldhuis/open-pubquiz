@@ -6,11 +6,11 @@
     @if (!currentSession) {
       <div class="create-session-card">
         <h2>Create New Quiz Session</h2>
-        <form [formGroup]="createForm" (ngSubmit)="createSession()" class="create-form">
+        <form [formGroup]="sessionForm" (ngSubmit)="createSession()" class="create-form">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Session Name</mat-label>
             <input matInput formControlName="sessionName" placeholder="Enter session name">
-            @if (createForm.get('sessionName')?.hasError('required')) {
+            @if (sessionForm.get('sessionName')?.hasError('required')) {
               <mat-error>
                 Session name is required
               </mat-error>
@@ -21,11 +21,11 @@
             color="primary"
             type="submit"
             class="create-button"
-            [disabled]="createForm.invalid || isCreating">
-            @if (isCreating) {
+            [disabled]="sessionForm.invalid || isLoading">
+            @if (isLoading) {
               <mat-spinner diameter="20" class="spinner"></mat-spinner>
             }
-            @if (!isCreating) {
+            @if (!isLoading) {
               <span>Create Session</span>
             }
           </button>

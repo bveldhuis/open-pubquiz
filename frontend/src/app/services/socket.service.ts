@@ -214,4 +214,31 @@ export class SocketService {
       action: 'next_round'
     });
   }
+
+  // Enhanced methods for improved components
+  on(eventName: string): Subject<unknown> {
+    const subject = new Subject<unknown>();
+    
+    if (this.socket) {
+      this.socket.on(eventName, (data: unknown) => {
+        subject.next(data);
+      });
+    }
+    
+    return subject;
+  }
+
+  emit(eventName: string, data?: unknown): void {
+    if (this.socket && this.connected) {
+      this.socket.emit(eventName, data);
+    } else {
+      console.warn(`Cannot emit ${eventName}: Socket not connected`);
+    }
+  }
+
+  // Removed duplicate - using existing method with different signature
+
+  leaveSession(): void {
+    this.emit('leave_session');
+  }
 }

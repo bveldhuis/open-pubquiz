@@ -150,8 +150,8 @@ export class PWAService {
     }
 
     const defaultOptions: NotificationOptions = {
-      badge: '/assets/icons/icon-72x72.png',
-      icon: '/assets/icons/icon-192x192.png',
+      badge: '/favicon.ico',
+      icon: '/favicon.ico',
       ...options
     };
 
