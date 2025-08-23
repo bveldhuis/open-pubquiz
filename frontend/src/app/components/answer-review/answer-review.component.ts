@@ -121,7 +121,24 @@ export class AnswerReviewComponent {
 
   isAutoScoredQuestion(): boolean {
     if (!this.question) return false;
-    return ['multiple_choice', 'true_false', 'numerical'].includes(this.question.type);
+    
+    // Always auto-scored question types
+    const alwaysAutoScoredTypes = ['multiple_choice', 'true_false', 'numerical'];
+    
+    // Question types that require a correct answer to be auto-scored
+    const conditionalAutoScoredTypes = ['open_text', 'image', 'audio', 'video'];
+    
+    // Sequence questions require sequence_items to be auto-scored
+    if (this.question.type === 'sequence') {
+      return !!this.question.sequence_items && this.question.sequence_items.length > 0;
+    }
+    
+    // Check conditional auto-scored types
+    if (conditionalAutoScoredTypes.includes(this.question.type)) {
+      return !!this.question.correct_answer;
+    }
+    
+    return alwaysAutoScoredTypes.includes(this.question.type);
   }
 
   getAutoScoreResultText(answer: Answer): string {
@@ -129,6 +146,18 @@ export class AnswerReviewComponent {
       return 'Not scored';
     }
     
+    // Special handling for sequence questions which can have partial scoring
+    if (this.question?.type === 'sequence') {
+      if (answer.points_awarded === this.question.points) {
+        return `Perfect - All correct (${answer.points_awarded} pts)`;
+      } else if (answer.points_awarded === 1) {
+        return `Partial - 1 wrong (${answer.points_awarded} pt)`;
+      } else {
+        return 'Incorrect (0 pts)';
+      }
+    }
+    
+    // For all other question types
     if (answer.is_correct) {
       return `Correct (${answer.points_awarded} pts)`;
     } else {
@@ -137,9 +166,10 @@ export class AnswerReviewComponent {
   }
 
   getFormattedCorrectAnswer(): string {
-    // For numerical questions, show the answer with tolerance
-    if (this.question?.type === 'numerical' && this.question.numerical_tolerance) {
-      return `${this.question.correct_answer} (±${this.question.numerical_tolerance})`;
+    // For numerical questions, show the numerical answer with tolerance
+    if (this.question?.type === 'numerical' && this.question.numerical_answer !== null && this.question.numerical_answer !== undefined) {
+      const tolerance = this.question.numerical_tolerance ? ` (±${this.question.numerical_tolerance})` : '';
+      return `${this.question.numerical_answer}${tolerance}`;
     }
     
     // For sequence questions, format the sequence

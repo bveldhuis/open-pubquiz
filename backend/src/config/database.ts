@@ -19,7 +19,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'pubquiz_user',
   password: process.env.DB_PASSWORD || 'pubquiz_password',
   database: process.env.DB_DATABASE || 'pubquiz',
-  synchronize: process.env.NODE_ENV === 'development',
+  synchronize: false, // Disabled to rely on migrations for schema management
   logging: process.env.NODE_ENV === 'development',
   entities: [
     QuizSession,

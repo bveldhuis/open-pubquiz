@@ -285,3 +285,85 @@ jobs:
           docker build -t frontend-test ./frontend
           docker build -t backend-test ./backend
           docker compose build
+
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install E2E dependencies
+        working-directory: ./e2e
+        run: npm ci
+
+      - name: Install Playwright browsers (Chromium only for CI)
+        working-directory: ./e2e
+        run: npx playwright install chromium
+
+      - name: Start application containers
+        run: |
+          echo "Starting application containers..."
+          docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d
+          
+          echo "Waiting for application to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:4200 >/dev/null 2>&1; then
+              echo "Application is ready!"
+              break
+            fi
+            echo "Attempt $i: Application not ready yet, waiting..."
+            sleep 2
+          done
+
+      - name: Run E2E tests
+        working-directory: ./e2e
+        run: npm run test:ci
+        env:
+          BASE_URL: http://localhost:4200
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USERNAME: test_user
+          DB_PASSWORD: test_password
+          DB_DATABASE: pubquiz_test
+          NODE_ENV: test
+          JWT_SECRET: test-jwt-secret
+          JWT_EXPIRES_IN: 24h
+          CORS_ORIGIN: http://localhost:4200
+          RATE_LIMIT_WINDOW_MS: 900000
+          RATE_LIMIT_MAX_REQUESTS: 100
+          MAX_FILE_SIZE: 5242880
+          UPLOAD_PATH: ./uploads
+          CLEANUP_ENABLED: false
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            e2e/test-results/
+            e2e/playwright-report/
+          retention-days: 7
+
+      - name: Upload E2E test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-html-report
+          path: e2e/playwright-report/
+          retention-days: 7

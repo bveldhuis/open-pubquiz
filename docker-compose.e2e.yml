@@ -32,7 +32,7 @@ services:
       DB_DATABASE: pubquiz
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       PORT: 3000
-      SEED_DATABASE: false
+      SEED_DATABASE: true
     ports:
       - "3000:3000"
     depends_on:
@@ -62,9 +62,6 @@ services:
         condition: service_healthy
     networks:
       - pubquiz-network
-
-volumes:
-  mysql_data:
 
 networks:
   pubquiz-network:

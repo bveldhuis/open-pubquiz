@@ -52,7 +52,12 @@ export class SocketService {
       return;
     }
 
-    this.socket = io(environment.apiUrl, {
+    // For Socket.IO, we need to connect to the same host as the frontend
+    // since the backend Socket.IO server is proxied through nginx
+    const socketUrl = environment.production ? window.location.origin : environment.apiUrl;
+    
+    console.log('🔌 Connecting to Socket.IO server at:', socketUrl);
+    this.socket = io(socketUrl, {
       transports: ['websocket', 'polling']
     });
 
