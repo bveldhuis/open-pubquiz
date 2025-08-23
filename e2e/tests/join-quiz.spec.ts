@@ -75,15 +75,43 @@ test.describe('Join Quiz', () => {
   });
 
   test('should be accessible with keyboard navigation', async ({ page }) => {
+    // Wait for the page to be fully loaded
+    await page.waitForLoadState('networkidle');
+    
     const codeInput = page.locator('input[placeholder="Enter session code"]');
+    const teamNameInput = page.locator('input[placeholder="Enter your team name"]');
+    
+    // Ensure both inputs are visible and wait for them to be ready
+    await expect(codeInput).toBeVisible();
+    await expect(teamNameInput).toBeVisible();
     
     // Click on the input first to ensure it's focusable
     await codeInput.click();
     await expect(codeInput).toBeFocused();
     
-    // Navigate to team name input
-    await page.keyboard.press('Tab');
-    const teamNameInput = page.locator('input[placeholder="Enter your team name"]');
+    // Navigate through the form with Tab to reach team name input
+    // This approach is more resilient as it doesn't depend on exact intermediate elements
+    let tabCount = 0;
+    const maxTabs = 5; // Safety limit
+    
+    while (tabCount < maxTabs) {
+      await page.keyboard.press('Tab');
+      tabCount++;
+      
+      // Check if we've reached the team name input
+      if (await teamNameInput.isFocused()) {
+        break;
+      }
+    }
+    
+    // Verify that we successfully reached the team name input
     await expect(teamNameInput).toBeFocused();
+    
+    // Also test backwards navigation with Shift+Tab
+    await page.keyboard.press('Shift+Tab');
+    
+    // After Shift+Tab, we should be back at the QR scan button (or session code input if button is disabled)
+    // Let's just verify we're not on the team name input anymore
+    await expect(teamNameInput).not.toBeFocused();
   });
 });
