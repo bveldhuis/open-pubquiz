@@ -1,4 +1,23 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import path from 'path';
+
+// Determine the correct API paths based on environment
+const getApiPaths = (): string[] => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const baseDir = process.cwd();
+  
+  if (isProduction) {
+    return [
+      path.join(baseDir, 'dist', 'routes', '*.js'),
+      path.join(baseDir, 'dist', 'index.js')
+    ];
+  } else {
+    return [
+      path.join(baseDir, 'src', 'routes', '*.ts'),
+      path.join(baseDir, 'src', 'index.ts')
+    ];
+  }
+};
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -424,7 +443,15 @@ const options: swaggerJsdoc.Options = {
       }
     ]
   },
-  apis: ['./dist/routes/*.js', './dist/index.js']
+  apis: getApiPaths()
 };
 
 export const specs = swaggerJsdoc(options);
+
+// Debug logging for Swagger configuration
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔍 Swagger configuration:');
+  console.log('  - Environment:', process.env.NODE_ENV);
+  console.log('  - API paths:', getApiPaths());
+  console.log('  - Base directory:', process.cwd());
+}
