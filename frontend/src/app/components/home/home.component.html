@@ -1,159 +1,218 @@
 <div class="container">
-  <div class="hero-section">
-    <div class="hero-content">
-      <h1 class="hero-title">🎯 Open Pub Quiz</h1>
+  <!-- PWA Install Banner -->
+  @if (showInstallPrompt && (isInstallable$ | async)) {
+    <div class="pwa-install-banner" @slideInRight>
+      <div class="pwa-banner-content">
+        <mat-icon>install_mobile</mat-icon>
+        <span>Install Open Pub Quiz for the best experience!</span>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          class="touch-friendly"
+          [@buttonPress]="buttonStates['install']"
+          (click)="installPWA()"
+          [attr.aria-label]="'Install Open Pub Quiz as a Progressive Web App'"
+          matTooltip="Install as an app for offline access and better performance">
+          Install
+        </button>
+        <button 
+          mat-icon-button 
+          class="close-banner"
+          (click)="showInstallPrompt = false"
+          [attr.aria-label]="'Close install banner'"
+          matTooltip="Close">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="hero-section" #heroSection>
+    <div class="hero-content" @fadeInUp>
+      <h1 class="hero-title" role="banner">🎯 Open Pub Quiz</h1>
       <p class="hero-subtitle">
         Transform traditional pub quizzes into an interactive, digital experience with real-time updates, 
         8 different question types, and professional presenter controls
       </p>
       
-      <div class="feature-grid">
-        <div class="feature-card">
-          <mat-icon class="feature-icon">sync</mat-icon>
-          <h3>Real-time Updates</h3>
-          <p>Live question updates, timers, and leaderboards via Socket.IO</p>
-        </div>
-        
-        <div class="feature-card">
-          <mat-icon class="feature-icon">quiz</mat-icon>
-          <h3>8 Question Types</h3>
-          <p>Multiple choice, open text, sequence (drag-and-drop), true/false, numerical, image, audio, and video</p>
-        </div>
-        
-        <div class="feature-card">
-          <mat-icon class="feature-icon">qr_code</mat-icon>
-          <h3>QR Code Join</h3>
-          <p>Participants can join sessions by scanning QR codes</p>
-        </div>
-        
-        <div class="feature-card">
-          <mat-icon class="feature-icon">devices</mat-icon>
-          <h3>Responsive Design</h3>
-          <p>Professional UI that works on desktop, tablet, and mobile</p>
-        </div>
-
-        <div class="feature-card">
-          <mat-icon class="feature-icon">timer</mat-icon>
-          <h3>Timer Support</h3>
-          <p>Configurable time limits for questions with visual countdown</p>
-        </div>
-
-        <div class="feature-card">
-          <mat-icon class="feature-icon">fact_check</mat-icon>
-          <h3>Fun Facts</h3>
-          <p>Educational tidbits displayed with each question</p>
-        </div>
-
-        <div class="feature-card">
-          <mat-icon class="feature-icon">score</mat-icon>
-          <h3>Live Scoring</h3>
-          <p>Automatic and manual scoring with real-time leaderboards</p>
-        </div>
-
-        <div class="feature-card">
-          <mat-icon class="feature-icon">layers</mat-icon>
-          <h3>Multi-Round Support</h3>
-          <p>Organize questions into rounds with different themes</p>
-        </div>
+      <div class="feature-grid" @staggeredFadeIn>
+        @for (feature of features; track feature.id) {
+          <div 
+            class="feature-card touch-friendly"
+            [@cardHover]="cardStates[feature.id]"
+            (mouseenter)="onCardHover(feature.id, true)"
+            (mouseleave)="onCardHover(feature.id, false)"
+            (click)="trackFeatureInteraction(feature.id)"
+            [attr.tabindex]="0"
+            [attr.aria-label]="feature.title + ': ' + feature.description"
+            role="button">
+            <mat-icon class="feature-icon" [attr.aria-hidden]="true">{{ feature.icon }}</mat-icon>
+            <h3>{{ feature.title }}</h3>
+            <p>{{ feature.description }}</p>
+          </div>
+        }
       </div>
       
-      <div class="action-buttons">
-        <button mat-raised-button color="primary" class="action-button" (click)="goToPresenter()">
-          <mat-icon>present_to_all</mat-icon>
+      <div class="action-buttons" @fadeInUp>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          class="action-button touch-friendly"
+          [@buttonPress]="buttonStates['presenter']"
+          (click)="goToPresenter()"
+          [attr.aria-label]="'Start a new quiz session as presenter'"
+          matTooltip="Create and manage a quiz session">
+          <mat-icon aria-hidden="true">present_to_all</mat-icon>
           Start as Presenter
         </button>
         
-        <button mat-raised-button color="accent" class="action-button" (click)="goToJoin()">
-          <mat-icon>group_add</mat-icon>
+        <button 
+          mat-raised-button 
+          color="accent" 
+          class="action-button touch-friendly"
+          [@buttonPress]="buttonStates['participant']"
+          (click)="goToJoin()"
+          [attr.aria-label]="'Join an existing quiz session as participant'"
+          matTooltip="Join an existing quiz session">
+          <mat-icon aria-hidden="true">group_add</mat-icon>
           Join as Participant
         </button>
       </div>
     </div>
   </div>
   
-  <div class="info-section">
-    <h2>How it works</h2>
-    <div class="steps-grid">
-      <div class="step-card">
-        <div class="step-number">1</div>
-        <h3>Create Session</h3>
-        <p>Presenter creates a new quiz session with custom configuration and gets a unique code</p>
+  <main id="main-content">
+    <section class="info-section" id="how-it-works" aria-labelledby="how-it-works-heading">
+      <h2 id="how-it-works-heading">How it works</h2>
+      <div class="steps-grid" @staggeredFadeIn>
+        @for (step of steps; track step.id) {
+          <article 
+            class="step-card touch-friendly"
+            [@cardHover]="cardStates[step.id]"
+            (mouseenter)="onCardHover(step.id, true)"
+            (mouseleave)="onCardHover(step.id, false)"
+            [attr.aria-labelledby]="'step-' + step.number + '-title'"
+            [attr.aria-describedby]="'step-' + step.number + '-desc'">
+            <div class="step-number" [attr.aria-label]="'Step ' + step.number">{{ step.number }}</div>
+            <h3 [id]="'step-' + step.number + '-title'">{{ step.title }}</h3>
+            <p [id]="'step-' + step.number + '-desc'">{{ step.description }}</p>
+          </article>
+        }
       </div>
-      
-      <div class="step-card">
-        <div class="step-number">2</div>
-        <h3>Join Session</h3>
-        <p>Participants scan QR code or enter session code to join with their team name</p>
-      </div>
-      
-      <div class="step-card">
-        <div class="step-number">3</div>
-        <h3>Answer Questions</h3>
-        <p>Real-time questions with timers, multiple formats, and fun facts</p>
-      </div>
-      
-      <div class="step-card">
-        <div class="step-number">4</div>
-        <h3>Review & Score</h3>
-        <p>Review answers, manually score subjective responses, and update leaderboards</p>
-      </div>
+    </section>
 
-      <div class="step-card">
-        <div class="step-number">5</div>
-        <h3>Manage Rounds</h3>
-        <p>Organize questions into themed rounds and track overall progress</p>
-      </div>
+    <section class="features-detail-section" id="features" aria-labelledby="features-heading">
+      <h2 id="features-heading">Key Features</h2>
+      <div class="features-detail-grid responsive-grid" @staggeredFadeIn>
+        <article class="feature-detail-card" @scaleIn>
+          <h3>🎮 Interactive Experience</h3>
+          <ul role="list">
+            <li>Real-time question updates and timers</li>
+            <li>8 different question types for variety</li>
+            <li>Drag-and-drop sequence questions</li>
+            <li>Media support (images, audio, video)</li>
+          </ul>
+        </article>
 
-      <div class="step-card">
-        <div class="step-number">6</div>
-        <h3>View Results</h3>
-        <p>Live leaderboard updates and final results with team rankings</p>
-      </div>
-    </div>
-  </div>
+        <article class="feature-detail-card" @scaleIn>
+          <h3>🎯 Presenter Controls</h3>
+          <ul role="list">
+            <li>Complete control over quiz flow</li>
+            <li>Live scoring with manual override</li>
+            <li>Review phase after each question</li>
+            <li>Multi-round session management</li>
+          </ul>
+        </article>
 
-  <div class="features-detail-section">
-    <h2>Key Features</h2>
-    <div class="features-detail-grid">
-      <div class="feature-detail-card">
-        <h3>🎮 Interactive Experience</h3>
-        <ul>
-          <li>Real-time question updates and timers</li>
-          <li>8 different question types for variety</li>
-          <li>Drag-and-drop sequence questions</li>
-          <li>Media support (images, audio, video)</li>
-        </ul>
-      </div>
+        <article class="feature-detail-card" @scaleIn>
+          <h3>📱 User Experience</h3>
+          <ul role="list">
+            <li>Responsive design for all devices</li>
+            <li>QR code quick join functionality</li>
+            <li>Real-time leaderboard updates</li>
+            <li>Educational fun facts with questions</li>
+          </ul>
+        </article>
 
-      <div class="feature-detail-card">
-        <h3>🎯 Presenter Controls</h3>
-        <ul>
-          <li>Complete control over quiz flow</li>
-          <li>Live scoring with manual override</li>
-          <li>Review phase after each question</li>
-          <li>Multi-round session management</li>
-        </ul>
+        <article class="feature-detail-card" @scaleIn>
+          <h3>🏗 Technical Excellence</h3>
+          <ul role="list">
+            <li>Self-hosted solution with Docker</li>
+            <li>Comprehensive REST API</li>
+            <li>Real-time Socket.IO communication</li>
+            <li>Professional Angular Material UI</li>
+          </ul>
+        </article>
       </div>
+    </section>
 
-      <div class="feature-detail-card">
-        <h3>📱 User Experience</h3>
-        <ul>
-          <li>Responsive design for all devices</li>
-          <li>QR code quick join functionality</li>
-          <li>Real-time leaderboard updates</li>
-          <li>Educational fun facts with questions</li>
-        </ul>
-      </div>
+    <!-- PWA Features Section -->
+    @if (isInstalled$ | async) {
+      <section class="pwa-features-section" @fadeInUp aria-labelledby="pwa-features-heading">
+        <h2 id="pwa-features-heading">🚀 App Features</h2>
+        <div class="pwa-feature-grid">
+          <div class="pwa-feature-item">
+            <mat-icon>offline_bolt</mat-icon>
+            <h4>Works Offline</h4>
+            <p>Continue using core features even without internet connection</p>
+          </div>
+          <div class="pwa-feature-item">
+            <mat-icon>notifications</mat-icon>
+            <h4>Push Notifications</h4>
+            <p>Get notified about new questions and quiz updates</p>
+          </div>
+          <div class="pwa-feature-item">
+            <mat-icon>speed</mat-icon>
+            <h4>Fast Loading</h4>
+            <p>Optimized performance for quick app startup</p>
+          </div>
+        </div>
+      </section>
+    }
 
-      <div class="feature-detail-card">
-        <h3>🏗 Technical Excellence</h3>
-        <ul>
-          <li>Self-hosted solution with Docker</li>
-          <li>Comprehensive REST API</li>
-          <li>Real-time Socket.IO communication</li>
-          <li>Professional Angular Material UI</li>
-        </ul>
+    <!-- Accessibility Information -->
+    <section class="accessibility-section" @fadeInUp aria-labelledby="accessibility-heading">
+      <h2 id="accessibility-heading">♿ Accessibility Features</h2>
+      <div class="accessibility-features">
+        <div class="accessibility-item">
+          <mat-icon>keyboard</mat-icon>
+          <span>Full keyboard navigation support</span>
+        </div>
+        <div class="accessibility-item">
+          <mat-icon>visibility</mat-icon>
+          <span>High contrast mode compatible</span>
+        </div>
+        <div class="accessibility-item">
+          <mat-icon>record_voice_over</mat-icon>
+          <span>Screen reader optimized</span>
+        </div>
+        <div class="accessibility-item">
+          <mat-icon>motion_photos_off</mat-icon>
+          <span>Reduced motion preferences respected</span>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
+
+  <!-- Quick Navigation -->
+  <nav class="quick-nav" aria-label="Quick navigation">
+    <button 
+      mat-fab 
+      color="primary" 
+      class="nav-fab touch-friendly"
+      (click)="scrollToSection('how-it-works')"
+      [attr.aria-label]="'Scroll to how it works section'"
+      matTooltip="How it works">
+      <mat-icon>help_outline</mat-icon>
+    </button>
+    <button 
+      mat-fab 
+      color="accent" 
+      class="nav-fab touch-friendly"
+      (click)="scrollToSection('features')"
+      [attr.aria-label]="'Scroll to features section'"
+      matTooltip="Features">
+      <mat-icon>star</mat-icon>
+    </button>
+  </nav>
 </div>
