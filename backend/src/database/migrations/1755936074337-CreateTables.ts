@@ -4,61 +4,66 @@ export class CreateTables1755936074337 implements MigrationInterface {
     name = 'CreateTables1755936074337'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE \`answers\` CHANGE \`is_correct\` \`is_correct\` tinyint NULL`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`fun_fact\` \`fun_fact\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`time_limit\` \`time_limit\` int NULL`);
-        await queryRunner.query(`ALTER TABLE \`questions\` DROP COLUMN \`options\``);
-        await queryRunner.query(`ALTER TABLE \`questions\` ADD \`options\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`correct_answer\` \`correct_answer\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`questions\` DROP COLUMN \`sequence_items\``);
-        await queryRunner.query(`ALTER TABLE \`questions\` ADD \`sequence_items\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`media_url\` \`media_url\` varchar(500) NULL`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`numerical_answer\` \`numerical_answer\` decimal(15,4) NULL`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`numerical_tolerance\` \`numerical_tolerance\` decimal(15,4) NULL`);
-        await queryRunner.query(`ALTER TABLE \`session_events\` DROP COLUMN \`event_data\``);
-        await queryRunner.query(`ALTER TABLE \`session_events\` ADD \`event_data\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`quiz_sessions\` CHANGE \`current_question_id\` \`current_question_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`fun_fact\` \`fun_fact\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`time_limit\` \`time_limit\` int NULL`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` DROP COLUMN \`options\``);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` ADD \`options\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`correct_answer\` \`correct_answer\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` DROP COLUMN \`sequence_items\``);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` ADD \`sequence_items\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`media_url\` \`media_url\` varchar(500) NULL`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`numerical_answer\` \`numerical_answer\` decimal(15,4) NULL`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`numerical_tolerance\` \`numerical_tolerance\` decimal(15,4) NULL`);
-        await queryRunner.query(`ALTER TABLE \`themes\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`api_keys\` CHANGE \`last_used\` \`last_used\` timestamp NULL`);
+        // Create themes table
+        await queryRunner.query(`CREATE TABLE \`themes\` (\`id\` varchar(36) NOT NULL, \`name\` varchar(255) NOT NULL, \`description\` text NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create api_keys table
+        await queryRunner.query(`CREATE TABLE \`api_keys\` (\`id\` varchar(36) NOT NULL, \`key_hash\` varchar(255) NOT NULL, \`name\` varchar(255) NOT NULL, \`is_active\` tinyint NOT NULL DEFAULT 1, \`last_used\` timestamp NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create quiz_sessions table
+        await queryRunner.query(`CREATE TABLE \`quiz_sessions\` (\`id\` varchar(36) NOT NULL, \`session_code\` varchar(10) NOT NULL, \`name\` varchar(255) NOT NULL, \`status\` enum('waiting', 'active', 'paused', 'finished') NOT NULL DEFAULT 'waiting', \`current_question_id\` varchar(36) NULL, \`current_round\` int NOT NULL DEFAULT 1, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), UNIQUE INDEX \`IDX_session_code\` (\`session_code\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create session_configurations table
+        await queryRunner.query(`CREATE TABLE \`session_configurations\` (\`id\` varchar(36) NOT NULL, \`quiz_session_id\` varchar(36) NOT NULL, \`round_number\` int NOT NULL, \`round_name\` varchar(255) NOT NULL, \`time_limit\` int NULL, \`points_per_question\` int NOT NULL DEFAULT 1, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create teams table
+        await queryRunner.query(`CREATE TABLE \`teams\` (\`id\` varchar(36) NOT NULL, \`quiz_session_id\` varchar(36) NOT NULL, \`name\` varchar(255) NOT NULL, \`score\` int NOT NULL DEFAULT 0, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create questions table
+        await queryRunner.query(`CREATE TABLE \`questions\` (\`id\` varchar(36) NOT NULL, \`quiz_session_id\` varchar(36) NOT NULL, \`round_number\` int NOT NULL, \`question_number\` int NOT NULL, \`type\` enum('multiple_choice', 'open_text', 'sequence', 'true_false', 'numerical', 'image', 'audio', 'video') NOT NULL, \`question_text\` text NOT NULL, \`fun_fact\` text NULL, \`time_limit\` int NULL, \`points\` int NOT NULL DEFAULT 1, \`options\` json NULL, \`correct_answer\` text NULL, \`sequence_items\` json NULL, \`media_url\` varchar(500) NULL, \`numerical_answer\` decimal(15,4) NULL, \`numerical_tolerance\` decimal(15,4) NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), INDEX \`IDX_quiz_session_id\` (\`quiz_session_id\`), INDEX \`IDX_round_question\` (\`round_number\`, \`question_number\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create answers table
+        await queryRunner.query(`CREATE TABLE \`answers\` (\`id\` varchar(36) NOT NULL, \`question_id\` varchar(36) NOT NULL, \`team_id\` varchar(36) NOT NULL, \`answer_text\` text NOT NULL, \`is_correct\` tinyint NULL, \`points_awarded\` int NOT NULL DEFAULT 0, \`submitted_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), INDEX \`IDX_question_id\` (\`question_id\`), INDEX \`IDX_team_id\` (\`team_id\`), UNIQUE INDEX \`IDX_team_question\` (\`team_id\`, \`question_id\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create sequence_answers table
+        await queryRunner.query(`CREATE TABLE \`sequence_answers\` (\`id\` varchar(36) NOT NULL, \`answer_id\` varchar(36) NOT NULL, \`item_text\` varchar(255) NOT NULL, \`position\` int NOT NULL, \`is_correct\` tinyint NOT NULL DEFAULT 0, PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create session_events table
+        await queryRunner.query(`CREATE TABLE \`session_events\` (\`id\` varchar(36) NOT NULL, \`quiz_session_id\` varchar(36) NOT NULL, \`event_type\` varchar(50) NOT NULL, \`event_data\` json NULL, \`timestamp\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Create question_sets table
+        await queryRunner.query(`CREATE TABLE \`question_sets\` (\`id\` varchar(36) NOT NULL, \`name\` varchar(255) NOT NULL, \`description\` text NULL, \`type\` enum('multiple_choice', 'open_text', 'sequence', 'true_false', 'numerical', 'image', 'audio', 'video') NOT NULL, \`question_text\` text NOT NULL, \`fun_fact\` text NULL, \`time_limit\` int NULL, \`points\` int NOT NULL DEFAULT 1, \`options\` json NULL, \`correct_answer\` text NULL, \`sequence_items\` json NULL, \`media_url\` varchar(500) NULL, \`numerical_answer\` decimal(15,4) NULL, \`numerical_tolerance\` decimal(15,4) NULL, \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+
+        // Add foreign key constraints
+        await queryRunner.query(`ALTER TABLE \`session_configurations\` ADD CONSTRAINT \`FK_session_configurations_quiz_session\` FOREIGN KEY (\`quiz_session_id\`) REFERENCES \`quiz_sessions\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`teams\` ADD CONSTRAINT \`FK_teams_quiz_session\` FOREIGN KEY (\`quiz_session_id\`) REFERENCES \`quiz_sessions\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`questions\` ADD CONSTRAINT \`FK_questions_quiz_session\` FOREIGN KEY (\`quiz_session_id\`) REFERENCES \`quiz_sessions\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`answers\` ADD CONSTRAINT \`FK_answers_question\` FOREIGN KEY (\`question_id\`) REFERENCES \`questions\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`answers\` ADD CONSTRAINT \`FK_answers_team\` FOREIGN KEY (\`team_id\`) REFERENCES \`teams\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`sequence_answers\` ADD CONSTRAINT \`FK_sequence_answers_answer\` FOREIGN KEY (\`answer_id\`) REFERENCES \`answers\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE \`session_events\` ADD CONSTRAINT \`FK_session_events_quiz_session\` FOREIGN KEY (\`quiz_session_id\`) REFERENCES \`quiz_sessions\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE \`api_keys\` CHANGE \`last_used\` \`last_used\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`themes\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`numerical_tolerance\` \`numerical_tolerance\` decimal(15,4) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`numerical_answer\` \`numerical_answer\` decimal(15,4) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`media_url\` \`media_url\` varchar(500) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` DROP COLUMN \`sequence_items\``);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` ADD \`sequence_items\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`correct_answer\` \`correct_answer\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` DROP COLUMN \`options\``);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` ADD \`options\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`time_limit\` \`time_limit\` int NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`question_sets\` CHANGE \`fun_fact\` \`fun_fact\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`quiz_sessions\` CHANGE \`current_question_id\` \`current_question_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`session_events\` DROP COLUMN \`event_data\``);
-        await queryRunner.query(`ALTER TABLE \`session_events\` ADD \`event_data\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`numerical_tolerance\` \`numerical_tolerance\` decimal(15,4) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`numerical_answer\` \`numerical_answer\` decimal(15,4) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`media_url\` \`media_url\` varchar(500) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`questions\` DROP COLUMN \`sequence_items\``);
-        await queryRunner.query(`ALTER TABLE \`questions\` ADD \`sequence_items\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`correct_answer\` \`correct_answer\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`questions\` DROP COLUMN \`options\``);
-        await queryRunner.query(`ALTER TABLE \`questions\` ADD \`options\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`time_limit\` \`time_limit\` int NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`questions\` CHANGE \`fun_fact\` \`fun_fact\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`answers\` CHANGE \`is_correct\` \`is_correct\` tinyint NULL DEFAULT 'NULL'`);
-    }
+        // Drop foreign key constraints
+        await queryRunner.query(`ALTER TABLE \`session_events\` DROP FOREIGN KEY \`FK_session_events_quiz_session\``);
+        await queryRunner.query(`ALTER TABLE \`sequence_answers\` DROP FOREIGN KEY \`FK_sequence_answers_answer\``);
+        await queryRunner.query(`ALTER TABLE \`answers\` DROP FOREIGN KEY \`FK_answers_team\``);
+        await queryRunner.query(`ALTER TABLE \`answers\` DROP FOREIGN KEY \`FK_answers_question\``);
+        await queryRunner.query(`ALTER TABLE \`questions\` DROP FOREIGN KEY \`FK_questions_quiz_session\``);
+        await queryRunner.query(`ALTER TABLE \`teams\` DROP FOREIGN KEY \`FK_teams_quiz_session\``);
+        await queryRunner.query(`ALTER TABLE \`session_configurations\` DROP FOREIGN KEY \`FK_session_configurations_quiz_session\``);
 
+        // Drop tables
+        await queryRunner.query(`DROP TABLE \`question_sets\``);
+        await queryRunner.query(`DROP TABLE \`session_events\``);
+        await queryRunner.query(`DROP TABLE \`sequence_answers\``);
+        await queryRunner.query(`DROP TABLE \`answers\``);
+        await queryRunner.query(`DROP TABLE \`questions\``);
+        await queryRunner.query(`DROP TABLE \`teams\``);
+        await queryRunner.query(`DROP TABLE \`session_configurations\``);
+        await queryRunner.query(`DROP TABLE \`quiz_sessions\``);
+        await queryRunner.query(`DROP TABLE \`api_keys\``);
+        await queryRunner.query(`DROP TABLE \`themes\``);
+    }
 }
