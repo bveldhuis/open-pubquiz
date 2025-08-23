@@ -173,6 +173,13 @@ app.get('/health', async (req, res) => {
 });
 
 // API Documentation
+// API Documentation - JSON spec endpoint
+app.get('/api/docs/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(specs);
+});
+
+// API Documentation - Swagger UI
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Open Pub Quiz API Documentation',
