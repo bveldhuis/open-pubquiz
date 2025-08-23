@@ -8,16 +8,16 @@
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:generate": "dotenv -e .env -- npm run typeorm migration:generate -- -d src/config/database.ts",
-    "migration:run": "dotenv -e .env -- npm run typeorm migration:run -- -d src/config/database.ts",
-    "migration:revert": "dotenv -e .env -- npm run typeorm migration:revert -- -d src/config/database.ts",
-    "seed": "dotenv -e .env -- ts-node src/database/seed.ts",
+    "migration:generate": "npm run typeorm migration:generate -- -d src/config/database.ts",
+    "migration:run": "npm run typeorm migration:run -- -d src/config/database.ts",
+    "migration:revert": "npm run typeorm migration:revert -- -d src/config/database.ts",
+    "seed": "ts-node src/database/seed.ts",
 
     "setup:db": "npm run migration:run && npm run seed",
     "test:health": "node test-health.js",
-    "test": "dotenv -e .env -- jest",
-    "test:watch": "dotenv -e .env -- jest --watch",
-    "test:coverage": "dotenv -e .env -- jest --coverage"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "pubquiz",
