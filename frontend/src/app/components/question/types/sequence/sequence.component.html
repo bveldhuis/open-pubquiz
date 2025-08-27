@@ -1,8 +1,8 @@
-<div class="sequence-container">
+<div class="sequence-container" #sequenceContainer>
   @if (isInteractive) {
     <div class="sequence-instructions">
-      <mat-icon>drag_indicator</mat-icon>
-      <p>Drag and drop the items to arrange them in the correct order:</p>
+      <mat-icon>{{ isTouchDevice ? 'touch_app' : 'drag_indicator' }}</mat-icon>
+      <p>{{ isTouchDevice ? 'Touch and drag items to arrange them in the correct order:' : 'Drag and drop the items to arrange them in the correct order:' }}</p>
     </div>
   }
 
@@ -10,11 +10,13 @@
     @for (item of displayItems; track item; let i = $index) {
       <div
         class="sequence-item"
-        [draggable]="isInteractive && !isAnswerSubmitted"
+        [class.touch-device]="isTouchDevice"
+        [draggable]="isInteractive && !isAnswerSubmitted && !isTouchDevice"
         (dragstart)="onDragStart($event, i)"
         (dragover)="onDragOver($event)"
         (drop)="onDrop($event, i)"
         (dragend)="onDragEnd()"
+        (touchstart)="onTouchStart($event, i)"
         [class.dragging]="draggedIndex === i"
         [class.drag-over]="dragOverIndex === i"
         [class.correct-position]="showCorrectAnswer && isCorrectPosition(i, item)"
@@ -38,9 +40,30 @@
           </div>
         }
         @if (isInteractive && !isAnswerSubmitted) {
-          <mat-icon class="drag-handle">
-            drag_indicator
-          </mat-icon>
+          @if (isTouchDevice) {
+            <div class="mobile-controls">
+              <button 
+                mat-icon-button 
+                class="move-button"
+                [disabled]="i === 0"
+                (click)="moveItemUp(i)"
+                aria-label="Move item up">
+                <mat-icon>keyboard_arrow_up</mat-icon>
+              </button>
+              <button 
+                mat-icon-button 
+                class="move-button"
+                [disabled]="i === displayItems.length - 1"
+                (click)="moveItemDown(i)"
+                aria-label="Move item down">
+                <mat-icon>keyboard_arrow_down</mat-icon>
+              </button>
+            </div>
+          } @else {
+            <mat-icon class="drag-handle">
+              drag_indicator
+            </mat-icon>
+          }
         }
       </div>
     }

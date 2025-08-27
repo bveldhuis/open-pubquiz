@@ -3,13 +3,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
     selector: 'app-loading-state',
-    template: `
-    <div class="loading-state">
-      <mat-spinner diameter="40"></mat-spinner>
-      <p>{{ message }}</p>
-    </div>
-  `,
-    styles: [],
+    templateUrl: './loading-state.component.html',
+    styleUrls: ['./loading-state.component.scss'],
     standalone: true,
     imports: [
         MatProgressSpinnerModule

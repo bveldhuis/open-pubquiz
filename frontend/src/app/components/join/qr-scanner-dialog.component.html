@@ -1,0 +1,76 @@
+<div class="qr-scanner-dialog">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>Scan QR Code</h2>
+    <button mat-icon-button (click)="close()" aria-label="Close scanner">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-content" mat-dialog-content>
+    @if (hasDevices && hasPermission) {
+      <div class="scanner-container">
+        <zxing-scanner
+          #scanner
+          [enable]="scannerEnabled"
+          [device]="currentDevice"
+          [formats]="formats"
+          (scanSuccess)="onScanSuccess($event)"
+          (scanFailure)="onScanError($event)"
+          (camerasFound)="onCamerasFound($event)"
+          (camerasNotFound)="onCamerasNotFound()"
+          (permissionResponse)="onPermissionResponse($event)"
+          (hasDevices)="onHasDevices($event)">
+        </zxing-scanner>
+        
+        <div class="scanner-overlay">
+          <div class="scanner-frame"></div>
+          <p class="scanner-instruction">Position the QR code within the frame</p>
+        </div>
+      </div>
+
+      @if (availableDevices.length > 1) {
+        <div class="camera-selector">
+          <mat-label>Camera:</mat-label>
+          <mat-select 
+            [value]="currentDevice" 
+            (selectionChange)="onDeviceSelectChange($event.value)">
+            @for (device of availableDevices; track device.deviceId) {
+              <mat-option [value]="device">
+                {{ device.label || 'Camera ' + ($index + 1) }}
+              </mat-option>
+            }
+          </mat-select>
+        </div>
+      }
+    } @else if (!hasPermission) {
+      <div class="permission-request">
+        <mat-icon class="permission-icon">camera_alt</mat-icon>
+        <h3>Camera Permission Required</h3>
+        <p>Please allow camera access to scan QR codes</p>
+        <button mat-raised-button color="primary" (click)="requestPermission()">
+          Allow Camera Access
+        </button>
+      </div>
+    } @else if (!hasDevices) {
+      <div class="no-devices">
+        <mat-icon class="no-camera-icon">camera_alt_off</mat-icon>
+        <h3>No Camera Found</h3>
+        <p>No camera devices were detected on this device</p>
+      </div>
+    } @else {
+      <div class="loading">
+        <mat-spinner diameter="50"></mat-spinner>
+        <p>Initializing camera...</p>
+      </div>
+    }
+  </div>
+
+  <div class="dialog-actions" mat-dialog-actions>
+    <button mat-button (click)="close()">Cancel</button>
+    @if (lastScannedCode) {
+      <button mat-raised-button color="primary" (click)="confirm()">
+        Use: {{ lastScannedCode }}
+      </button>
+    }
+  </div>
+</div>
