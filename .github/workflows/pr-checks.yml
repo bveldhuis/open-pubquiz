@@ -195,11 +195,13 @@ jobs:
           # Check if any spec files exist
           if find src -name "*.spec.ts" | grep -q .; then
             echo "Test files found, running tests..."
-            npm test -- --watch=false --browsers=ChromeHeadless --code-coverage
+            npm run test:ci
           else
             echo "No test files found, skipping tests..."
             echo "Consider adding unit tests to improve code quality"
           fi
+        env:
+          CI: true
 
       - name: Upload frontend test coverage
         uses: codecov/codecov-action@v4

@@ -15,10 +15,10 @@ npm test -- --browsers=Chrome
 
 ### CI/Production Testing
 ```bash
-# Run tests once with headless Chrome (CI-friendly)
+# Run tests once with headless Chrome and code coverage (CI-friendly)
 npm run test:ci
 
-# Alternative headless test command
+# Alternative headless test command (without coverage)
 npm run test:headless
 ```
 

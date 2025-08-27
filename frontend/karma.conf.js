@@ -26,11 +26,12 @@ module.exports = function (config) {
       suppressAll: true // removes the duplicated traces
     },
     coverageReporter: {
-      dir: require('path').join(__dirname, './coverage/pubquiz-frontend'),
+      dir: require('path').join(__dirname, './coverage'),
       subdir: '.',
       reporters: [
-        { type: 'html' },
-        { type: 'text-summary' }
+        { type: 'html', subdir: 'html' },
+        { type: 'text-summary' },
+        { type: 'lcov', subdir: '.' }
       ]
     },
     reporters: ['progress', 'kjhtml'],
