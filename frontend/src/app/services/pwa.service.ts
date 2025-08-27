@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -145,10 +145,18 @@ export class PWAService {
     try {
       console.log('PWA Service: Attempting to show notification:', title);
       
+      // In development mode, show a visual notification since service workers aren't enabled
+      if (isDevMode()) {
+        console.log('PWA Service: Development mode - showing visual notification instead');
+        this.showDevelopmentNotification(title, options);
+        return;
+      }
+      
       const hasPermission = await this.requestNotificationPermission();
       
       if (!hasPermission) {
         console.warn('Notification permission not granted');
+        this.showVisualFeedback('Notification permission required for quiz updates');
         return;
       }
 
@@ -165,27 +173,140 @@ export class PWAService {
           const registration = await Promise.race([
             navigator.serviceWorker.ready,
             new Promise<never>((_, reject) => 
-              setTimeout(() => reject(new Error('Service worker registration timeout')), 3000)
+              setTimeout(() => reject(new Error('Service worker registration timeout')), 5000)
             )
           ]) as ServiceWorkerRegistration;
+          
           console.log('PWA Service: Service worker ready, showing notification');
-          registration.showNotification(title, defaultOptions);
+          await registration.showNotification(title, defaultOptions);
+          console.log('PWA Service: Notification shown via service worker');
         } catch (swError) {
           console.warn('PWA Service: Service worker notification failed, falling back to regular notification:', swError);
           // Fallback to regular notification
-          new Notification(title, defaultOptions);
+          const notification = new Notification(title, defaultOptions);
+          console.log('PWA Service: Fallback notification created:', notification);
         }
       } else {
         // Fallback to regular notification
         console.log('PWA Service: Using regular notification (no service worker)');
-        new Notification(title, defaultOptions);
+        const notification = new Notification(title, defaultOptions);
+        console.log('PWA Service: Regular notification created:', notification);
       }
       
       console.log('PWA Service: Notification shown successfully');
     } catch (error) {
       console.error('PWA Service: Failed to show notification:', error);
-      // Don't throw the error, just log it so the flow continues
+      
+      // Show fallback visual notification
+      this.showVisualFeedback(`Notification failed: ${title}`);
     }
+  }
+
+  private showDevelopmentNotification(title: string, options?: NotificationOptions): void {
+    const body = options?.body || '';
+    const message = `📱 ${title}${body ? `: ${body}` : ''}`;
+    
+    // Create a visual notification element
+    const notification = document.createElement('div');
+    notification.className = 'dev-notification';
+    notification.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #2196f3;
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 300px;
+        animation: slideInRight 0.3s ease-out;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.4;
+      ">
+        <strong>DEV NOTIFICATION</strong><br>
+        ${message}
+        <button onclick="this.parentElement.parentElement.remove()" style="
+          position: absolute;
+          top: 4px;
+          right: 6px;
+          background: none;
+          border: none;
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+          padding: 0;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">×</button>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 5000);
+    
+    console.log('PWA Service: Development notification shown:', message);
+  }
+
+  private showVisualFeedback(message: string): void {
+    const notification = document.createElement('div');
+    notification.className = 'visual-feedback';
+    notification.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #ff9800;
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 300px;
+        animation: slideInRight 0.3s ease-out;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.4;
+      ">
+        ${message}
+        <button onclick="this.parentElement.parentElement.remove()" style="
+          position: absolute;
+          top: 4px;
+          right: 6px;
+          background: none;
+          border: none;
+          color: white;
+          font-size: 16px;
+          cursor: pointer;
+          padding: 0;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">×</button>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 4000);
   }
 
   // Quiz-specific notification methods
