@@ -34,8 +34,22 @@ module.exports = function (config) {
       ]
     },
     reporters: ['progress', 'kjhtml'],
-    browsers: ['ChromeHeadlessCI'],
+    browsers: ['ChromeHeadlessNoSandbox'],
     customLaunchers: {
+      ChromeHeadlessNoSandbox: {
+        base: 'ChromeHeadless',
+        flags: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-extensions',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--headless',
+          '--remote-debugging-port=9222'
+        ]
+      },
       ChromeHeadlessCI: {
         base: 'ChromeHeadless',
         flags: [
@@ -44,6 +58,9 @@ module.exports = function (config) {
           '--disable-dev-shm-usage',
           '--disable-extensions',
           '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--headless',
           '--remote-debugging-port=9222'
         ]
       }

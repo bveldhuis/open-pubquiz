@@ -8,6 +8,8 @@
     "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessNoSandbox",
+    "test:headless": "ng test --watch=false --browsers=ChromeHeadlessNoSandbox",
     "lint": "ng lint"
   },
   "private": true,
