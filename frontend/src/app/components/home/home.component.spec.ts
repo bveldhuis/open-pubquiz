@@ -1,7 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { of } from 'rxjs';
 
 import { HomeComponent } from './home.component';
 import { PWAService } from '../../services/pwa.service';
@@ -14,15 +15,25 @@ describe('HomeComponent', () => {
   let mockMatSnackBar: jasmine.SpyObj<MatSnackBar>;
 
   beforeEach(async () => {
+    // Mock touch device detection before component creation
+    // Note: maxTouchPoints is already mocked in test-setup.ts
+    Object.defineProperty(window, 'ontouchstart', { value: undefined, writable: true });
+    
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     const pwaServiceSpy = jasmine.createSpyObj('PWAService', [
       'requestNotificationPermission',
       'installPWA',
       'showNotification'
-    ], {
-      isInstallable$: { subscribe: jasmine.createSpy() },
-      isInstalled$: { subscribe: jasmine.createSpy() }
-    });
+    ]);
+    
+    // Mock PWA service methods
+    pwaServiceSpy.requestNotificationPermission.and.returnValue(Promise.resolve(true));
+    pwaServiceSpy.installPWA.and.returnValue(Promise.resolve(true));
+    
+    // Mock observables properly
+    pwaServiceSpy.isInstallable$ = of(false);
+    pwaServiceSpy.isInstalled$ = of(false);
+    
     const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
 
     await TestBed.configureTestingModule({
@@ -58,27 +69,52 @@ describe('HomeComponent', () => {
 
   it('should setup PWA handling on init', () => {
     component.ngOnInit();
-    expect(mockPwaService.requestNotificationPermission).toHaveBeenCalled();
+    // HomeComponent doesn't call requestNotificationPermission, it only sets up PWA observables
+    expect(component.isInstallable$).toBeDefined();
+    expect(component.isInstalled$).toBeDefined();
   });
 
-  it('should navigate to presenter when goToPresenter is called', async () => {
-    await component.goToPresenter();
+  it('should navigate to presenter when goToPresenter is called', fakeAsync(() => {
+    component.goToPresenter();
+    tick(100); // Wait for the setTimeout delay
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/presenter']);
-  });
+  }));
 
-  it('should navigate to join when goToJoin is called', async () => {
-    await component.goToJoin();
+  it('should navigate to join when goToJoin is called', fakeAsync(() => {
+    component.goToJoin();
+    tick(100); // Wait for the setTimeout delay
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/join']);
-  });
+  }));
 
-  it('should show install notification when installPWA is called', async () => {
+  it('should show install notification when installPWA is called', fakeAsync(async () => {
+    // Reset the mock to ensure it returns true
     mockPwaService.installPWA.and.returnValue(Promise.resolve(true));
     
+    // Ensure component is properly initialized
+    component.ngOnInit();
+    
+    // Replace the component's snackBar with our mock
+    (component as any).snackBar = mockMatSnackBar;
+    
+    // Call the method directly on the component instance
     await component.installPWA();
     
+    // Wait for the setTimeout delay
+    tick(200);
+    
+    // Verify the PWA service was called
     expect(mockPwaService.installPWA).toHaveBeenCalled();
-    expect(mockMatSnackBar.open).toHaveBeenCalled();
-  });
+    
+    // Verify the snackbar was called with the success message
+    expect(mockMatSnackBar.open).toHaveBeenCalledWith(
+      '🎉 App installed successfully!',
+      'Close',
+      jasmine.objectContaining({
+        duration: 3000,
+        panelClass: ['success-snackbar']
+      })
+    );
+  }));
 
   it('should handle card hover animations when not reduced motion', () => {
     component.isReducedMotion = false;
@@ -99,15 +135,22 @@ describe('HomeComponent', () => {
   });
 
   it('should handle touch events correctly', () => {
+    // Set touch device to true so the method actually does something
     component.isTouchDevice = true;
-    const mockElement = { classList: { add: jasmine.createSpy(), remove: jasmine.createSpy() } };
-    const mockEvent = { target: mockElement } as unknown as TouchEvent;
     
-    mockElement.classList.add.and.stub();
-    mockElement.classList.remove.and.stub();
+    const mockEvent = {
+      target: {
+        classList: {
+          contains: jasmine.createSpy('contains').and.returnValue(true),
+          add: jasmine.createSpy('add')
+        }
+      }
+    };
     
-    component.onTouchStart(mockEvent);
-    // Note: In real implementation, this would check for 'touch-friendly' class
+    component.onTouchStart(mockEvent as any);
+    // The component checks for 'feature-card', 'step-card', or 'action-button'
+    expect(mockEvent.target.classList.contains).toHaveBeenCalledWith('feature-card');
+    expect(mockEvent.target.classList.add).toHaveBeenCalledWith('touch-active');
   });
 
   it('should handle keyboard navigation', () => {

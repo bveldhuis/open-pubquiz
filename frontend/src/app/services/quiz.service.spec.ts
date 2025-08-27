@@ -52,7 +52,7 @@ describe('QuizService', () => {
         expect(response).toBeDefined();
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/sessions`);
+      const req = httpMock.expectOne(`${apiUrl}/quiz`);
       expect(req.request.method).toBe('POST');
       req.flush(mockResponse);
     });
@@ -65,7 +65,7 @@ describe('QuizService', () => {
         expect(response).toBeDefined();
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/sessions/${sessionCode}/status`);
+      const req = httpMock.expectOne(`${apiUrl}/quiz/${sessionCode}/status`);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
@@ -78,7 +78,7 @@ describe('QuizService', () => {
         expect(response).toBeDefined();
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/sessions/${sessionCode}/leaderboard`);
+      const req = httpMock.expectOne(`${apiUrl}/quiz/${sessionCode}/leaderboard`);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
@@ -95,7 +95,7 @@ describe('QuizService', () => {
         }
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/sessions/${sessionCode}/status`);
+      const req = httpMock.expectOne(`${apiUrl}/quiz/${sessionCode}/status`);
       req.flush('Session not found', { status: 404, statusText: 'Not Found' });
     });
   });

@@ -5,6 +5,7 @@ import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting
 } from '@angular/platform-browser-dynamic/testing';
+import { Router } from '@angular/router';
 
 // declare const require: {
 //   context(path: string, deep?: boolean, filter?: RegExp): {
@@ -21,20 +22,107 @@ getTestBed().initTestEnvironment(
 
 // Global test setup
 beforeEach(() => {
-  // Mock matchMedia
+  // Mock Router to fix "Cannot read properties of undefined (reading 'root')" error
+  const mockRouter = {
+    navigate: jasmine.createSpy('navigate'),
+    navigateByUrl: jasmine.createSpy('navigateByUrl'),
+    createUrlTree: jasmine.createSpy('createUrlTree'),
+    serializeUrl: jasmine.createSpy('serializeUrl'),
+    parseUrl: jasmine.createSpy('parseUrl'),
+    isActive: jasmine.createSpy('isActive'),
+    events: {
+      pipe: jasmine.createSpy('pipe').and.returnValue({ subscribe: jasmine.createSpy() })
+    },
+    url: '/',
+    routerState: {
+      snapshot: {
+        url: '/',
+        root: {
+          children: []
+        }
+      }
+    },
+    config: [],
+    root: {
+      component: null,
+      data: {},
+      outlet: 'primary',
+      url: [],
+      params: {},
+      queryParams: {},
+      fragment: null,
+      firstChild: null,
+      children: []
+    }
+  };
+
+  // Mock the Router provider globally
+  getTestBed().overrideProvider(Router, { useValue: mockRouter });
+
+  // Mock matchMedia with proper function implementations for Angular CDK
+  // This needs to be a more comprehensive mock that handles all MediaQueryList creation
+  const originalMatchMedia = window.matchMedia;
+  
+  // Create a mock MediaQueryList class
+  class MockMediaQueryList {
+    matches: boolean;
+    media: string;
+    onchange: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null;
+    private _listeners: ((ev: MediaQueryListEvent) => void)[] = [];
+    private _eventListeners: Record<string, EventListener[]> = {};
+
+    constructor(query: string) {
+      this.matches = false;
+      this.media = query;
+      this.onchange = null;
+    }
+
+    addListener(callback: (ev: MediaQueryListEvent) => void): void {
+      this._listeners.push(callback);
+    }
+
+    removeListener(callback: (ev: MediaQueryListEvent) => void): void {
+      const index = this._listeners.indexOf(callback);
+      if (index > -1) {
+        this._listeners.splice(index, 1);
+      }
+    }
+
+    addEventListener(type: string, callback: EventListener): void {
+      if (!this._eventListeners[type]) {
+        this._eventListeners[type] = [];
+      }
+      this._eventListeners[type].push(callback);
+    }
+
+    removeEventListener(type: string, callback: EventListener): void {
+      if (this._eventListeners[type]) {
+        const index = this._eventListeners[type].indexOf(callback);
+        if (index > -1) {
+          this._eventListeners[type].splice(index, 1);
+        }
+      }
+    }
+
+    dispatchEvent(event: Event): boolean {
+      return true;
+    }
+  }
+
+  // Replace window.matchMedia with our mock
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jasmine.createSpy('matchMedia').and.returnValue({
-      matches: false,
-      media: '',
-      onchange: null,
-      addListener: jasmine.createSpy(), // deprecated
-      removeListener: jasmine.createSpy(), // deprecated
-      addEventListener: jasmine.createSpy(),
-      removeEventListener: jasmine.createSpy(),
-      dispatchEvent: jasmine.createSpy(),
-    }),
+    value: (query: string) => new MockMediaQueryList(query),
   });
+
+  // Ensure MediaQueryListEvent is available for the CDK
+  if (!window.MediaQueryListEvent) {
+    (window as any).MediaQueryListEvent = class MockMediaQueryListEvent extends Event {
+      constructor(type: string, eventInitDict?: MediaQueryListEventInit) {
+        super(type, eventInitDict);
+      }
+    };
+  }
 
   // Mock IntersectionObserver
   (global as typeof globalThis).IntersectionObserver = class MockIntersectionObserver {
@@ -59,25 +147,39 @@ beforeEach(() => {
     unobserve() { return null; }
   };
 
-  // Mock navigator
-  Object.defineProperty(window, 'navigator', {
-    writable: true,
-    value: {
-      userAgent: 'Mozilla/5.0 (Test)',
-      vibrate: jasmine.createSpy('vibrate'),
-      share: jasmine.createSpy('share').and.returnValue(Promise.resolve()),
-      clipboard: {
-        writeText: jasmine.createSpy('writeText').and.returnValue(Promise.resolve()),
-        readText: jasmine.createSpy('readText').and.returnValue(Promise.resolve(''))
-      },
-      maxTouchPoints: 0,
-      serviceWorker: {
-        register: jasmine.createSpy('register').and.returnValue(Promise.resolve({
-          addEventListener: jasmine.createSpy(),
-          removeEventListener: jasmine.createSpy()
-        }))
-      }
+  // Mock navigator with a more robust approach
+  const mockNavigator = {
+    userAgent: 'Mozilla/5.0 (Test)',
+    vibrate: jasmine.createSpy('vibrate'),
+    share: jasmine.createSpy('share').and.returnValue(Promise.resolve()),
+    clipboard: {
+      writeText: jasmine.createSpy('writeText').and.returnValue(Promise.resolve()),
+      readText: jasmine.createSpy('readText').and.returnValue(Promise.resolve(''))
+    },
+    maxTouchPoints: 0,
+    serviceWorker: {
+      register: jasmine.createSpy('register').and.returnValue(Promise.resolve({
+        addEventListener: jasmine.createSpy(),
+        removeEventListener: jasmine.createSpy()
+      }))
     }
+  };
+
+  // Ensure navigator is properly mocked and cannot be overridden
+  Object.defineProperty(window, 'navigator', {
+    value: mockNavigator,
+    writable: true,
+    configurable: true
+  });
+
+  // Also ensure navigator is available globally
+  (global as any).navigator = mockNavigator;
+
+  // Mock window.ontouchstart to be undefined for non-touch device detection
+  Object.defineProperty(window, 'ontouchstart', {
+    value: undefined,
+    writable: true,
+    configurable: true
   });
 
   // Mock Notification API
@@ -217,18 +319,54 @@ export const TestUtils = {
 
   // Mock reduced motion preference
   mockReducedMotion: (enabled = true) => {
+    class MockMediaQueryListWithReducedMotion {
+      matches: boolean;
+      media: string;
+      onchange: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null;
+      private _listeners: ((ev: MediaQueryListEvent) => void)[] = [];
+      private _eventListeners: Record<string, EventListener[]> = {};
+
+      constructor(query: string) {
+        this.matches = query === '(prefers-reduced-motion: reduce)' ? enabled : false;
+        this.media = query;
+        this.onchange = null;
+      }
+
+      addListener(callback: (ev: MediaQueryListEvent) => void): void {
+        this._listeners.push(callback);
+      }
+
+      removeListener(callback: (ev: MediaQueryListEvent) => void): void {
+        const index = this._listeners.indexOf(callback);
+        if (index > -1) {
+          this._listeners.splice(index, 1);
+        }
+      }
+
+      addEventListener(type: string, callback: EventListener): void {
+        if (!this._eventListeners[type]) {
+          this._eventListeners[type] = [];
+        }
+        this._eventListeners[type].push(callback);
+      }
+
+      removeEventListener(type: string, callback: EventListener): void {
+        if (this._eventListeners[type]) {
+          const index = this._eventListeners[type].indexOf(callback);
+          if (index > -1) {
+            this._eventListeners[type].splice(index, 1);
+          }
+        }
+      }
+
+      dispatchEvent(event: Event): boolean {
+        return true;
+      }
+    }
+
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: jasmine.createSpy('matchMedia').and.callFake((query: string) => ({
-        matches: query === '(prefers-reduced-motion: reduce)' ? enabled : false,
-        media: query,
-        onchange: null,
-        addListener: jasmine.createSpy(),
-        removeListener: jasmine.createSpy(),
-        addEventListener: jasmine.createSpy(),
-        removeEventListener: jasmine.createSpy(),
-        dispatchEvent: jasmine.createSpy(),
-      })),
+      value: (query: string) => new MockMediaQueryListWithReducedMotion(query),
     });
   },
 

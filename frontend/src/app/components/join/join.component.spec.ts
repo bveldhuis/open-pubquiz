@@ -1,50 +1,121 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { Subject, of } from 'rxjs';
+import { fakeAsync, tick } from '@angular/core/testing';
 
 import { JoinComponent } from './join.component';
 import { AuthService } from '../../services/auth.service';
 import { SocketService } from '../../services/socket.service';
+import { QuizManagementService } from '../../services/quiz-management.service';
 import { PWAService } from '../../services/pwa.service';
 
 describe('JoinComponent', () => {
   let component: JoinComponent;
   let fixture: ComponentFixture<JoinComponent>;
-  let mockRouter: jasmine.SpyObj<Router>;
+  let mockAuthService: jasmine.SpyObj<AuthService>;
+  let mockSocketService: jasmine.SpyObj<SocketService>;
   let mockPwaService: jasmine.SpyObj<PWAService>;
+  let mockRouter: jasmine.SpyObj<Router>;
   let mockMatSnackBar: jasmine.SpyObj<MatSnackBar>;
 
   beforeEach(async () => {
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-    const authServiceSpy = jasmine.createSpyObj('AuthService', ['setCurrentUser', 'getCurrentSession']);
-    const socketServiceSpy = jasmine.createSpyObj('SocketService', ['connect', 'joinSession']);
+    // Mock touch device detection before component creation
+    // Note: maxTouchPoints is already mocked in test-setup.ts
+    Object.defineProperty(window, 'ontouchstart', { value: undefined, writable: true });
+    
+    // Ensure navigator is properly mocked before component creation
+    const mockNavigator = {
+      userAgent: 'Mozilla/5.0 (Test)',
+      vibrate: jasmine.createSpy('vibrate'),
+      share: jasmine.createSpy('share').and.returnValue(Promise.resolve()),
+      clipboard: {
+        writeText: jasmine.createSpy('writeText').and.returnValue(Promise.resolve()),
+        readText: jasmine.createSpy('readText').and.returnValue(Promise.resolve(''))
+      },
+      maxTouchPoints: 0,
+      serviceWorker: {
+        register: jasmine.createSpy('register').and.returnValue(Promise.resolve({
+          addEventListener: jasmine.createSpy(),
+          removeEventListener: jasmine.createSpy()
+        }))
+      }
+    };
+    
+    Object.defineProperty(window, 'navigator', { 
+      value: mockNavigator, 
+      writable: true, 
+      configurable: true 
+    });
+    
+    const authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentSession', 'clearSession', 'joinSession']);
+    const socketServiceSpy = jasmine.createSpyObj('SocketService', [
+      'joinSession', 
+      'leaveSession',
+      'on'
+    ]);
+    const quizManagementServiceSpy = jasmine.createSpyObj('QuizManagementService', ['getQuestion']);
     const pwaServiceSpy = jasmine.createSpyObj('PWAService', [
       'requestNotificationPermission',
+      'notifyNewQuestion',
+      'notifyQuizEnded',
+      'notifyTimeRunningOut',
       'installPWA',
       'showNotification'
-    ], {
-      isInstallable$: { subscribe: jasmine.createSpy() },
-      isInstalled$: { subscribe: jasmine.createSpy() }
-    });
+    ]);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
 
+    // Mock socket service 'on' method to return observables
+    socketServiceSpy.on.and.callFake(() => {
+      return new Subject().asObservable();
+    });
+
+    // Mock PWA service methods
+    pwaServiceSpy.requestNotificationPermission.and.returnValue(Promise.resolve(true));
+    pwaServiceSpy.installPWA.and.returnValue(Promise.resolve(true));
+
+    // Mock PWA service observables
+    pwaServiceSpy.isInstallable$ = of(false);
+    pwaServiceSpy.isInstalled$ = of(false);
+
     await TestBed.configureTestingModule({
-      imports: [JoinComponent, ReactiveFormsModule, NoopAnimationsModule],
+      imports: [
+        JoinComponent, 
+        ReactiveFormsModule, 
+        NoopAnimationsModule,
+        RouterTestingModule
+      ],
       providers: [
-        { provide: Router, useValue: routerSpy },
         { provide: AuthService, useValue: authServiceSpy },
         { provide: SocketService, useValue: socketServiceSpy },
+        { provide: QuizManagementService, useValue: quizManagementServiceSpy },
         { provide: PWAService, useValue: pwaServiceSpy },
-        { provide: MatSnackBar, useValue: snackBarSpy }
+        { provide: Router, useValue: routerSpy },
+        { provide: MatSnackBar, useValue: snackBarSpy },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            params: of({}),
+            queryParams: of({}),
+            snapshot: {
+              params: {},
+              queryParams: {}
+            }
+          }
+        }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(JoinComponent);
     component = fixture.componentInstance;
-    mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+    mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
     mockPwaService = TestBed.inject(PWAService) as jasmine.SpyObj<PWAService>;
+    mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     mockMatSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
   });
 
@@ -121,8 +192,21 @@ describe('JoinComponent', () => {
     expect(sessionCodeControl?.value).toBeDefined();
   });
 
-  it('should handle join session success', async () => {
-    // AuthService doesn't have setCurrentUser, it saves to localStorage in joinSession
+  it('should handle join session success', fakeAsync(async () => {
+    // Mock the auth service to return success
+    mockAuthService.joinSession.and.returnValue(Promise.resolve({ success: true }));
+    
+    // Mock the PWA service to not throw an error
+    mockPwaService.showNotification.and.returnValue(Promise.resolve());
+    
+    // Ensure component is properly initialized
+    component.ngOnInit();
+    
+    // Replace the component's services with our mocks
+    (component as any).router = mockRouter;
+    (component as any).authService = mockAuthService;
+    (component as any).pwaService = mockPwaService;
+    
     component.joinForm.patchValue({
       sessionCode: 'TEST123',
       teamName: 'Test Team'
@@ -130,9 +214,12 @@ describe('JoinComponent', () => {
     
     await component.joinSession();
     
+    // Wait for both setTimeout delays (1000ms + 1000ms = 2000ms)
+    tick(2000);
+    
     expect(component.isJoining).toBe(false);
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/participant']);
-  });
+  }));
 
   it('should handle form validation errors', () => {
     component.joinForm.patchValue({
@@ -145,13 +232,17 @@ describe('JoinComponent', () => {
     expect(component.teamNameError).toContain('required');
   });
 
-  it('should handle QR code scanning', async () => {
-    // QR scanning feature is part of scanQRCode method
+  it('should handle QR code scanning', fakeAsync(async () => {
+    // Replace the component's snackBar with our mock
+    (component as any).snackBar = mockMatSnackBar;
+    
     await component.scanQRCode();
     
-    // The actual implementation would scan and populate the form
+    // Wait for the setTimeout delay
+    tick(200);
+    
     expect(mockMatSnackBar.open).toHaveBeenCalled();
-  });
+  }));
 
   it('should handle session code input', () => {
     // Test direct form input instead of QR parsing
@@ -192,14 +283,23 @@ describe('JoinComponent', () => {
     expect(mockNavigator.clipboard.writeText).toHaveBeenCalled();
   });
 
-  it('should install PWA when available', async () => {
+  it('should install PWA when available', fakeAsync(async () => {
     mockPwaService.installPWA.and.returnValue(Promise.resolve(true));
+    
+    // Replace the component's snackBar with our mock
+    (component as any).snackBar = mockMatSnackBar;
+    
+    // Ensure component is properly initialized
+    component.ngOnInit();
     
     await component.installPWA();
     
+    // Wait for the setTimeout delay
+    tick(200);
+    
     expect(mockPwaService.installPWA).toHaveBeenCalled();
     expect(mockMatSnackBar.open).toHaveBeenCalled();
-  });
+  }));
 
   it('should handle card hover animations', () => {
     component.isReducedMotion = false;

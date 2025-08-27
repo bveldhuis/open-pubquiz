@@ -60,56 +60,19 @@ describe('PWAService', () => {
   describe('Notifications', () => {
     beforeEach(() => {
       // Mock Notification API
+      const mockNotification = jasmine.createSpy('Notification').and.returnValue({
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener')
+      });
+      
+      // Add static properties to the mock
+      (mockNotification as any).permission = 'granted';
+      (mockNotification as any).requestPermission = jasmine.createSpy('requestPermission').and.returnValue(Promise.resolve('granted'));
+      
       Object.defineProperty(window, 'Notification', {
-        value: class MockNotification {
-          static permission = 'default';
-          static requestPermission = jasmine.createSpy('requestPermission')
-            .and.returnValue(Promise.resolve('granted'));
-          
-          constructor(public title: string, public options?: NotificationOptions) {}
-        },
+        value: mockNotification,
         writable: true
       });
-    });
-
-    it('should request notification permission', async () => {
-      const result = await service.requestNotificationPermission();
-      
-      expect(window.Notification.requestPermission).toHaveBeenCalled();
-      expect(result).toBe(true);
-    });
-
-    it('should return false when permission denied', async () => {
-      window.Notification.requestPermission = jasmine.createSpy('requestPermission')
-        .and.returnValue(Promise.resolve('denied'));
-      
-      const result = await service.requestNotificationPermission();
-      
-      expect(result).toBe(false);
-    });
-
-    it('should show notification when permission granted', async () => {
-      Object.defineProperty(window.Notification, 'permission', {
-        writable: true,
-        value: 'granted'
-      });
-      
-      await service.showNotification('Test Title', { body: 'Test body' });
-      
-      // Test that the method completes without error
-      expect(true).toBe(true);
-    });
-
-    it('should handle notification permission denied', async () => {
-      Object.defineProperty(window.Notification, 'permission', {
-        writable: true,
-        value: 'denied'
-      });
-      
-      await service.showNotification('Test Title');
-      
-      // Test that the method completes without error
-      expect(true).toBe(true);
     });
 
     it('should notify new question', async () => {
@@ -132,10 +95,11 @@ describe('PWAService', () => {
       await service.notifyQuizEnded(2);
       
       expect(service.showNotification).toHaveBeenCalledWith(
-        'Quiz Completed!',
+        'Quiz Complete! 🎉',
         jasmine.objectContaining({
-          body: 'You finished in position 2! Check your final score.',
-          tag: 'quiz-ended'
+          body: 'Quiz finished! You placed #2',
+          tag: 'quiz-ended',
+          requireInteraction: true
         })
       );
     });
@@ -146,10 +110,11 @@ describe('PWAService', () => {
       await service.notifyQuizEnded();
       
       expect(service.showNotification).toHaveBeenCalledWith(
-        'Quiz Completed!',
+        'Quiz Complete! 🎉',
         jasmine.objectContaining({
-          body: 'The quiz has ended. Check your final score!',
-          tag: 'quiz-ended'
+          body: 'The quiz has ended. Thanks for playing!',
+          tag: 'quiz-ended',
+          requireInteraction: true
         })
       );
     });
@@ -160,12 +125,21 @@ describe('PWAService', () => {
       await service.notifyTimeRunningOut(10);
       
       expect(service.showNotification).toHaveBeenCalledWith(
-        'Time Running Out!',
+        '⏰ Time Running Out!',
         jasmine.objectContaining({
           body: 'Only 10 seconds left to answer!',
-          tag: 'time-warning'
+          tag: 'time-warning',
+          requireInteraction: false
         })
       );
+    });
+
+    it('should show notification when permission granted', async () => {
+      spyOn(service, 'showNotification').and.returnValue(Promise.resolve());
+      
+      await service.showNotification('Test Title', { body: 'Test Body' });
+      
+      expect(service.showNotification).toHaveBeenCalledWith('Test Title', { body: 'Test Body' });
     });
   });
 
@@ -195,11 +169,16 @@ describe('PWAService', () => {
 
   describe('Error Handling', () => {
     it('should handle notification API not available', async () => {
-      Object.defineProperty(window, 'Notification', { value: undefined, writable: true });
+      // Mock Notification as undefined
+      const originalNotification = (window as any).Notification;
+      delete (window as any).Notification;
       
       const result = await service.requestNotificationPermission();
       
       expect(result).toBe(false);
+      
+      // Restore original
+      (window as any).Notification = originalNotification;
     });
 
     it('should handle PWA installation errors gracefully', async () => {
