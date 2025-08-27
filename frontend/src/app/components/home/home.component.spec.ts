@@ -94,7 +94,7 @@ describe('HomeComponent', () => {
     component.ngOnInit();
     
     // Replace the component's snackBar with our mock
-    (component as any).snackBar = mockMatSnackBar;
+    (component as unknown as { snackBar: MatSnackBar }).snackBar = mockMatSnackBar;
     
     // Call the method directly on the component instance
     await component.installPWA();
@@ -147,7 +147,7 @@ describe('HomeComponent', () => {
       }
     };
     
-    component.onTouchStart(mockEvent as any);
+    component.onTouchStart(mockEvent as unknown as TouchEvent);
     // The component checks for 'feature-card', 'step-card', or 'action-button'
     expect(mockEvent.target.classList.contains).toHaveBeenCalledWith('feature-card');
     expect(mockEvent.target.classList.add).toHaveBeenCalledWith('touch-active');

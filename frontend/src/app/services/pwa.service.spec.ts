@@ -66,8 +66,8 @@ describe('PWAService', () => {
       });
       
       // Add static properties to the mock
-      (mockNotification as any).permission = 'granted';
-      (mockNotification as any).requestPermission = jasmine.createSpy('requestPermission').and.returnValue(Promise.resolve('granted'));
+      (mockNotification as unknown as { permission: string }).permission = 'granted';
+      (mockNotification as unknown as { requestPermission: () => Promise<string> }).requestPermission = jasmine.createSpy('requestPermission').and.returnValue(Promise.resolve('granted'));
       
       Object.defineProperty(window, 'Notification', {
         value: mockNotification,
@@ -170,15 +170,15 @@ describe('PWAService', () => {
   describe('Error Handling', () => {
     it('should handle notification API not available', async () => {
       // Mock Notification as undefined
-      const originalNotification = (window as any).Notification;
-      delete (window as any).Notification;
+      const originalNotification = (window as unknown as { Notification?: typeof Notification }).Notification;
+      delete (window as unknown as { Notification?: typeof Notification }).Notification;
       
       const result = await service.requestNotificationPermission();
       
       expect(result).toBe(false);
       
       // Restore original
-      (window as any).Notification = originalNotification;
+      (window as unknown as { Notification?: typeof Notification }).Notification = originalNotification;
     });
 
     it('should handle PWA installation errors gracefully', async () => {

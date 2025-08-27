@@ -90,21 +90,22 @@ export class AuthService {
       } else {
         throw new Error('Invalid response from server');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to join session:', error);
       
       // Handle specific error cases
-      if (error.status === 400) {
+      const httpError = error as { status?: number; error?: { error?: string } };
+      if (httpError.status === 400) {
         return { 
           success: false, 
-          error: error.error?.error || 'Invalid session code or team name'
+          error: httpError.error?.error || 'Invalid session code or team name'
         };
-      } else if (error.status === 404) {
+      } else if (httpError.status === 404) {
         return { 
           success: false, 
           error: 'Session not found'
         };
-      } else if (error.status === 409) {
+      } else if (httpError.status === 409) {
         return { 
           success: false, 
           error: 'Team name already exists in this session'
@@ -112,7 +113,7 @@ export class AuthService {
       } else {
         return { 
           success: false, 
-          error: error.error?.error || 'Failed to join session. Please try again.'
+          error: httpError.error?.error || 'Failed to join session. Please try again.'
         };
       }
     }

@@ -61,13 +61,13 @@ beforeEach(() => {
 
   // Mock matchMedia with proper function implementations for Angular CDK
   // This needs to be a more comprehensive mock that handles all MediaQueryList creation
-  const originalMatchMedia = window.matchMedia;
+  // const _originalMatchMedia = window.matchMedia;
   
   // Create a mock MediaQueryList class
   class MockMediaQueryList {
     matches: boolean;
     media: string;
-    onchange: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null;
+    onchange: ((this: MediaQueryList, ev: MediaQueryListEvent) => unknown) | null;
     private _listeners: ((ev: MediaQueryListEvent) => void)[] = [];
     private _eventListeners: Record<string, EventListener[]> = {};
 
@@ -104,7 +104,8 @@ beforeEach(() => {
       }
     }
 
-    dispatchEvent(event: Event): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    dispatchEvent(_event: Event): boolean {
       return true;
     }
   }
@@ -117,7 +118,7 @@ beforeEach(() => {
 
   // Ensure MediaQueryListEvent is available for the CDK
   if (!window.MediaQueryListEvent) {
-    (window as any).MediaQueryListEvent = class MockMediaQueryListEvent extends Event {
+    (window as unknown as { MediaQueryListEvent?: unknown }).MediaQueryListEvent = class MockMediaQueryListEvent extends Event {
       constructor(type: string, eventInitDict?: MediaQueryListEventInit) {
         super(type, eventInitDict);
       }
@@ -173,7 +174,7 @@ beforeEach(() => {
   });
 
   // Also ensure navigator is available globally
-  (global as any).navigator = mockNavigator;
+  (global as unknown as { navigator: unknown }).navigator = mockNavigator;
 
   // Mock window.ontouchstart to be undefined for non-touch device detection
   Object.defineProperty(window, 'ontouchstart', {
@@ -208,7 +209,7 @@ afterEach(() => {
 });
 
 // Global error handler for unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
@@ -322,7 +323,7 @@ export const TestUtils = {
     class MockMediaQueryListWithReducedMotion {
       matches: boolean;
       media: string;
-      onchange: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null;
+      onchange: ((this: MediaQueryList, ev: MediaQueryListEvent) => unknown) | null;
       private _listeners: ((ev: MediaQueryListEvent) => void)[] = [];
       private _eventListeners: Record<string, EventListener[]> = {};
 
@@ -359,7 +360,8 @@ export const TestUtils = {
         }
       }
 
-      dispatchEvent(event: Event): boolean {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      dispatchEvent(_event: Event): boolean {
         return true;
       }
     }

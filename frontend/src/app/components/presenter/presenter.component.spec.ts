@@ -9,7 +9,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { PresenterComponent } from './presenter.component';
 import { AuthService } from '../../services/auth.service';
-import { QuizService } from '../../services/quiz.service';
+// import { QuizService } from '../../services/quiz.service';
 import { QuizManagementService } from '../../services/quiz-management.service';
 import { SocketService } from '../../services/socket.service';
 import { PWAService } from '../../services/pwa.service';
@@ -17,11 +17,11 @@ import { PWAService } from '../../services/pwa.service';
 describe('PresenterComponent', () => {
   let component: PresenterComponent;
   let fixture: ComponentFixture<PresenterComponent>;
-  let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockSocketService: jasmine.SpyObj<SocketService>;
+  // let _mockAuthService: jasmine.SpyObj<AuthService>;
+  // let _mockSocketService: jasmine.SpyObj<SocketService>;
   let mockPwaService: jasmine.SpyObj<PWAService>;
-  let mockRouter: jasmine.SpyObj<Router>;
-  let mockMatSnackBar: jasmine.SpyObj<MatSnackBar>;
+  // let _mockRouter: jasmine.SpyObj<Router>;
+  // let _mockMatSnackBar: jasmine.SpyObj<MatSnackBar>;
 
   beforeEach(async () => {
     // Mock touch device detection before component creation
@@ -94,11 +94,11 @@ describe('PresenterComponent', () => {
 
     fixture = TestBed.createComponent(PresenterComponent);
     component = fixture.componentInstance;
-    mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
+    // _mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+    // _mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
     mockPwaService = TestBed.inject(PWAService) as jasmine.SpyObj<PWAService>;
-    mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    mockMatSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
+    // _mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    // _mockMatSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
     
     // Call ngOnInit to trigger PWA setup
     component.ngOnInit();

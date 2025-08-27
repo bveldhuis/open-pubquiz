@@ -324,7 +324,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
   }
 
   // Enhanced user interactions with animations
-  async onAnswerSubmitted(answerData: any): Promise<void> {
+  async onAnswerSubmitted(answerData: unknown): Promise<void> {
     console.log('Participant submitting answer:', answerData);
     
     this.answerSubmitted = true;

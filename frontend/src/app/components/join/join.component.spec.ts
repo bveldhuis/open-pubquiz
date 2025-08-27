@@ -17,7 +17,7 @@ describe('JoinComponent', () => {
   let component: JoinComponent;
   let fixture: ComponentFixture<JoinComponent>;
   let mockAuthService: jasmine.SpyObj<AuthService>;
-  let mockSocketService: jasmine.SpyObj<SocketService>;
+  // let _mockSocketService: jasmine.SpyObj<SocketService>;
   let mockPwaService: jasmine.SpyObj<PWAService>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockMatSnackBar: jasmine.SpyObj<MatSnackBar>;
@@ -116,7 +116,7 @@ describe('JoinComponent', () => {
     fixture = TestBed.createComponent(JoinComponent);
     component = fixture.componentInstance;
     mockAuthService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
+    // _mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
     mockPwaService = TestBed.inject(PWAService) as jasmine.SpyObj<PWAService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     mockMatSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
@@ -206,9 +206,9 @@ describe('JoinComponent', () => {
     component.ngOnInit();
     
     // Replace the component's services with our mocks
-    (component as any).router = mockRouter;
-    (component as any).authService = mockAuthService;
-    (component as any).pwaService = mockPwaService;
+    (component as unknown as { router: Router }).router = mockRouter;
+    (component as unknown as { authService: AuthService }).authService = mockAuthService;
+    (component as unknown as { pwaService: PWAService }).pwaService = mockPwaService;
     
     component.joinForm.patchValue({
       sessionCode: 'TEST123',
@@ -237,7 +237,7 @@ describe('JoinComponent', () => {
 
   it('should handle QR code scanning', fakeAsync(async () => {
     // Replace the component's snackBar with our mock
-    (component as any).snackBar = mockMatSnackBar;
+    (component as unknown as { snackBar: MatSnackBar }).snackBar = mockMatSnackBar;
     
     await component.scanQRCode();
     
@@ -290,7 +290,7 @@ describe('JoinComponent', () => {
     mockPwaService.installPWA.and.returnValue(Promise.resolve(true));
     
     // Replace the component's snackBar with our mock
-    (component as any).snackBar = mockMatSnackBar;
+    (component as unknown as { snackBar: MatSnackBar }).snackBar = mockMatSnackBar;
     
     // Ensure component is properly initialized
     component.ngOnInit();
