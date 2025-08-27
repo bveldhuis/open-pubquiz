@@ -134,8 +134,22 @@ export class PWAService {
     }
 
     if (Notification.permission !== 'denied') {
-      const permission = await Notification.requestPermission();
-      return permission === 'granted';
+      // Check if we're on a mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // On mobile, we might want to be more conservative about requesting permissions
+        // Only request if the user is actively engaging with the app
+        console.log('Mobile device detected - notification permission will be requested when needed');
+      }
+      
+      try {
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
+      } catch (error) {
+        console.warn('Failed to request notification permission:', error);
+        return false;
+      }
     }
 
     return false;
@@ -144,6 +158,9 @@ export class PWAService {
   async showNotification(title: string, options?: NotificationOptions): Promise<void> {
     try {
       console.log('PWA Service: Attempting to show notification:', title);
+      
+      // Check if we're on a mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
       const hasPermission = await this.requestNotificationPermission();
       
@@ -161,14 +178,25 @@ export class PWAService {
       if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
         // Use service worker for better reliability
         try {
+          // Increase timeout for mobile devices
+          const timeout = isMobile ? 5000 : 3000;
+          
           // Add timeout to prevent hanging
           const registration = await Promise.race([
             navigator.serviceWorker.ready,
             new Promise<never>((_, reject) => 
-              setTimeout(() => reject(new Error('Service worker registration timeout')), 3000)
+              setTimeout(() => reject(new Error('Service worker registration timeout')), timeout)
             )
           ]) as ServiceWorkerRegistration;
+          
           console.log('PWA Service: Service worker ready, showing notification');
+          
+          // Add additional check for mobile devices
+          if (isMobile && registration.active?.state !== 'activated') {
+            console.warn('PWA Service: Service worker not fully activated on mobile, using fallback');
+            throw new Error('Service worker not ready on mobile');
+          }
+          
           registration.showNotification(title, defaultOptions);
         } catch (swError) {
           console.warn('PWA Service: Service worker notification failed, falling back to regular notification:', swError);
@@ -185,6 +213,7 @@ export class PWAService {
     } catch (error) {
       console.error('PWA Service: Failed to show notification:', error);
       // Don't throw the error, just log it so the flow continues
+      // This prevents the brief error message from appearing
     }
   }
 
@@ -218,6 +247,33 @@ export class PWAService {
     }
   }
 
+  // Show a user-friendly message about notification status
+  async showNotificationStatus(): Promise<void> {
+    const support = await this.checkNotificationSupport();
+    
+    if (!support.supported) {
+      console.log('Notifications not supported on this device/browser');
+      return;
+    }
+    
+    if (support.permission === 'denied') {
+      console.log('Notification permission denied by user');
+      return;
+    }
+    
+    if (support.permission === 'default') {
+      console.log('Notification permission not yet requested');
+      return;
+    }
+    
+    if (support.permission === 'granted' && !support.serviceWorkerReady) {
+      console.log('Notifications granted but service worker not ready');
+      return;
+    }
+    
+    console.log('Notifications are working properly');
+  }
+
   // Check if browser supports PWA features
   get browserSupport(): {
     notifications: boolean;
@@ -228,6 +284,36 @@ export class PWAService {
       notifications: 'Notification' in window,
       serviceWorker: 'serviceWorker' in navigator,
       installPrompt: 'BeforeInstallPromptEvent' in window
+    };
+  }
+
+  // Check if notifications are actually working on this device
+  async checkNotificationSupport(): Promise<{
+    supported: boolean;
+    permission: NotificationPermission;
+    serviceWorkerReady: boolean;
+    mobile: boolean;
+  }> {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    const supported = 'Notification' in window;
+    const permission = supported ? Notification.permission : 'denied';
+    
+    let serviceWorkerReady = false;
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        serviceWorkerReady = registration.active?.state === 'activated';
+      } catch {
+        serviceWorkerReady = false;
+      }
+    }
+    
+    return {
+      supported,
+      permission,
+      serviceWorkerReady,
+      mobile: isMobile
     };
   }
 }

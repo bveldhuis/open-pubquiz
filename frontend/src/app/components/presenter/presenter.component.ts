@@ -396,10 +396,18 @@ export class PresenterComponent implements OnInit, OnDestroy {
         this.transitionToView('session-config');
         this.showSuccessFeedback('Session created successfully!');
         
-        // PWA notification
-        await this.pwaService.showNotification('Session Created', {
-          body: `Quiz session "${formValue.sessionName}" is ready!`
-        });
+        // PWA notification - handle gracefully on mobile
+        try {
+          const notificationSupport = await this.pwaService.checkNotificationSupport();
+          
+          if (notificationSupport.supported && notificationSupport.permission === 'granted') {
+            await this.pwaService.showNotification('Session Created', {
+              body: `Quiz session "${formValue.sessionName}" is ready!`
+            });
+          }
+        } catch (notificationError) {
+          console.warn('Notification failed, but continuing with session creation:', notificationError);
+        }
       }
     } catch (error) {
       this.showErrorFeedback('Failed to create session. Please try again.');
