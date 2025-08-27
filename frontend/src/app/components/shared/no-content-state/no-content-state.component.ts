@@ -3,13 +3,8 @@ import { MatIconModule } from '@angular/material/icon';
 
 @Component({
     selector: 'app-no-content-state',
-    template: `
-    <div class="no-content-state">
-      <mat-icon>{{ icon }}</mat-icon>
-      <p>{{ message }}</p>
-    </div>
-  `,
-    styles: [],
+    templateUrl: './no-content-state.component.html',
+    styleUrls: ['./no-content-state.component.scss'],
     standalone: true,
     imports: [
         MatIconModule
