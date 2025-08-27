@@ -6,11 +6,12 @@ export interface AuthenticatedRequest extends Request {
   apiKey?: ApiKey;
 }
 
-export const apiKeyAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const apiKeyAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   const apiKey = req.headers['x-api-key'] as string;
 
   if (!apiKey) {
-    return res.status(401).json({ error: 'API key required' });
+    res.status(401).json({ error: 'API key required' });
+    return;
   }
 
   try {
@@ -23,7 +24,8 @@ export const apiKeyAuth = async (req: AuthenticatedRequest, res: Response, next:
     });
 
     if (!keyRecord) {
-      return res.status(401).json({ error: 'Invalid API key' });
+      res.status(401).json({ error: 'Invalid API key' });
+      return;
     }
 
     // Update last used timestamp
@@ -33,7 +35,8 @@ export const apiKeyAuth = async (req: AuthenticatedRequest, res: Response, next:
     next();
   } catch (error) {
     console.error('API key authentication error:', error);
-    return res.status(500).json({ error: 'Authentication failed' });
+    res.status(500).json({ error: 'Authentication failed' });
+    return;
   }
 };
 
