@@ -41,7 +41,8 @@ describe('LoadingStateComponent', () => {
     const spinner = compiled.querySelector('mat-spinner');
 
     expect(spinner).toBeTruthy();
-    expect(spinner?.getAttribute('ng-reflect-diameter')).toBe('40');
+    // Check for the diameter attribute directly since ng-reflect attributes may not be present in tests
+    expect(spinner?.getAttribute('diameter')).toBe('40');
   });
 
   it('should have correct CSS classes', () => {

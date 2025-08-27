@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { BarcodeFormat } from '@zxing/library';
 import { QRScannerDialogComponent } from './qr-scanner-dialog.component';
@@ -86,11 +86,16 @@ describe('QRScannerDialogComponent', () => {
       { deviceId: 'device3', kind: 'videoinput', label: 'Camera 3', groupId: 'group1' } as MediaDeviceInfo
     ];
 
+    // Clear currentDevice to test the selection logic
+    component.currentDevice = undefined;
     component.onCamerasFound(devices);
 
     expect(component.availableDevices).toEqual(devices);
     expect(component.hasDevices).toBe(true);
-    expect(component.currentDevice).toEqual(devices[0]);
+    expect(component.currentDevice).toBeTruthy();
+    if (component.currentDevice) {
+      expect(component.currentDevice).toEqual(devices[0]);
+    }
   });
 
   it('should prefer back camera when multiple devices found', () => {
@@ -114,7 +119,7 @@ describe('QRScannerDialogComponent', () => {
     expect(component.hasPermission).toBe(false);
   });
 
-  it('should handle device selection change', () => {
+  it('should handle device selection change', fakeAsync(() => {
     const newDevice = { deviceId: 'device2', kind: 'videoinput', label: 'Front Camera', groupId: 'group1' } as MediaDeviceInfo;
     
     component.onDeviceSelectChange(newDevice);
@@ -123,10 +128,9 @@ describe('QRScannerDialogComponent', () => {
     expect(component.scannerEnabled).toBe(false);
 
     // Should re-enable scanner after timeout
-    setTimeout(() => {
-      expect(component.scannerEnabled).toBe(true);
-    }, 150);
-  });
+    tick(150);
+    expect(component.scannerEnabled).toBe(true);
+  }));
 
   it('should close dialog when close is called', () => {
     component.close();
