@@ -261,15 +261,17 @@ export function setupSocketHandlers(io: Server) {
             break;
 
           case 'end_session':
-            const { leaderboard } = data;
             console.log(`🏁 Ending session: ${sessionCode}`);
+            
+            // Get the final leaderboard with accurate calculations
+            const finalLeaderboard = await teamService.getLeaderboard(sessionCode);
             
             // End the session
             await sessionService.endSession(sessionCode);
             
-            // Emit session ended event to all participants
+            // Emit session ended event to all participants with accurate leaderboard
             io.to(sessionCode).emit('session-ended', {
-              leaderboard: leaderboard || []
+              leaderboard: finalLeaderboard
             });
             break;
         }

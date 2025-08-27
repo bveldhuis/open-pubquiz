@@ -564,25 +564,22 @@ export class PresenterComponent implements OnInit, OnDestroy {
         await this.quizManagementService.endSession(this.currentSession.code).toPromise();
       }
       
-      // Sort teams by total points for final leaderboard
-      const finalLeaderboard = this.teams.sort((a, b) => b.total_points - a.total_points);
+      // Get the final leaderboard BEFORE clearing session data
+      const finalLeaderboard = await this.quizManagementService.getLeaderboard(this.currentSession!.code!).toPromise();
+      this.leaderboardTeams = (finalLeaderboard?.teams || []) as TeamInfo[];
       
-      // Set the final leaderboard data
-      this.leaderboardTeams = finalLeaderboard;
-      
-      // Notify teams using presenter action
+      // Notify teams using presenter action (backend will calculate accurate leaderboard)
       this.socketService.presenterAction({
         sessionCode: this.currentSession!.code!,
-        action: 'end_session',
-        leaderboard: finalLeaderboard
+        action: 'end_session'
       });
       
-      // Clear the current session from localStorage and component state FIRST
+      // Show the final leaderboard BEFORE clearing the session
+      this.showLeaderboard = true;
+      
+      // Clear the current session from localStorage and component state AFTER showing leaderboard
       localStorage.removeItem('presenterSession');
       this.currentSession = undefined;
-      
-      // Show the final leaderboard AFTER clearing the session
-      this.showLeaderboard = true;
       
       this.showSuccessFeedback('Session ended successfully!');
       
@@ -1053,7 +1050,18 @@ export class PresenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  showLeaderboardView(): void {
+  async showLeaderboardView(): Promise<void> {
+    if (this.currentSession) {
+      try {
+        // Get the current leaderboard from the backend
+        const finalLeaderboard = await this.quizManagementService.getLeaderboard(this.currentSession!.code!).toPromise();
+        this.leaderboardTeams = (finalLeaderboard?.teams || []) as TeamInfo[];
+      } catch (error) {
+        console.error('Failed to get leaderboard:', error);
+        this.showErrorFeedback('Failed to load leaderboard');
+      }
+    }
+    
     this.showLeaderboard = true;
     this.showReview = false;
   }

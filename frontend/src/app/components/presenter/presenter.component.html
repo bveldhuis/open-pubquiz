@@ -271,7 +271,7 @@
             @if (showLeaderboard) {
               <div class="leaderboard-section">
                 <app-leaderboard
-                  [teams]="teams"
+                  [teams]="leaderboardTeams"
                   [currentRound]="currentSession.current_round || 1"
                   [totalQuestions]="totalQuestionsInSession">
                 </app-leaderboard>

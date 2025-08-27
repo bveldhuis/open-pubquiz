@@ -298,12 +298,15 @@ describe('TeamService', () => {
         id: 'session-1', 
         code: sessionCode,
         teams: [
-          { id: 'team-1', name: 'Team A' },
-          { id: 'team-2', name: 'Team B' }
+          { id: 'team-1', name: 'Team A', total_points: 10 },
+          { id: 'team-2', name: 'Team B', total_points: 5 }
         ]
       };
 
       mockSessionRepository.findOne.mockResolvedValue(mockSession as unknown as QuizSession);
+      mockAnswerRepository.find
+        .mockResolvedValueOnce([]) // No answers for team-1
+        .mockResolvedValueOnce([]); // No answers for team-2
 
       const result = await teamService.getExistingTeams(sessionCode);
 
@@ -312,8 +315,8 @@ describe('TeamService', () => {
         relations: ['teams']
       });
       expect(result).toEqual([
-        { id: 'team-1', name: 'Team A' },
-        { id: 'team-2', name: 'Team B' }
+        { id: 'team-1', name: 'Team A', total_points: 10, answers_submitted: 0, correct_answers: 0 },
+        { id: 'team-2', name: 'Team B', total_points: 5, answers_submitted: 0, correct_answers: 0 }
       ]);
     });
 

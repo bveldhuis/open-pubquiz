@@ -1,6 +1,6 @@
 import { Injectable  } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { Subject, BehaviorSubject } from 'rxjs';
+import { Subject, BehaviorSubject, Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { JoinSessionData } from '../models/join-session-data.model';
@@ -217,7 +217,7 @@ export class SocketService {
   }
 
   // Enhanced methods for improved components
-  on(eventName: string): Subject<unknown> {
+  on(eventName: string): Observable<unknown> {
     const subject = new Subject<unknown>();
     
     if (this.socket) {
@@ -226,7 +226,7 @@ export class SocketService {
       });
     }
     
-    return subject;
+    return subject.asObservable();
   }
 
   emit(eventName: string, data?: unknown): void {

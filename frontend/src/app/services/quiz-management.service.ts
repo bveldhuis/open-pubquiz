@@ -81,6 +81,10 @@ export class QuizManagementService {
     return this.http.get<{ teams: unknown[] }>(`${this.apiUrl}/teams/session/${sessionCode}`);
   }
 
+  getLeaderboard(sessionCode: string): Observable<{ teams: unknown[] }> {
+    return this.http.get<{ teams: unknown[] }>(`${this.apiUrl}/quiz/${sessionCode}/leaderboard`);
+  }
+
   // Theme and Session Configuration Methods
   getAvailableThemes(): Observable<{ themes: Theme[] }> {
     return this.http.get<{ themes: Theme[] }>(`${this.apiUrl}/session-config/themes`);

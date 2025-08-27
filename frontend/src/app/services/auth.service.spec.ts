@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
 import { UserSession } from '../models/user-session.model';
+import { environment } from '../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -24,6 +26,7 @@ describe('AuthService', () => {
     });
 
     TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
       providers: [AuthService]
     });
     service = TestBed.inject(AuthService);
@@ -53,8 +56,14 @@ describe('AuthService', () => {
     // Set up localStorage before creating service
     mockLocalStorage.setItem('userSession', JSON.stringify(mockSession));
     
-    // Create new service instance to trigger constructor
-    const newService = new AuthService();
+    // Clear the existing service and create a new one
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [AuthService]
+    });
+    
+    const newService = TestBed.inject(AuthService);
     
     expect(newService.getCurrentUser()).toEqual(mockSession);
     expect(newService.isLoggedIn()).toBeTrue();
@@ -65,8 +74,14 @@ describe('AuthService', () => {
     mockLocalStorage.setItem('userSession', 'invalid-json');
     spyOn(console, 'error');
     
-    // Create new service instance to trigger constructor
-    const newService = new AuthService();
+    // Clear the existing service and create a new one
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [AuthService]
+    });
+    
+    const newService = TestBed.inject(AuthService);
     
     expect(newService.getCurrentUser()).toBeNull();
     expect(console.error).toHaveBeenCalled();
@@ -125,7 +140,28 @@ describe('AuthService', () => {
   });
 
   it('should join session successfully', async () => {
-    const result = await service.joinSession('TEST123', 'Test Team');
+    // Mock the HTTP response
+    const mockResponse = {
+      team: {
+        id: 'team_123',
+        name: 'Test Team',
+        totalPoints: 0,
+        joinedAt: new Date().toISOString()
+      }
+    };
+    
+    const httpMock = TestBed.inject(HttpTestingController);
+    
+    // Start the service call first
+    const resultPromise = service.joinSession('TEST123', 'Test Team');
+    
+    // Then expect and flush the HTTP request
+    const req = httpMock.expectOne(`${environment.apiUrl}/teams/join`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ sessionCode: 'TEST123', teamName: 'Test Team' });
+    req.flush(mockResponse);
+
+    const result = await resultPromise;
 
     expect(result.success).toBeTrue();
     expect(result.error).toBeUndefined();
@@ -134,7 +170,7 @@ describe('AuthService', () => {
     expect(currentUser).toBeTruthy();
     expect(currentUser?.teamName).toBe('Test Team');
     expect(currentUser?.sessionCode).toBe('TEST123');
-    expect(currentUser?.teamId).toMatch(/^team_\d+$/); // Should match generated ID pattern
+    expect(currentUser?.teamId).toBe('team_123');
   });
 
   it('should emit user changes through observable', (done) => {
@@ -187,12 +223,38 @@ describe('AuthService', () => {
   });
 
   it('should handle edge cases in joinSession', async () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    
     // Test with empty session code
-    const result1 = await service.joinSession('', 'Test Team');
-    expect(result1.success).toBeTrue(); // Current implementation allows empty codes
+    const mockResponse1 = {
+      team: {
+        id: 'team_456',
+        name: 'Test Team',
+        totalPoints: 0,
+        joinedAt: new Date().toISOString()
+      }
+    };
+    
+    const result1Promise = service.joinSession('', 'Test Team');
+    const req1 = httpMock.expectOne(`${environment.apiUrl}/teams/join`);
+    req1.flush(mockResponse1);
+    const result1 = await result1Promise;
+    expect(result1.success).toBeTrue();
 
     // Test with empty team name
-    const result2 = await service.joinSession('TEST123', '');
-    expect(result2.success).toBeTrue(); // Current implementation allows empty names
+    const mockResponse2 = {
+      team: {
+        id: 'team_789',
+        name: '',
+        totalPoints: 0,
+        joinedAt: new Date().toISOString()
+      }
+    };
+    
+    const result2Promise = service.joinSession('TEST123', '');
+    const req2 = httpMock.expectOne(`${environment.apiUrl}/teams/join`);
+    req2.flush(mockResponse2);
+    const result2 = await result2Promise;
+    expect(result2.success).toBeTrue();
   });
 });

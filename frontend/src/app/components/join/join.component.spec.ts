@@ -53,9 +53,11 @@ describe('JoinComponent', () => {
     
     const authServiceSpy = jasmine.createSpyObj('AuthService', ['getCurrentSession', 'clearSession', 'joinSession']);
     const socketServiceSpy = jasmine.createSpyObj('SocketService', [
+      'connect',
       'joinSession', 
       'leaveSession',
-      'on'
+      'on',
+      'emit'
     ]);
     const quizManagementServiceSpy = jasmine.createSpyObj('QuizManagementService', ['getQuestion']);
     const pwaServiceSpy = jasmine.createSpyObj('PWAService', [
@@ -67,12 +69,13 @@ describe('JoinComponent', () => {
       'showNotification'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    routerSpy.navigate.and.returnValue(Promise.resolve(true));
     const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
 
     // Mock socket service 'on' method to return observables
-    socketServiceSpy.on.and.callFake(() => {
-      return new Subject().asObservable();
-    });
+    socketServiceSpy.on.and.callFake(() => new Subject().asObservable());
+    socketServiceSpy.connect.and.returnValue(undefined);
+    socketServiceSpy.emit.and.returnValue(undefined);
 
     // Mock PWA service methods
     pwaServiceSpy.requestNotificationPermission.and.returnValue(Promise.resolve(true));

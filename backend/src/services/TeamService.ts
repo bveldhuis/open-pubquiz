@@ -109,17 +109,21 @@ export class TeamService implements ITeamService {
 
       const answers_submitted = answers.length;
       const correct_answers = answers.filter(answer => answer.is_correct === true).length;
+      
+      // Recalculate total points from actual answers to ensure accuracy
+      const calculated_total_points = answers.reduce((sum, answer) => sum + (answer.points_awarded || 0), 0);
 
       return {
         id: team.id,
         name: team.name,
-        total_points: team.total_points,
+        total_points: calculated_total_points, // Use calculated points instead of stored points
         answers_submitted,
         correct_answers
       };
     }));
 
-    return teamsWithStats;
+    // Sort by calculated total points
+    return teamsWithStats.sort((a, b) => b.total_points - a.total_points);
   }
 
   /**
@@ -145,11 +149,14 @@ export class TeamService implements ITeamService {
 
       const answers_submitted = answers.length;
       const correct_answers = answers.filter(answer => answer.is_correct === true).length;
+      
+      // Recalculate total points from actual answers to ensure accuracy
+      const calculated_total_points = answers.reduce((sum, answer) => sum + (answer.points_awarded || 0), 0);
 
       return {
         id: team.id,
         name: team.name,
-        total_points: team.total_points || 0,
+        total_points: calculated_total_points, // Use calculated points instead of stored points
         answers_submitted,
         correct_answers
       };
