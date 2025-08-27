@@ -10,6 +10,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { ZXingScannerModule } from '@zxing/ngx-scanner';
+import { BarcodeFormat } from '@zxing/library';
 import { AuthService } from '../../services/auth.service';
 import { SocketService } from '../../services/socket.service';
 import { PWAService } from '../../services/pwa.service';
@@ -40,7 +43,9 @@ import { takeUntil } from 'rxjs/operators';
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatDialogModule,
+    ZXingScannerModule
   ],
   templateUrl: './join.component.html',
   styleUrl: './join.component.scss',
@@ -64,6 +69,7 @@ export class JoinComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   private destroy$ = new Subject<void>();
   
@@ -84,6 +90,13 @@ export class JoinComponent implements OnInit, OnDestroy {
   // PWA and sharing
   showInstallPrompt = false;
   canShare = false;
+  
+  // QR Scanner
+  availableDevices: MediaDeviceInfo[] = [];
+  currentDevice: MediaDeviceInfo | undefined;
+  hasDevices = false;
+  hasPermission = false;
+  qrFormats: BarcodeFormat[] = [BarcodeFormat.QR_CODE];
 
   constructor() {
     this.detectDeviceCapabilities();
@@ -321,14 +334,19 @@ export class JoinComponent implements OnInit, OnDestroy {
     this.buttonStates['scan'] = 'pressed';
     
     try {
-      if ('BarcodeDetector' in window) {
-        // Use native Barcode Detection API if available
-        await this.scanWithNativeAPI();
-      } else {
-        // Fallback to camera access
-        await this.scanWithCamera();
+      // Check for camera permissions first
+      const hasPermission = await this.checkCameraPermissions();
+      
+      if (!hasPermission) {
+        this.showErrorFeedback('Camera permission is required for QR code scanning');
+        return;
       }
-    } catch {
+      
+      // Open QR scanner dialog
+      await this.openQRScannerDialog();
+      
+    } catch (error) {
+      console.error('QR scanning error:', error);
       this.showErrorFeedback('QR code scanning is not available on this device');
     } finally {
       setTimeout(() => {
@@ -337,50 +355,71 @@ export class JoinComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async scanWithNativeAPI(): Promise<void> {
+  private async checkCameraPermissions(): Promise<boolean> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const barcodeDetector = new (window as any).BarcodeDetector({
-        formats: ['qr_code']
-      });
-      
+      // Request camera permission
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.play();
       
-      video.addEventListener('loadedmetadata', async () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        if (ctx) {
-          ctx.drawImage(video, 0, 0);
-          const barcodes = await barcodeDetector.detect(canvas);
-          
-          if (barcodes.length > 0) {
-            const qrValue = barcodes[0].rawValue;
-            this.processQRCode(qrValue);
-          }
-        }
-        
-        stream.getTracks().forEach(track => track.stop());
-      });
+      // Stop the stream immediately since we just needed to check permission
+      stream.getTracks().forEach(track => track.stop());
       
+      this.hasPermission = true;
+      return true;
     } catch (error) {
-      console.error('Native barcode detection failed:', error);
-      throw error;
+      console.error('Camera permission denied:', error);
+      this.hasPermission = false;
+      return false;
     }
   }
 
-  private async scanWithCamera(): Promise<void> {
-    this.showInfoMessage('QR code scanning requires camera access. Please allow camera permissions.');
-    // Note: In a real implementation, you would integrate with a QR code scanning library
-    // For now, we'll show a placeholder message
-    throw new Error('QR scanning not implemented');
+  private async openQRScannerDialog(): Promise<void> {
+    // Get available camera devices
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      this.availableDevices = devices.filter(device => device.kind === 'videoinput');
+      this.hasDevices = this.availableDevices.length > 0;
+      
+      if (!this.hasDevices) {
+        this.showErrorFeedback('No camera found on this device');
+        return;
+      }
+      
+      // Prefer back camera for mobile devices
+      this.currentDevice = this.availableDevices.find(device => 
+        device.label.toLowerCase().includes('back') || 
+        device.label.toLowerCase().includes('rear')
+      ) || this.availableDevices[0];
+      
+      // Import and open scanner dialog
+      const QRScannerDialogComponent = await import('./qr-scanner-dialog.component').then(m => m.QRScannerDialogComponent);
+      
+      const dialogRef = this.dialog.open(QRScannerDialogComponent, {
+        width: '90vw',
+        maxWidth: '400px',
+        height: '70vh',
+        maxHeight: '500px',
+        data: {
+          availableDevices: this.availableDevices,
+          currentDevice: this.currentDevice,
+          formats: this.qrFormats
+        },
+        disableClose: true,
+        panelClass: 'qr-scanner-dialog'
+      });
+      
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.processQRCode(result);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error accessing camera devices:', error);
+      this.showErrorFeedback('Unable to access camera devices');
+    }
   }
+
+
 
   private processQRCode(qrValue: string): void {
     try {

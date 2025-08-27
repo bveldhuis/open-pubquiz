@@ -8,6 +8,8 @@
     "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessNoSandbox --code-coverage",
+    "test:headless": "ng test --watch=false --browsers=ChromeHeadlessNoSandbox",
     "lint": "ng lint"
   },
   "private": true,
@@ -24,6 +26,8 @@
     "@angular/router": "^20.2.1",
     "@angular/service-worker": "^20.2.1",
     "@types/qrcode": "^1.5.5",
+    "@zxing/library": "^0.21.3",
+    "@zxing/ngx-scanner": "^20.0.0",
     "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",
     "socket.io-client": "^4.7.4",
@@ -47,6 +51,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "puppeteer": "^24.17.0",
     "typescript": "~5.9.2",
     "typescript-eslint": "8.40.0"
   }

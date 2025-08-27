@@ -1,0 +1,16 @@
+<mat-toolbar color="primary" class="toolbar">
+  <span class="toolbar-title" (click)="goHome()" (keydown.enter)="goHome()" tabindex="0" role="button">🎯 Open Pub Quiz</span>
+  <span class="toolbar-spacer"></span>
+  <button mat-button routerLink="/presenter" class="toolbar-button">
+    <mat-icon>present_to_all</mat-icon>
+    Presenter
+  </button>
+  <button mat-button routerLink="/join" class="toolbar-button">
+    <mat-icon>group_add</mat-icon>
+    Join Quiz
+  </button>
+</mat-toolbar>
+
+<div class="app-container">
+  <router-outlet></router-outlet>
+</div>

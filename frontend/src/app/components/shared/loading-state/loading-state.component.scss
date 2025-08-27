@@ -1,0 +1,33 @@
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  color: #666;
+
+  mat-spinner {
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 480px) {
+  .loading-state {
+    padding: 24px 16px;
+
+    mat-spinner {
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 0.9rem;
+    }
+  }
+}
