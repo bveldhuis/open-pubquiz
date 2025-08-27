@@ -23,6 +23,7 @@ import { StatisticsUtils } from '../../utils';
 export class LeaderboardComponent {
   @Input() teams: LeaderboardTeam[] = [];
   @Input() currentRound?: number;
+  @Input() totalQuestions?: number;
 
   get sortedTeams(): LeaderboardTeam[] {
     return [...this.teams].sort((a, b) => (b.total_points || 0) - (a.total_points || 0));

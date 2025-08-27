@@ -1,58 +1,178 @@
-<div class="container">
-  <div class="participant-content">
-    <div class="team-info">
-      <h1>Welcome, {{ teamName }}!</h1>
-      <p class="session-info">Session: {{ sessionCode }}</p>
-    </div>
+<div class="participant-container" @fadeInUp>
+  <!-- Skip link for accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    @if (!isQuestionActive && !sessionEnded) {
-      <div class="status-card">
-        <h2>Waiting for questions...</h2>
-        <p>Your presenter will start the quiz soon.</p>
+  <!-- Connection Status Banner -->
+  @if (!isConnected) {
+    <div class="connection-banner" @slideInFromRight>
+      <div class="banner-content">
+        <mat-icon>wifi_off</mat-icon>
+        <span>Connection lost. Attempting to reconnect...</span>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          class="touch-friendly"
+          [@buttonPress]="buttonStates['reconnect']"
+          (click)="reconnect()"
+          [attr.aria-label]="'Reconnect to quiz session'"
+          matTooltip="Try to reconnect to the quiz">
+          Reconnect
+        </button>
       </div>
+    </div>
+  }
+
+  <main id="main-content" class="participant-content">
+    <!-- Team Info Header -->
+    <header class="team-info" @scaleIn>
+      <h1>Welcome, {{ teamName }}!</h1>
+      <p class="session-info">
+        <mat-icon aria-hidden="true">meeting_room</mat-icon>
+        Session: <strong>{{ sessionCode }}</strong>
+      </p>
+    </header>
+
+    <!-- Waiting State -->
+    @if (!isQuestionActive && !sessionEnded) {
+      <section 
+        class="status-card touch-friendly"
+        [@cardHover]="cardStates['main']"
+        (mouseenter)="onCardHover('main', true)"
+        (mouseleave)="onCardHover('main', false)"
+        @fadeInUp
+        [attr.aria-live]="'polite'">
+        <mat-icon class="status-icon" aria-hidden="true">schedule</mat-icon>
+        <h2>Waiting for questions...</h2>
+        <p>Your presenter will start the quiz soon. Get ready!</p>
+        
+        <div class="waiting-animation">
+          <div class="pulse-dot"></div>
+          <div class="pulse-dot"></div>
+          <div class="pulse-dot"></div>
+        </div>
+      </section>
     }
 
     <!-- Session Ended View -->
     @if (sessionEnded) {
-      <div class="session-ended-card">
-        <h2>🎉 Quiz Session Ended!</h2>
-        <p>Thank you for participating in the quiz!</p>
+      <section class="session-ended-card" @scaleIn [attr.aria-live]="'assertive'">
+        <header class="session-end-header">
+          <mat-icon class="celebration-icon" aria-hidden="true">celebration</mat-icon>
+          <h2>🎉 Quiz Session Ended!</h2>
+          <p>Thank you for participating in the quiz!</p>
+        </header>
+        
         @if (finalLeaderboard.length > 0) {
-          <div class="final-leaderboard">
-            <h3>🏆 Final Results</h3>
-            <div class="leaderboard-list">
+          <section class="final-leaderboard" @fadeInUp [attr.aria-labelledby]="'final-results-heading'">
+            <h3 id="final-results-heading">🏆 Final Results</h3>
+            <div class="leaderboard-list" role="list">
               @for (team of finalLeaderboard; track team; let i = $index) {
-                <div class="leaderboard-item">
-                  <div class="rank">{{ i + 1 }}</div>
-                  <div class="team-name">{{ team.name }}</div>
+                <article 
+                  class="leaderboard-item touch-friendly"
+                  [@scaleIn]
+                  role="listitem"
+                  [attr.aria-label]="'Position ' + (i + 1) + ': ' + team.name + ' with ' + team.total_points + ' points'">
+                  <div class="rank" [class.user-team]="team.name === teamName">
+                    <span class="rank-number">{{ i + 1 }}</span>
+                    @if (i < 3) {
+                      <mat-icon class="medal" aria-hidden="true">emoji_events</mat-icon>
+                    }
+                  </div>
+                  <div class="team-name" [class.user-team]="team.name === teamName">
+                    {{ team.name }}
+                    @if (team.name === teamName) {
+                      <span class="you-indicator">(You)</span>
+                    }
+                  </div>
                   <div class="points">{{ team.total_points }} pts</div>
-                </div>
+                </article>
               }
             </div>
+          </section>
+        }
+        
+        <div class="session-end-actions">
+          <button 
+            mat-raised-button 
+            color="primary" 
+            class="touch-friendly"
+            [@buttonPress]="buttonStates['leave']"
+            (click)="leaveSession()"
+            [attr.aria-label]="'Leave quiz session and return to home'"
+            matTooltip="Return to home page">
+            <mat-icon aria-hidden="true">home</mat-icon>
+            Return Home
+          </button>
+        </div>
+      </section>
+    }
+
+    <!-- Question Display -->
+    @if (isQuestionActive && currentQuestion && !sessionEnded && timeRemaining > 0) {
+      <section 
+        class="question-section"
+        [@cardHover]="cardStates['question']"
+        (mouseenter)="onCardHover('question', true)"
+        (mouseleave)="onCardHover('question', false)"
+        @slideInFromRight
+        [attr.aria-live]="'assertive'">
+        
+        <!-- Timer Display -->
+        <div class="timer-container" [attr.aria-label]="'Time remaining: ' + timeRemaining + ' seconds'">
+          <div 
+            class="timer"
+            [@timerPulse]="timerState"
+            [class.warning]="timerState === 'warning'"
+            [class.danger]="timerState === 'danger'">
+            <mat-icon aria-hidden="true">timer</mat-icon>
+            <span class="timer-text">{{ timeRemaining }}s</span>
+          </div>
+        </div>
+
+        <!-- Question Component -->
+        <app-question-answer
+          [question]="currentQuestion"
+          [isActive]="isQuestionActive"
+          [isAnswerSubmitted]="answerSubmitted"
+          [timeRemaining]="timeRemaining"
+          [totalTime]="currentQuestion.time_limit || 60"
+          (answerSubmitted)="onAnswerSubmitted($event)"
+          (timeUp)="onTimeUp()"
+          (timeChanged)="onTimeChanged($event)"
+          class="question-answer-container">
+        </app-question-answer>
+      </section>
+    }
+
+    <!-- Feedback Animation Container -->
+    @if (feedbackState) {
+      <div class="feedback-container">
+        @if (feedbackState === 'success') {
+          <div class="feedback-animation success" @successPop>
+            <mat-icon>check_circle</mat-icon>
+          </div>
+        }
+        @if (feedbackState === 'error') {
+          <div class="feedback-animation error" @errorShake>
+            <mat-icon>error</mat-icon>
           </div>
         }
       </div>
     }
+  </main>
 
-    <!-- Question Display -->
-    @if (isQuestionActive && currentQuestion && !sessionEnded) {
-      <app-question-answer
-        [question]="currentQuestion"
-        [isActive]="isQuestionActive"
-        [isAnswerSubmitted]="answerSubmitted"
-        [timeRemaining]="timeRemaining"
-        [totalTime]="currentQuestion.time_limit || 60"
-        (answerSubmitted)="onAnswerSubmitted($event)"
-        (timeUp)="onTimeUp()"
-        (timeChanged)="onTimeChanged($event)">
-      </app-question-answer>
-    }
-
-    <div class="connection-status">
-      <mat-icon [class]="isConnected ? 'connected' : 'disconnected'">
-        {{ isConnected ? 'wifi' : 'wifi_off' }}
-      </mat-icon>
-      <span>{{ isConnected ? 'Connected' : 'Disconnected' }}</span>
+  <!-- Quick Actions FAB -->
+  @if (isConnected && !sessionEnded) {
+    <div class="quick-actions" @fadeInUp>
+      <button 
+        mat-fab 
+        color="accent" 
+        class="action-fab touch-friendly"
+        (click)="leaveSession()"
+        [attr.aria-label]="'Leave quiz session'"
+        matTooltip="Leave session">
+        <mat-icon>exit_to_app</mat-icon>
+      </button>
     </div>
-  </div>
+  }
 </div>

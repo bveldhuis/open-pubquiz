@@ -40,7 +40,7 @@
             </span>
             <span class="stat">
               <mat-icon>quiz</mat-icon>
-              {{ team.correct_answers || 0 }}/{{ team.answers_submitted || 0 }} correct
+              {{ team.correct_answers || 0 }}/{{ totalQuestions || team.answers_submitted || 0 }} correct
             </span>
           </div>
         </div>

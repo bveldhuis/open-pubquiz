@@ -4,9 +4,18 @@
   <meta charset="utf-8">
   <title>Open Pub Quiz</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=3.0">
   <meta name="description" content="A self-hosted pub quiz application with real-time updates">
   <meta name="theme-color" content="#3f51b5">
+  <!-- Apple specific meta tags for better mobile experience -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Open Pub Quiz">
+  <!-- Microsoft specific meta tags -->
+  <meta name="msapplication-TileColor" content="#3f51b5">
+  <meta name="msapplication-tap-highlight" content="no">
+  <!-- Disable touch callouts and highlights -->
+  <meta name="format-detection" content="telephone=no">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +24,15 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body class="mat-typography">
+  <!-- Skip link for accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <app-root></app-root>
-  <noscript>Please enable JavaScript to continue.</noscript>
+  <div id="main-content"></div>
+  <noscript>
+    <div style="padding: 20px; text-align: center; background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;">
+      <h2>JavaScript Required</h2>
+      <p>Please enable JavaScript to continue using Open Pub Quiz. This application requires JavaScript for real-time quiz functionality.</p>
+    </div>
+  </noscript>
 </body>
 </html>

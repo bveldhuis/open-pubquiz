@@ -1,6 +1,6 @@
 import { Injectable  } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { Subject, BehaviorSubject } from 'rxjs';
+import { Subject, BehaviorSubject, Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { JoinSessionData } from '../models/join-session-data.model';
@@ -52,9 +52,10 @@ export class SocketService {
       return;
     }
 
-    // For Socket.IO, we need to connect to the same host as the frontend
-    // since the backend Socket.IO server is proxied through nginx
-    const socketUrl = environment.production ? window.location.origin : environment.apiUrl;
+    // For Socket.IO, we need to connect to the base server URL
+    // In production, use the same origin as the frontend
+    // In development, use the base server URL (without /api)
+    const socketUrl = environment.production ? window.location.origin : 'http://localhost:3000';
     
     console.log('🔌 Connecting to Socket.IO server at:', socketUrl);
     this.socket = io(socketUrl, {
@@ -213,5 +214,32 @@ export class SocketService {
       sessionCode,
       action: 'next_round'
     });
+  }
+
+  // Enhanced methods for improved components
+  on(eventName: string): Observable<unknown> {
+    const subject = new Subject<unknown>();
+    
+    if (this.socket) {
+      this.socket.on(eventName, (data: unknown) => {
+        subject.next(data);
+      });
+    }
+    
+    return subject.asObservable();
+  }
+
+  emit(eventName: string, data?: unknown): void {
+    if (this.socket && this.connected) {
+      this.socket.emit(eventName, data);
+    } else {
+      console.warn(`Cannot emit ${eventName}: Socket not connected`);
+    }
+  }
+
+  // Removed duplicate - using existing method with different signature
+
+  leaveSession(): void {
+    this.emit('leave_session');
   }
 }
