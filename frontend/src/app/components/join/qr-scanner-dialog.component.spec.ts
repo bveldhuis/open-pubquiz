@@ -149,7 +149,10 @@ describe('QRScannerDialogComponent', () => {
         getTracks: () => [{ stop: jasmine.createSpy('stop') }]
       })
     );
-    (navigator as any).mediaDevices = { getUserMedia: mockGetUserMedia };
+    Object.defineProperty(navigator, 'mediaDevices', {
+      value: { getUserMedia: mockGetUserMedia },
+      writable: true
+    });
 
     await component.requestPermission();
 
@@ -162,7 +165,10 @@ describe('QRScannerDialogComponent', () => {
     const mockGetUserMedia = jasmine.createSpy('getUserMedia').and.returnValue(
       Promise.reject(new Error('Permission denied'))
     );
-    (navigator as any).mediaDevices = { getUserMedia: mockGetUserMedia };
+    Object.defineProperty(navigator, 'mediaDevices', {
+      value: { getUserMedia: mockGetUserMedia },
+      writable: true
+    });
 
     await component.requestPermission();
 

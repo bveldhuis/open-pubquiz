@@ -1,4 +1,4 @@
-import { Component, Inject, OnDestroy, ViewChild } from '@angular/core';
+import { Component, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ZXingScannerComponent, ZXingScannerModule } from '@zxing/ngx-scanner';
-import { BarcodeFormat, Result } from '@zxing/library';
+import { BarcodeFormat } from '@zxing/library';
 
 interface QRScannerDialogData {
   availableDevices: MediaDeviceInfo[];
@@ -32,6 +32,9 @@ interface QRScannerDialogData {
 export class QRScannerDialogComponent implements OnDestroy {
   @ViewChild('scanner') scanner!: ZXingScannerComponent;
 
+  public dialogRef = inject(MatDialogRef<QRScannerDialogComponent>);
+  public data = inject<QRScannerDialogData>(MAT_DIALOG_DATA);
+
   availableDevices: MediaDeviceInfo[] = [];
   currentDevice: MediaDeviceInfo | undefined;
   formats: BarcodeFormat[] = [];
@@ -40,13 +43,10 @@ export class QRScannerDialogComponent implements OnDestroy {
   scannerEnabled = false;
   lastScannedCode: string | null = null;
 
-  constructor(
-    public dialogRef: MatDialogRef<QRScannerDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: QRScannerDialogData
-  ) {
-    this.availableDevices = data.availableDevices;
-    this.currentDevice = data.currentDevice;
-    this.formats = data.formats;
+  constructor() {
+    this.availableDevices = this.data.availableDevices;
+    this.currentDevice = this.data.currentDevice;
+    this.formats = this.data.formats;
     this.hasDevices = this.availableDevices.length > 0;
     this.scannerEnabled = true;
   }
@@ -65,7 +65,7 @@ export class QRScannerDialogComponent implements OnDestroy {
     }
   }
 
-  onScanError(error: any): void {
+  onScanError(error: Error | undefined): void {
     console.error('QR scan error:', error);
   }
 
