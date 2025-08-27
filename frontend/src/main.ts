@@ -66,9 +66,17 @@ if (screen.orientation) {
 function setViewportHeight() {
   const vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
+  
+  // Ensure no horizontal overflow
+  document.documentElement.style.setProperty('--vw', '100vw');
+  document.body.style.overflowX = 'hidden';
+  document.documentElement.style.overflowX = 'hidden';
 }
 
 window.addEventListener('resize', setViewportHeight);
+window.addEventListener('orientationchange', () => {
+  setTimeout(setViewportHeight, 100);
+});
 setViewportHeight();
 
 // Prevent zoom on double tap for iOS
