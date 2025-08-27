@@ -6,10 +6,13 @@ import { ITeamService } from './interfaces/ITeamService';
 import { LessThan } from 'typeorm';
 
 export class SessionService implements ISessionService {
-  private sessionRepository = AppDataSource.getRepository(QuizSession);
-  private eventRepository = AppDataSource.getRepository(SessionEvent);
+  private sessionRepository;
+  private eventRepository;
 
-  constructor(private teamService: ITeamService) {}
+  constructor(private teamService: ITeamService) {
+    this.sessionRepository = AppDataSource.getRepository(QuizSession);
+    this.eventRepository = AppDataSource.getRepository(SessionEvent);
+  }
 
   /**
    * Create a new quiz session

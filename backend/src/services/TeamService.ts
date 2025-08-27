@@ -1,13 +1,18 @@
 import { AppDataSource } from '../config/database';
 import { Team } from '../entities/Team';
-import { QuizSession } from '../entities/QuizSession';
 import { Answer } from '../entities/Answer';
+import { QuizSession } from '../entities/QuizSession';
 import { ITeamService } from './interfaces/ITeamService';
 import { TeamWithStats } from './interfaces/ISessionService';
 
 export class TeamService implements ITeamService {
-  private teamRepository = AppDataSource.getRepository(Team);
-  private answerRepository = AppDataSource.getRepository(Answer);
+  private teamRepository;
+  private answerRepository;
+
+  constructor() {
+    this.teamRepository = AppDataSource.getRepository(Team);
+    this.answerRepository = AppDataSource.getRepository(Answer);
+  }
 
   /**
    * Create a new team

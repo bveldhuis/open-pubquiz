@@ -11,14 +11,16 @@ import { distance } from 'fastest-levenshtein';
 const NlpManager = require('node-nlp').NlpManager;
 
 export class AnswerService implements IAnswerService {
-  private answerRepository = AppDataSource.getRepository(Answer);
-  private sequenceAnswerRepository = AppDataSource.getRepository(SequenceAnswer);
+  private answerRepository;
+  private sequenceAnswerRepository;
   private nlp: any;
 
   constructor(
     private questionService: IQuestionService,
     private teamService: ITeamService
   ) {
+    this.answerRepository = AppDataSource.getRepository(Answer);
+    this.sequenceAnswerRepository = AppDataSource.getRepository(SequenceAnswer);
     // Initialize NLP with support for multiple languages
     this.nlp = new NlpManager({
       languages: ['en', 'nl', 'de', 'fr', 'es', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'],

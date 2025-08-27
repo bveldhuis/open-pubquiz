@@ -240,11 +240,11 @@ describe('TeamService', () => {
         { id: 'team-2', name: 'Team B', total_points: 10, answers: [] } as unknown as Team
       ];
       const mockAnswers = [
-        { team_id: 'team-1', is_correct: true } as Answer,
-        { team_id: 'team-1', is_correct: true } as Answer,
-        { team_id: 'team-1', is_correct: false } as Answer,
-        { team_id: 'team-2', is_correct: true } as Answer,
-        { team_id: 'team-2', is_correct: false } as Answer
+        { team_id: 'team-1', is_correct: true, points_awarded: 5 } as Answer,
+        { team_id: 'team-1', is_correct: true, points_awarded: 5 } as Answer,
+        { team_id: 'team-1', is_correct: false, points_awarded: 0 } as Answer,
+        { team_id: 'team-2', is_correct: true, points_awarded: 5 } as Answer,
+        { team_id: 'team-2', is_correct: false, points_awarded: 0 } as Answer
       ];
 
       mockSessionRepository.findOne.mockResolvedValue(mockSession as QuizSession);
@@ -267,14 +267,14 @@ describe('TeamService', () => {
         {
           id: 'team-1',
           name: 'Team A',
-          total_points: 15,
+          total_points: 10, // 5 + 5 + 0
           answers_submitted: 3,
           correct_answers: 2
         },
         {
           id: 'team-2',
           name: 'Team B',
-          total_points: 10,
+          total_points: 5, // 5 + 0
           answers_submitted: 2,
           correct_answers: 1
         }
@@ -305,8 +305,13 @@ describe('TeamService', () => {
 
       mockSessionRepository.findOne.mockResolvedValue(mockSession as unknown as QuizSession);
       mockAnswerRepository.find
-        .mockResolvedValueOnce([]) // No answers for team-1
-        .mockResolvedValueOnce([]); // No answers for team-2
+        .mockResolvedValueOnce([
+          { team_id: 'team-1', is_correct: true, points_awarded: 5 } as Answer,
+          { team_id: 'team-1', is_correct: true, points_awarded: 5 } as Answer
+        ]) // 10 points for team-1
+        .mockResolvedValueOnce([
+          { team_id: 'team-2', is_correct: true, points_awarded: 5 } as Answer
+        ]); // 5 points for team-2
 
       const result = await teamService.getExistingTeams(sessionCode);
 
@@ -315,8 +320,8 @@ describe('TeamService', () => {
         relations: ['teams']
       });
       expect(result).toEqual([
-        { id: 'team-1', name: 'Team A', total_points: 10, answers_submitted: 0, correct_answers: 0 },
-        { id: 'team-2', name: 'Team B', total_points: 5, answers_submitted: 0, correct_answers: 0 }
+        { id: 'team-1', name: 'Team A', total_points: 10, answers_submitted: 2, correct_answers: 2 },
+        { id: 'team-2', name: 'Team B', total_points: 5, answers_submitted: 1, correct_answers: 1 }
       ]);
     });
 

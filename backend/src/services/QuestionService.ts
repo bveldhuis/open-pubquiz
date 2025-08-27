@@ -5,9 +5,11 @@ import { IQuestionService } from './interfaces/IQuestionService';
 import { ISessionService } from './interfaces/ISessionService';
 
 export class QuestionService implements IQuestionService {
-  private questionRepository = AppDataSource.getRepository(Question);
+  private questionRepository;
 
-  constructor(private sessionService: ISessionService) {}
+  constructor(private sessionService: ISessionService) {
+    this.questionRepository = AppDataSource.getRepository(Question);
+  }
 
   /**
    * Create a question

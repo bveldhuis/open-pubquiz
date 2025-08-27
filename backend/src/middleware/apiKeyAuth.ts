@@ -1,43 +1,39 @@
-import { Request, Response, NextFunction } from 'express';
 import { AppDataSource } from '../config/database';
 import { ApiKey } from '../entities/ApiKey';
+import { Request, Response, NextFunction } from 'express';
 
 export interface AuthenticatedRequest extends Request {
   apiKey?: ApiKey;
 }
 
-export const apiKeyAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-    
-    if (!apiKey) {
-      res.status(401).json({ error: 'API key is required' });
-      return;
-    }
+export const apiKeyAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const apiKey = req.headers['x-api-key'] as string;
 
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+
+  try {
     const apiKeyRepository = AppDataSource.getRepository(ApiKey);
-    const key = await apiKeyRepository.findOne({
-      where: {
-        api_key: apiKey as string,
-        is_active: true
-      }
+    const keyRecord = await apiKeyRepository.findOne({ 
+      where: { 
+        api_key: apiKey,
+        is_active: true 
+      } 
     });
 
-    if (!key) {
-      res.status(401).json({ error: 'Invalid or inactive API key' });
-      return;
+    if (!keyRecord) {
+      return res.status(401).json({ error: 'Invalid API key' });
     }
 
     // Update last used timestamp
-    key.last_used = new Date();
-    await apiKeyRepository.save(key);
+    await apiKeyRepository.update(keyRecord.id, { last_used: new Date() });
 
-    // Attach API key info to request
-    req.apiKey = key;
+    req.apiKey = keyRecord;
     next();
   } catch (error) {
     console.error('API key authentication error:', error);
-    res.status(500).json({ error: 'Authentication error' });
+    return res.status(500).json({ error: 'Authentication failed' });
   }
 };
 

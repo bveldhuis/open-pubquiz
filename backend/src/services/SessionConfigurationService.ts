@@ -23,11 +23,19 @@ export interface SessionConfigRequest {
 }
 
 export class SessionConfigurationService {
-  private sessionConfigRepository = AppDataSource.getRepository(SessionConfiguration);
-  private themeRepository = AppDataSource.getRepository(Theme);
-  private questionSetRepository = AppDataSource.getRepository(QuestionSet);
-  private questionRepository = AppDataSource.getRepository(Question);
-  private sessionRepository = AppDataSource.getRepository(QuizSession);
+  private sessionConfigRepository;
+  private themeRepository;
+  private questionSetRepository;
+  private questionRepository;
+  private sessionRepository;
+
+  constructor() {
+    this.sessionConfigRepository = AppDataSource.getRepository(SessionConfiguration);
+    this.themeRepository = AppDataSource.getRepository(Theme);
+    this.questionSetRepository = AppDataSource.getRepository(QuestionSet);
+    this.questionRepository = AppDataSource.getRepository(Question);
+    this.sessionRepository = AppDataSource.getRepository(QuizSession);
+  }
 
   async createSessionConfiguration(config: SessionConfigRequest): Promise<SessionConfiguration> {
     const session = await this.sessionRepository.findOne({
