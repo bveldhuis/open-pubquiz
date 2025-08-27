@@ -142,26 +142,49 @@ export class PWAService {
   }
 
   async showNotification(title: string, options?: NotificationOptions): Promise<void> {
-    const hasPermission = await this.requestNotificationPermission();
-    
-    if (!hasPermission) {
-      console.warn('Notification permission not granted');
-      return;
-    }
+    try {
+      console.log('PWA Service: Attempting to show notification:', title);
+      
+      const hasPermission = await this.requestNotificationPermission();
+      
+      if (!hasPermission) {
+        console.warn('Notification permission not granted');
+        return;
+      }
 
-    const defaultOptions: NotificationOptions = {
-      badge: '/favicon.ico',
-      icon: '/favicon.ico',
-      ...options
-    };
+      const defaultOptions: NotificationOptions = {
+        badge: '/favicon.ico',
+        icon: '/favicon.ico',
+        ...options
+      };
 
-    if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
-      // Use service worker for better reliability
-      const registration = await navigator.serviceWorker.ready;
-      registration.showNotification(title, defaultOptions);
-    } else {
-      // Fallback to regular notification
-      new Notification(title, defaultOptions);
+      if ('serviceWorker' in navigator && 'showNotification' in ServiceWorkerRegistration.prototype) {
+        // Use service worker for better reliability
+        try {
+          // Add timeout to prevent hanging
+          const registration = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('Service worker registration timeout')), 3000)
+            )
+          ]) as ServiceWorkerRegistration;
+          console.log('PWA Service: Service worker ready, showing notification');
+          registration.showNotification(title, defaultOptions);
+        } catch (swError) {
+          console.warn('PWA Service: Service worker notification failed, falling back to regular notification:', swError);
+          // Fallback to regular notification
+          new Notification(title, defaultOptions);
+        }
+      } else {
+        // Fallback to regular notification
+        console.log('PWA Service: Using regular notification (no service worker)');
+        new Notification(title, defaultOptions);
+      }
+      
+      console.log('PWA Service: Notification shown successfully');
+    } catch (error) {
+      console.error('PWA Service: Failed to show notification:', error);
+      // Don't throw the error, just log it so the flow continues
     }
   }
 

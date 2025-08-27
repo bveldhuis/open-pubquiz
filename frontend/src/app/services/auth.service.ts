@@ -1,6 +1,7 @@
-import { Injectable  } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 import { UserSession } from '../models/user-session.model';
 
@@ -8,6 +9,7 @@ import { UserSession } from '../models/user-session.model';
   providedIn: 'root'
 })
 export class AuthService {
+  private http = inject(HttpClient);
   private currentUserSubject = new BehaviorSubject<UserSession | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -62,23 +64,57 @@ export class AuthService {
   // Enhanced methods for improved components
   async joinSession(sessionCode: string, teamName: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // Simulate API call to join session
-      // In a real implementation, this would call the backend API
-      const sessionData: UserSession = {
-        teamId: `team_${Date.now()}`, // Generate unique team ID
-        teamName: teamName,
-        sessionCode: sessionCode
-      };
+      console.log('Making API call to join session:', sessionCode, teamName);
       
-      this.setUserSession(sessionData);
+      // Make actual API call to join session using modern Observable approach
+      const response = await firstValueFrom(
+        this.http.post<{ team: { id: string; name: string; totalPoints: number; joinedAt: string } }>(
+          `${environment.apiUrl}/teams/join`,
+          { sessionCode, teamName }
+        )
+      );
       
-      return { success: true };
-    } catch (error) {
+      console.log('API response received:', response);
+      
+      if (response && response.team) {
+        // Create session data from API response
+        const sessionData: UserSession = {
+          teamId: response.team.id,
+          teamName: response.team.name,
+          sessionCode: sessionCode
+        };
+        
+        this.setUserSession(sessionData);
+        console.log('Session data set successfully');
+        return { success: true };
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (error: any) {
       console.error('Failed to join session:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to join session'
-      };
+      
+      // Handle specific error cases
+      if (error.status === 400) {
+        return { 
+          success: false, 
+          error: error.error?.error || 'Invalid session code or team name'
+        };
+      } else if (error.status === 404) {
+        return { 
+          success: false, 
+          error: 'Session not found'
+        };
+      } else if (error.status === 409) {
+        return { 
+          success: false, 
+          error: 'Team name already exists in this session'
+        };
+      } else {
+        return { 
+          success: false, 
+          error: error.error?.error || 'Failed to join session. Please try again.'
+        };
+      }
     }
   }
 

@@ -16,8 +16,14 @@ interface SubmitAnswerData {
 
 interface PresenterAction {
   sessionCode: string;
-  action: 'start_question' | 'end_question' | 'show_leaderboard' | 'show_review' | 'next_round';
+  action: 'start_question' | 'end_question' | 'show_leaderboard' | 'show_review' | 'next_round' | 'end_session';
   questionId?: string;
+  leaderboard?: any[];
+}
+
+interface TimerUpdateData {
+  sessionCode: string;
+  timeRemaining: number;
 }
 
 export function setupSocketHandlers(io: Server) {
@@ -155,6 +161,19 @@ export function setupSocketHandlers(io: Server) {
       }
     });
 
+    // Timer update from presenter
+    socket.on('timer_update', (data: TimerUpdateData) => {
+      try {
+        const { sessionCode, timeRemaining } = data;
+        console.log(`⏰ Timer update: ${timeRemaining}s remaining in session ${sessionCode}`);
+        
+        // Broadcast timer update to all participants in the session
+        socket.to(sessionCode).emit('timer-update', { timeRemaining });
+      } catch (error) {
+        console.error('Error handling timer update:', error);
+      }
+    });
+
     // Presenter actions
     socket.on('presenter_action', async (data: PresenterAction) => {
       try {
@@ -178,6 +197,8 @@ export function setupSocketHandlers(io: Server) {
               return EventType.SHOW_REVIEW;
             case 'next_round':
               return EventType.NEXT_ROUND;
+            case 'end_session':
+              return EventType.SESSION_ENDED;
             default:
               throw new Error(`Unknown action: ${action}`);
           }
@@ -236,6 +257,19 @@ export function setupSocketHandlers(io: Server) {
             
             io.to(sessionCode).emit('round_started', {
               roundNumber: newRound
+            });
+            break;
+
+          case 'end_session':
+            const { leaderboard } = data;
+            console.log(`🏁 Ending session: ${sessionCode}`);
+            
+            // End the session
+            await sessionService.endSession(sessionCode);
+            
+            // Emit session ended event to all participants
+            io.to(sessionCode).emit('session-ended', {
+              leaderboard: leaderboard || []
             });
             break;
         }

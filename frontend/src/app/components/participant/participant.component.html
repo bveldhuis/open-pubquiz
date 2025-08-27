@@ -41,7 +41,7 @@
         (mouseleave)="onCardHover('main', false)"
         @fadeInUp
         [attr.aria-live]="'polite'">
-        <mat-icon class="status-icon" aria-hidden="true">hourglass_empty</mat-icon>
+        <mat-icon class="status-icon" aria-hidden="true">schedule</mat-icon>
         <h2>Waiting for questions...</h2>
         <p>Your presenter will start the quiz soon. Get ready!</p>
         
@@ -108,7 +108,7 @@
     }
 
     <!-- Question Display -->
-    @if (isQuestionActive && currentQuestion && !sessionEnded) {
+    @if (isQuestionActive && currentQuestion && !sessionEnded && timeRemaining > 0) {
       <section 
         class="question-section"
         [@cardHover]="cardStates['question']"

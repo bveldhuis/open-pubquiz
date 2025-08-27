@@ -3,7 +3,7 @@
     <h1 class="presenter-title">Quiz Presenter</h1>
 
     <!-- Create Session Form -->
-    @if (!currentSession) {
+    @if (!currentSession && !showLeaderboard) {
       <div class="create-session-card">
         <h2>Create New Quiz Session</h2>
         <form [formGroup]="sessionForm" (ngSubmit)="createSession()" class="create-form">
@@ -147,38 +147,48 @@
         <!-- Quiz Management Section -->
         @if (questions.length > 0) {
           <div class="quiz-management">
-            @if (!showReview && !showLeaderboard) {
-              <div class="quiz-header">
-                <h3>Round {{ currentSession.current_round }} - Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}</h3>
-                <div class="quiz-status">
-                  <span class="status-badge" [class]="getQuizStatusClass()">
-                    {{ getQuizStatusText() }}
-                  </span>
-                </div>
-              </div>
-            }
+                         @if (!showReview && !showLeaderboard) {
+               <div class="quiz-header">
+                 <h3>Round {{ currentSession.current_round }} - Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}</h3>
+                 <div class="quiz-status">
+                   <span class="status-badge" [class]="getQuizStatusClass()">
+                     {{ getQuizStatusText() }}
+                   </span>
+                 </div>
+               </div>
+             }
+             @if (showReview) {
+               <div class="quiz-header">
+                 <h3>Round {{ currentSession.current_round }} - Review Mode</h3>
+                 <div class="quiz-status">
+                   <span class="status-badge review">
+                     Reviewing Answers
+                   </span>
+                 </div>
+               </div>
+             }
             <!-- Current Question Display -->
             @if (currentQuestion && !showReview && !showLeaderboard) {
               <div class="current-question">
-                <app-question-display
-                  [question]="currentQuestion"
-                  [isActive]="isQuestionActive"
-                  [showCorrectAnswer]="showReview"
-                  [submissionsReceived]="submissionsReceived"
-                  [totalTeams]="teams.length"
-                  [canStart]="false"
-                  [hasAnswers]="currentAnswers.length > 0"
-                  [timeRemaining]="timeRemaining"
-                  [totalTime]="currentQuestion.time_limit || 60"
-                  [showControls]="true"
-                  [isLastQuestion]="currentQuestionIndex === questions.length - 1"
-                  (startQuestion)="startQuestion()"
-                  (endQuestion)="endQuestion()"
-                  (showReview)="showQuestionReview()"
-                  (endRound)="endRound()"
-                  (timeUp)="onTimeUp()"
-                  (timeChanged)="onTimeChanged($event)">
-                </app-question-display>
+                                 <app-question-display
+                   [question]="currentQuestion"
+                   [isActive]="isQuestionActive"
+                   [showCorrectAnswer]="showReview"
+                   [submissionsReceived]="submissionsReceived"
+                   [totalTeams]="teams.length"
+                   [canStart]="false"
+                   [hasAnswers]="currentQuestionHasAnswers"
+                   [timeRemaining]="timeRemaining"
+                   [totalTime]="currentQuestion.time_limit || 60"
+                   [showControls]="!showReview"
+                   [isLastQuestion]="currentQuestionIndex === questions.length - 1"
+                   (startQuestion)="startQuestion()"
+                   (endQuestion)="endQuestion()"
+                   (showReview)="showQuestionReview()"
+                   (endRound)="endRound()"
+                   (timeUp)="onTimeUp()"
+                   (timeChanged)="onTimeChanged($event)">
+                 </app-question-display>
               </div>
             }
             <!-- Question Navigation -->
@@ -226,6 +236,26 @@
             <!-- Review Section -->
             @if (showReview && currentQuestion) {
               <div class="review-section">
+                <div class="review-header">
+                  <h3>Reviewing Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}</h3>
+                  <div class="review-navigation">
+                    <button
+                      mat-icon-button
+                      [disabled]="currentQuestionIndex === 0"
+                      (click)="previousQuestion()"
+                      matTooltip="Previous question">
+                      <mat-icon>arrow_back</mat-icon>
+                    </button>
+                    <span class="question-counter">{{ currentQuestionIndex + 1 }} / {{ questions.length }}</span>
+                    <button
+                      mat-icon-button
+                      [disabled]="currentQuestionIndex === questions.length - 1"
+                      (click)="nextReviewQuestion()"
+                      matTooltip="Next question">
+                      <mat-icon>arrow_forward</mat-icon>
+                    </button>
+                  </div>
+                </div>
                 <app-answer-review
                   [question]="currentQuestion"
                   [answers]="currentAnswers"
@@ -241,8 +271,9 @@
             @if (showLeaderboard) {
               <div class="leaderboard-section">
                 <app-leaderboard
-                  [teams]="leaderboardTeams"
-                  [currentRound]="currentSession.current_round || 1">
+                  [teams]="teams"
+                  [currentRound]="currentSession.current_round || 1"
+                  [totalQuestions]="totalQuestionsInSession">
                 </app-leaderboard>
                 @if (currentSession) {
                   <div class="leaderboard-actions">
@@ -282,7 +313,8 @@
           <h2>🏆 Final Results</h2>
           <app-leaderboard
             [teams]="leaderboardTeams"
-            [currentRound]="1">
+            [currentRound]="1"
+            [totalQuestions]="totalQuestionsInSession">
           </app-leaderboard>
           <div class="final-leaderboard-actions">
             <button

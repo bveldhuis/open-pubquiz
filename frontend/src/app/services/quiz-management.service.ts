@@ -54,12 +54,14 @@ export class QuizManagementService {
     return this.http.post<{ success: boolean; currentRound?: number }>(`${this.apiUrl}/quiz/${sessionCode}/next-round`, {});
   }
 
-  startSession(sessionId: string): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/quiz/${sessionId}/start`, {});
-  }
+
 
   endSession(sessionCode: string): Observable<{ success: boolean; teams?: unknown[] }> {
     return this.http.post<{ success: boolean; teams?: unknown[] }>(`${this.apiUrl}/quiz/${sessionCode}/end`, {});
+  }
+
+  updateSessionStatus(sessionCode: string, status: string): Observable<{ success: boolean; status: string }> {
+    return this.http.patch<{ success: boolean; status: string }>(`${this.apiUrl}/quiz/${sessionCode}/status`, { status });
   }
 
   // Answer Management

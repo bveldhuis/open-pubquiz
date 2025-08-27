@@ -34,7 +34,8 @@ COPY --from=builder /app/dist ./dist
 
 # Copy startup script
 COPY scripts/start.sh ./start.sh
-RUN chmod +x start.sh
+RUN chmod +x start.sh && \
+    sed -i 's/\r$//' start.sh
 
 # Create uploads directory
 RUN mkdir -p uploads && chown -R nodejs:nodejs uploads

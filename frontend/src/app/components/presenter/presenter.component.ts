@@ -111,6 +111,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
   currentQuestion?: Question;
   isQuestionActive = false;
   timeRemaining = 0;
+  totalQuestionsInSession = 0;
   
   // Answer management
   answers: AnswerInfo[] = [];
@@ -130,6 +131,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
   currentAnswers: AnswerInfo[] = [];
   isLoadingAnswers = false;
   leaderboardTeams: TeamInfo[] = [];
+  currentQuestionHasAnswers = false;
   
   // Animation states
   buttonStates: Record<string, string> = {};
@@ -211,17 +213,46 @@ export class PresenterComponent implements OnInit, OnDestroy {
   }
 
   private setupSocketListeners(): void {
+    // Connect to socket server first
+    this.socketService.connect();
+    
+    // Listen to socket connection status
+    this.socketService.connectionStatus$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((connected: boolean) => {
+        this.isConnected = connected;
+        if (connected) {
+          this.showSuccessFeedback('Connected to quiz server');
+        } else {
+          this.showErrorFeedback('Disconnected from quiz server');
+        }
+      });
+    
     // Enhanced socket listeners with animations and notifications
-    this.socketService.on('team-joined')
+    this.socketService.on('team_joined_session')
       .pipe(takeUntil(this.destroy$))
       .subscribe((data: unknown) => {
-        this.handleTeamJoined(data as TeamInfo);
+        console.log('Presenter received team_joined_session event:', data);
+        this.handleTeamJoined(data as { teamId: string; teamName: string });
       });
 
-    this.socketService.on('answer-submitted')
+    this.socketService.on('existing_teams')
       .pipe(takeUntil(this.destroy$))
       .subscribe((data: unknown) => {
-        this.handleAnswerSubmitted(data as AnswerInfo);
+        console.log('Presenter received existing_teams event:', data);
+        const teamsData = data as { teams: TeamInfo[] };
+        this.teams = teamsData.teams;
+        console.log('Set teams to:', this.teams);
+        if (teamsData.teams.length > 0) {
+          this.showInfoMessage(`${teamsData.teams.length} team(s) already in session`);
+        }
+      });
+
+    this.socketService.on('answer_received')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((data: unknown) => {
+        console.log('Presenter received answer_received event:', data);
+        this.handleAnswerSubmitted(data as { teamId: string; teamName: string; questionId: string });
       });
 
     this.socketService.on('session-error')
@@ -231,8 +262,31 @@ export class PresenterComponent implements OnInit, OnDestroy {
       });
   }
 
-  private async handleTeamJoined(team: TeamInfo): Promise<void> {
+  private async handleTeamJoined(data: { teamId: string; teamName: string }): Promise<void> {
+    console.log('Presenter handling team joined with data:', data);
+    
+    // Check if team already exists
+    const existingTeam = this.teams.find(team => team.id === data.teamId);
+    if (existingTeam) {
+      console.log('Team already exists, not adding duplicate:', existingTeam);
+      return;
+    }
+    
+    // Create a TeamInfo object from the received data
+    const team: TeamInfo = {
+      id: data.teamId,
+      name: data.teamName,
+      total_points: 0,
+      answers_submitted: 0,
+      correct_answers: 0
+    };
+    
+    console.log('Created team object:', team);
+    console.log('Current teams before push:', this.teams);
+    
     this.teams.push(team);
+    
+    console.log('Current teams after push:', this.teams);
     this.showSuccessFeedback(`Team "${team.name}" joined the session!`);
     
     // Haptic feedback for mobile
@@ -241,12 +295,50 @@ export class PresenterComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async handleAnswerSubmitted(answer: AnswerInfo): Promise<void> {
+  private async handleAnswerSubmitted(answerData: { teamId: string; teamName: string; questionId: string }): Promise<void> {
+    console.log('Presenter received answer:', answerData);
+    
+    // Create a simple answer info object for tracking
+    const answer: AnswerInfo = {
+      id: `temp-${Date.now()}`,
+      question_id: answerData.questionId,
+      team_id: answerData.teamId,
+      answer_text: 'Submitted',
+      is_correct: false,
+      points_awarded: 0,
+      submitted_at: new Date().toISOString()
+    };
+    
     this.answers.push(answer);
-    this.showInfoMessage(`Answer received from team`);
+    this.submissionsReceived++;
+    
+    // Update current answers for the current question
+    if (this.currentQuestion && answerData.questionId === this.currentQuestion.id) {
+      this.currentAnswers.push(answer);
+      // Mark that this question now has answers
+      this.currentQuestionHasAnswers = true;
+    }
+    
+    this.showInfoMessage(`Answer received from team ${answerData.teamName}`);
     
     // Update UI state
     this.updateTeamStats();
+    
+    // Haptic feedback for mobile
+    if (this.isTouchDevice && 'vibrate' in navigator) {
+      navigator.vibrate(50);
+    }
+  }
+
+  // Method to check if a question has answers in the database
+  private async checkQuestionHasAnswers(questionId: string): Promise<boolean> {
+    try {
+      const response = await this.quizManagementService.getAnswersForQuestion(questionId).toPromise();
+      return (response?.answers && response.answers.length > 0) || false;
+    } catch (error) {
+      console.error('Failed to check if question has answers:', error);
+      return false;
+    }
   }
 
   private handleSessionError(error: { message?: string }): void {
@@ -260,6 +352,12 @@ export class PresenterComponent implements OnInit, OnDestroy {
       try {
         this.currentSession = JSON.parse(existingSession);
         this.currentView = 'active';
+        
+        // Join the presenter room for existing session
+        if (this.currentSession?.code) {
+          this.socketService.joinRoom(this.currentSession.code);
+          console.log('Presenter joined room for existing session:', this.currentSession.code);
+        }
       } catch (error) {
         console.error('Failed to load existing session:', error);
       }
@@ -291,6 +389,10 @@ export class PresenterComponent implements OnInit, OnDestroy {
         this.currentSession = { ...response.session, code: response.session.code };
         localStorage.setItem('presenterSession', JSON.stringify(response.session));
         
+        // Join the presenter room for this session
+        this.socketService.joinRoom(this.currentSession.code);
+        console.log('Presenter joined room for session:', this.currentSession.code);
+        
         this.transitionToView('session-config');
         this.showSuccessFeedback('Session created successfully!');
         
@@ -320,8 +422,8 @@ export class PresenterComponent implements OnInit, OnDestroy {
     this.isLoading = true;
 
     try {
-      // Start the session
-      await this.quizManagementService.startSession(this.currentSession.id).toPromise();
+      // Start the session by updating its status to ACTIVE
+      await this.quizManagementService.updateSessionStatus(this.currentSession.code, 'active').toPromise();
       
       this.transitionToView('active');
       this.showSuccessFeedback('Session started! Teams can now join.');
@@ -330,6 +432,9 @@ export class PresenterComponent implements OnInit, OnDestroy {
       if (this.questions.length > 0) {
         this.currentQuestion = this.questions[0];
         this.currentQuestionIndex = 0;
+        
+        // Check if the first question has answers in the database
+        this.currentQuestionHasAnswers = await this.checkQuestionHasAnswers(this.currentQuestion.id);
       }
       
     } catch (error) {
@@ -353,10 +458,25 @@ export class PresenterComponent implements OnInit, OnDestroy {
       this.timeRemaining = this.currentQuestion.time_limit || 30;
       this.startTimer();
       
-      // Notify teams
-      this.socketService.emit('question-started', {
-        question: this.currentQuestion,
-        timeLimit: this.timeRemaining
+      // Reset submission counters for new question
+      this.submissionsReceived = 0;
+      this.currentAnswers = [];
+      this.currentQuestionHasAnswers = false;
+      
+      // Send initial timer value immediately
+      if (this.currentSession?.code) {
+        this.socketService.emit('timer_update', {
+          sessionCode: this.currentSession.code,
+          timeRemaining: this.timeRemaining
+        });
+      }
+      
+      // Notify teams using presenter action
+      console.log('Presenter starting question:', this.currentQuestion?.id);
+      this.socketService.presenterAction({
+        sessionCode: this.currentSession!.code!,
+        action: 'start_question',
+        questionId: this.currentQuestion?.id
       });
       
       this.showSuccessFeedback('Question started!');
@@ -380,13 +500,36 @@ export class PresenterComponent implements OnInit, OnDestroy {
       this.isQuestionActive = false;
       this.stopTimer();
       
-      // Notify teams
-      this.socketService.emit('question-ended', {
-        questionId: this.currentQuestion?.id
+      // Send final timer update (0) to stop participant timers
+      if (this.currentSession?.code) {
+        this.socketService.emit('timer_update', {
+          sessionCode: this.currentSession.code,
+          timeRemaining: 0
+        });
+      }
+      
+      // Notify teams using presenter action
+      this.socketService.presenterAction({
+        sessionCode: this.currentSession!.code!,
+        action: 'end_question'
       });
       
-      this.transitionToView('review');
-      this.showSuccessFeedback('Question ended. Review answers.');
+      // Check if this was the last question in the round
+      if (this.currentQuestionIndex === this.questions.length - 1) {
+        // This was the last question, start review
+        this.startReview();
+      } else {
+        // Move to next question
+        this.currentQuestionIndex++;
+        this.currentQuestion = this.questions[this.currentQuestionIndex];
+        
+        // Check if this question has answers in the database
+        if (this.currentQuestion) {
+          this.currentQuestionHasAnswers = await this.checkQuestionHasAnswers(this.currentQuestion.id);
+        }
+        
+        this.showSuccessFeedback('Question ended. Next question ready.');
+      }
       
     } finally {
       setTimeout(() => {
@@ -399,10 +542,17 @@ export class PresenterComponent implements OnInit, OnDestroy {
     if (this.currentQuestionIndex < this.questions.length - 1) {
       this.currentQuestionIndex++;
       this.currentQuestion = this.questions[this.currentQuestionIndex];
+      
+      // Check if this question has answers in the database
+      if (this.currentQuestion) {
+        this.currentQuestionHasAnswers = await this.checkQuestionHasAnswers(this.currentQuestion.id);
+      }
+      
       this.transitionToView('active');
       this.showInfoMessage(`Question ${this.currentQuestionIndex + 1} ready`);
     } else {
-      await this.endSession();
+      // This is the last question, start review instead of ending session
+      await this.startReview();
     }
   }
 
@@ -411,15 +561,29 @@ export class PresenterComponent implements OnInit, OnDestroy {
     
     try {
       if (this.currentSession) {
-        await this.quizManagementService.endSession(this.currentSession.id).toPromise();
+        await this.quizManagementService.endSession(this.currentSession.code).toPromise();
       }
       
-      // Notify teams
-      this.socketService.emit('session-ended', {
-        leaderboard: this.teams.sort((a, b) => b.total_points - a.total_points)
+      // Sort teams by total points for final leaderboard
+      const finalLeaderboard = this.teams.sort((a, b) => b.total_points - a.total_points);
+      
+      // Set the final leaderboard data
+      this.leaderboardTeams = finalLeaderboard;
+      
+      // Notify teams using presenter action
+      this.socketService.presenterAction({
+        sessionCode: this.currentSession!.code!,
+        action: 'end_session',
+        leaderboard: finalLeaderboard
       });
       
-      this.transitionToView('leaderboard');
+      // Clear the current session from localStorage and component state FIRST
+      localStorage.removeItem('presenterSession');
+      this.currentSession = undefined;
+      
+      // Show the final leaderboard AFTER clearing the session
+      this.showLeaderboard = true;
+      
       this.showSuccessFeedback('Session ended successfully!');
       
       // PWA notification
@@ -443,6 +607,14 @@ export class PresenterComponent implements OnInit, OnDestroy {
     this.timerSubscription = interval(1000).subscribe(() => {
       if (this.timeRemaining > 0) {
         this.timeRemaining--;
+        
+        // Send timer update to all participants via socket
+        if (this.currentSession?.code) {
+          this.socketService.emit('timer_update', {
+            sessionCode: this.currentSession.code,
+            timeRemaining: this.timeRemaining
+          });
+        }
         
         // Notify about time running out
         if (this.timeRemaining === 10) {
@@ -474,6 +646,7 @@ export class PresenterComponent implements OnInit, OnDestroy {
   // Configuration and data management
   onSessionConfigured(config: SessionConfiguration): void {
     this.sessionConfiguration = config;
+    this.showConfigurationForm = false; // Hide the configuration form
     // Note: SessionConfiguration might not have questions property directly
     // This would be populated separately through question generation
     this.showSuccessFeedback('Session configured successfully!');
@@ -481,16 +654,27 @@ export class PresenterComponent implements OnInit, OnDestroy {
 
   onQuestionsLoaded(questions: Question[]): void {
     this.questions = questions;
+    this.totalQuestionsInSession = questions.length;
     this.showSuccessFeedback(`${questions.length} questions loaded`);
   }
 
   private updateTeamStats(): void {
-    // Update team statistics based on answers
+    // Update team statistics based on all answers (both current and historical)
     this.teams.forEach(team => {
-      const teamAnswers = this.answers.filter(a => a.team_id === team.id);
-      team.answers_submitted = teamAnswers.length;
-      team.correct_answers = teamAnswers.filter(a => a.is_correct).length;
-      team.total_points = teamAnswers.reduce((sum, a) => sum + a.points_awarded, 0);
+      // Get all answers for this team from both arrays
+      const allTeamAnswers = [
+        ...this.answers.filter(a => a.team_id === team.id),
+        ...this.currentAnswers.filter(a => a.team_id === team.id)
+      ];
+      
+      // Remove duplicates based on answer ID
+      const uniqueAnswers = allTeamAnswers.filter((answer, index, self) => 
+        index === self.findIndex(a => a.id === answer.id)
+      );
+      
+      team.answers_submitted = uniqueAnswers.length;
+      team.correct_answers = uniqueAnswers.filter(a => a.is_correct === true).length;
+      team.total_points = uniqueAnswers.reduce((sum, a) => sum + (a.points_awarded || 0), 0);
     });
   }
 
@@ -620,7 +804,40 @@ export class PresenterComponent implements OnInit, OnDestroy {
 
   generateQuestionsForCurrentRound(): void {
     if (!this.currentSession) return;
+    
+    this.isLoading = true;
     this.showInfoMessage('Generating questions...');
+    
+    // Clear any existing answers when generating new questions
+    this.currentAnswers = [];
+    this.submissionsReceived = 0;
+    this.currentQuestionHasAnswers = false;
+    
+    // Generate questions for the current round
+    const currentRound = this.currentSession.current_round || 1;
+    this.quizManagementService.generateQuestionsForRound(this.currentSession.code, currentRound)
+      .subscribe({
+                 next: async (response) => {
+           this.questions = response.questions;
+           this.totalQuestionsInSession = response.questions.length;
+           this.isLoading = false;
+           this.showSuccessFeedback(`Generated ${response.questions.length} questions for round ${currentRound}`);
+          
+          // Set the first question as current if available
+          if (this.questions.length > 0) {
+            this.currentQuestion = this.questions[0];
+            this.currentQuestionIndex = 0;
+            
+            // Check if the first question has answers in the database
+            this.currentQuestionHasAnswers = await this.checkQuestionHasAnswers(this.currentQuestion.id);
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error('Error generating questions:', error);
+          this.showErrorFeedback('Failed to generate questions. Please try again.');
+        }
+      });
   }
 
   getQuestionTypeDisplayName(type: string): string {
@@ -651,32 +868,189 @@ export class PresenterComponent implements OnInit, OnDestroy {
     return 'Waiting';
   }
 
-  showQuestionReview(): void {
+  async startReview(): Promise<void> {
+    // Start review from the first question
+    this.currentQuestionIndex = 0;
+    this.currentQuestion = this.questions[0];
+    
+    // Load answers for the first question
+    if (this.currentQuestion) {
+      // Check if this question has answers in the database
+      this.currentQuestionHasAnswers = await this.checkQuestionHasAnswers(this.currentQuestion.id);
+      
+      this.isLoadingAnswers = true;
+      this.quizManagementService.getAnswersForQuestion(this.currentQuestion.id)
+        .subscribe({
+          next: (response) => {
+            this.currentAnswers = (response?.answers || []) as AnswerInfo[];
+            this.submissionsReceived = this.currentAnswers.length;
+            console.log('Loaded answers for first review question:', this.currentAnswers);
+            this.isLoadingAnswers = false;
+            
+            // Update team stats after loading answers
+            this.updateTeamStats();
+          },
+          error: (error) => {
+            console.error('Failed to load answers for review:', error);
+            this.showErrorFeedback('Failed to load answers for review');
+            this.isLoadingAnswers = false;
+          }
+        });
+    }
+    
+    this.showReview = true;
+    this.showLeaderboard = false;
+    this.isQuestionActive = false;
+    this.showSuccessFeedback('Round ended. Review answers.');
+  }
+
+  async showQuestionReview(): Promise<void> {
+    // Start review from the first question
+    this.currentQuestionIndex = 0;
+    this.currentQuestion = this.questions[0];
+    
+    // Load answers for the first question
+    if (this.currentQuestion) {
+      // Check if this question has answers in the database
+      this.currentQuestionHasAnswers = await this.checkQuestionHasAnswers(this.currentQuestion.id);
+      
+      this.isLoadingAnswers = true;
+      this.quizManagementService.getAnswersForQuestion(this.currentQuestion.id)
+        .subscribe({
+          next: (response) => {
+            this.currentAnswers = (response?.answers || []) as AnswerInfo[];
+            this.submissionsReceived = this.currentAnswers.length;
+            console.log('Loaded answers for first review question:', this.currentAnswers);
+            this.isLoadingAnswers = false;
+            
+            // Update team stats after loading answers
+            this.updateTeamStats();
+          },
+          error: (error) => {
+            console.error('Failed to load answers for review:', error);
+            this.showErrorFeedback('Failed to load answers for review');
+            this.isLoadingAnswers = false;
+          }
+        });
+    }
+    
     this.showReview = true;
     this.showLeaderboard = false;
     this.isQuestionActive = false;
   }
 
-  endRound(): void {
-    this.showReview = true;
-    this.isQuestionActive = false;
-    this.showSuccessFeedback('Round ended. Review answers.');
+  async endRound(): Promise<void> {
+    await this.startReview();
   }
 
-  previousQuestion(): void {
+  async previousQuestion(): Promise<void> {
     if (this.currentQuestionIndex > 0) {
       this.currentQuestionIndex--;
       this.currentQuestion = this.questions[this.currentQuestionIndex];
+      
+      // Clear current answers and load answers for the specific question
+      this.currentAnswers = [];
+      this.submissionsReceived = 0;
+      
+      if (this.currentQuestion) {
+        // Check if this question has answers in the database
+        this.currentQuestionHasAnswers = await this.checkQuestionHasAnswers(this.currentQuestion.id);
+        
+        if (this.showReview) {
+          // In review mode, load the actual answers
+          this.isLoadingAnswers = true;
+          this.quizManagementService.getAnswersForQuestion(this.currentQuestion.id)
+            .subscribe({
+              next: (response) => {
+                this.currentAnswers = (response?.answers || []) as AnswerInfo[];
+                // For review, show the actual number of answers submitted
+                this.submissionsReceived = this.currentAnswers.length;
+                console.log('Loaded answers for review question:', this.currentQuestionIndex + 1, this.currentAnswers);
+                this.isLoadingAnswers = false;
+                
+                // Update team stats after loading answers
+                this.updateTeamStats();
+              },
+              error: (error) => {
+                console.error('Failed to load answers for review:', error);
+                this.showErrorFeedback('Failed to load answers for review');
+                this.isLoadingAnswers = false;
+              }
+            });
+        }
+      }
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  scoreAnswer(_answerId: string, _points: number, _isCorrect: boolean): void {
-    this.showSuccessFeedback('Answer scored!');
+  scoreAnswer(answerId: string, points: number, isCorrect: boolean): void {
+    this.isLoading = true;
+    
+    this.quizManagementService.scoreAnswer(answerId, points, isCorrect)
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Update the local answer data
+            const answerIndex = this.currentAnswers.findIndex(a => a.id === answerId);
+            if (answerIndex !== -1) {
+              this.currentAnswers[answerIndex].points_awarded = points;
+              this.currentAnswers[answerIndex].is_correct = isCorrect;
+            }
+            
+            // Update team stats
+            this.updateTeamStats();
+            
+            this.showSuccessFeedback('Answer scored successfully!');
+          } else {
+            this.showErrorFeedback('Failed to score answer');
+          }
+        },
+        error: (error) => {
+          console.error('Error scoring answer:', error);
+          this.showErrorFeedback('Failed to score answer. Please try again.');
+        },
+        complete: () => {
+          this.isLoading = false;
+        }
+      });
   }
 
-  nextReviewQuestion(): void {
-    this.nextQuestion();
+  async nextReviewQuestion(): Promise<void> {
+    if (this.currentQuestionIndex < this.questions.length - 1) {
+      this.currentQuestionIndex++;
+      this.currentQuestion = this.questions[this.currentQuestionIndex];
+      
+      // Clear current answers and load answers for the specific question
+      this.currentAnswers = [];
+      this.submissionsReceived = 0;
+      
+      if (this.currentQuestion) {
+        // Check if this question has answers in the database
+        this.currentQuestionHasAnswers = await this.checkQuestionHasAnswers(this.currentQuestion.id);
+        
+        this.isLoadingAnswers = true;
+        this.quizManagementService.getAnswersForQuestion(this.currentQuestion.id)
+          .subscribe({
+            next: (response) => {
+              this.currentAnswers = (response?.answers || []) as AnswerInfo[];
+              // For review, show the actual number of answers submitted
+              this.submissionsReceived = this.currentAnswers.length;
+              console.log('Loaded answers for review question:', this.currentQuestionIndex + 1, this.currentAnswers);
+              this.isLoadingAnswers = false;
+              
+              // Update team stats after loading answers
+              this.updateTeamStats();
+            },
+            error: (error) => {
+              console.error('Failed to load answers for review:', error);
+              this.showErrorFeedback('Failed to load answers for review');
+              this.isLoadingAnswers = false;
+            }
+          });
+      }
+    } else {
+      // All questions reviewed, show leaderboard
+      this.showLeaderboardView();
+    }
   }
 
   showLeaderboardView(): void {
@@ -685,16 +1059,93 @@ export class PresenterComponent implements OnInit, OnDestroy {
   }
 
   isLastRound(): boolean {
-    return true; // Simplified for compatibility
+    // Check if this is the last round based on session configuration
+    if (this.sessionConfiguration && this.currentSession) {
+      return this.currentSession.current_round >= this.sessionConfiguration.total_rounds;
+    }
+    // If no configuration, assume single round
+    return true;
   }
 
   startNextRound(): void {
-    this.showSuccessFeedback('Starting next round...');
+    if (!this.currentSession) {
+      this.showErrorFeedback('No active session');
+      return;
+    }
+
+    this.isLoading = true;
+    this.showInfoMessage('Starting next round...');
+
+    // Call the backend to start the next round
+    this.quizManagementService.nextRound(this.currentSession.code)
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          
+          // Update the current round
+          if (this.currentSession && response.currentRound) {
+            this.currentSession.current_round = response.currentRound;
+          }
+          
+                     // Clear answers from previous round
+           this.currentAnswers = [];
+           this.submissionsReceived = 0;
+           this.answers = [];
+           this.currentQuestionHasAnswers = false;
+          
+          // Generate questions for the new round
+          this.generateQuestionsForCurrentRound();
+          
+          // Hide leaderboard and show active view
+          this.showLeaderboard = false;
+          this.currentView = 'active';
+          
+          this.showSuccessFeedback(`Round ${this.currentSession?.current_round} started!`);
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error('Error starting next round:', error);
+          this.showErrorFeedback('Failed to start next round. Please try again.');
+        }
+      });
   }
 
   createNewSession(): void {
+    // Clear all session data
     this.currentSession = undefined;
+    this.sessionConfiguration = undefined;
+    this.questions = [];
+    this.currentQuestionIndex = 0;
+    this.currentQuestion = undefined;
+    this.isQuestionActive = false;
+    this.timeRemaining = 0;
+    this.totalQuestionsInSession = 0;
+    this.answers = [];
+    this.teams = [];
+    this.showQRCode = false;
+    this.showReview = false;
+    this.showLeaderboard = false;
+    this.currentQuestionHasAnswers = false;
+    
+    // Reset loading states
+    this.isLoading = false;
+    
+    // Reset button states
+    Object.keys(this.buttonStates).forEach(key => {
+      this.buttonStates[key] = 'unpressed';
+    });
+    
+    // Reset form
+    this.sessionForm.reset({
+      sessionName: '',
+      maxTeams: 10,
+      timePerQuestion: 30
+    });
+    
+    // Navigate to setup view
     this.currentView = 'setup';
+    
+    this.showInfoMessage('Ready to create a new session');
   }
 
   onTimeUp(): void {

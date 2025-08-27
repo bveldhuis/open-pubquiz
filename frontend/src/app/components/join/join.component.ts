@@ -253,8 +253,12 @@ export class JoinComponent implements OnInit, OnDestroy {
       const cleanSessionCode = sessionCode.toUpperCase().trim();
       const cleanTeamName = teamName.trim();
 
+      console.log('About to call authService.joinSession with:', cleanSessionCode, cleanTeamName);
+
       // Validate with auth service
       const result = await this.authService.joinSession(cleanSessionCode, cleanTeamName);
+      
+      console.log('authService.joinSession result:', result);
       
       if (result.success) {
         this.feedbackState = 'success';
@@ -272,7 +276,22 @@ export class JoinComponent implements OnInit, OnDestroy {
 
         // Brief delay for success animation
         setTimeout(() => {
-          this.router.navigate(['/participant']);
+          console.log('Navigating to participant component...');
+          this.router.navigate(['/participant']).then(() => {
+            console.log('Navigation to participant completed');
+          }).catch((error) => {
+            console.error('Navigation to participant failed:', error);
+            // Fallback: try to navigate again
+            setTimeout(() => {
+              console.log('Retrying navigation to participant...');
+              this.router.navigate(['/participant']).then(() => {
+                console.log('Retry navigation successful');
+              }).catch((retryError) => {
+                console.error('Retry navigation also failed:', retryError);
+                this.showErrorFeedback('Failed to navigate to participant view. Please try refreshing the page.');
+              });
+            }, 500);
+          });
         }, 1000);
         
       } else {

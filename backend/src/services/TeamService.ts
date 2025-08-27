@@ -125,7 +125,7 @@ export class TeamService implements ITeamService {
   /**
    * Get existing teams for a session
    */
-  async getExistingTeams(sessionCode: string): Promise<{ id: string; name: string }[]> {
+  async getExistingTeams(sessionCode: string): Promise<{ id: string; name: string; total_points: number; answers_submitted: number; correct_answers: number }[]> {
     // Get session directly from database to avoid circular dependency
     const sessionRepository = AppDataSource.getRepository(QuizSession);
     const session = await sessionRepository.findOne({
@@ -137,9 +137,24 @@ export class TeamService implements ITeamService {
       throw new Error('Session not found');
     }
 
-    return session.teams.map((team: any) => ({
-      id: team.id,
-      name: team.name
+    // Get teams with their answers to calculate statistics
+    const teamsWithStats = await Promise.all(session.teams.map(async (team: any) => {
+      const answers = await this.answerRepository.find({
+        where: { team_id: team.id }
+      });
+
+      const answers_submitted = answers.length;
+      const correct_answers = answers.filter(answer => answer.is_correct === true).length;
+
+      return {
+        id: team.id,
+        name: team.name,
+        total_points: team.total_points || 0,
+        answers_submitted,
+        correct_answers
+      };
     }));
+
+    return teamsWithStats;
   }
 }

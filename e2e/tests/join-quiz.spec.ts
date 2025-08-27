@@ -99,7 +99,7 @@ test.describe('Join Quiz', () => {
       tabCount++;
       
       // Check if we've reached the team name input
-      if (await teamNameInput.isFocused()) {
+      if (await teamNameInput.evaluate(el => el === document.activeElement)) {
         break;
       }
     }

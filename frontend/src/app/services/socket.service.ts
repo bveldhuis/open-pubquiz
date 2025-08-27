@@ -52,9 +52,10 @@ export class SocketService {
       return;
     }
 
-    // For Socket.IO, we need to connect to the same host as the frontend
-    // since the backend Socket.IO server is proxied through nginx
-    const socketUrl = environment.production ? window.location.origin : environment.apiUrl;
+    // For Socket.IO, we need to connect to the base server URL
+    // In production, use the same origin as the frontend
+    // In development, use the base server URL (without /api)
+    const socketUrl = environment.production ? window.location.origin : 'http://localhost:3000';
     
     console.log('🔌 Connecting to Socket.IO server at:', socketUrl);
     this.socket = io(socketUrl, {
