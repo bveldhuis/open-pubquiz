@@ -66,8 +66,7 @@ describe('JoinComponent', () => {
       'notifyQuizEnded',
       'notifyTimeRunningOut',
       'installPWA',
-      'showNotification',
-      'checkNotificationSupport'
+      'showNotification'
     ]);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     routerSpy.navigate.and.returnValue(Promise.resolve(true));
@@ -81,12 +80,6 @@ describe('JoinComponent', () => {
     // Mock PWA service methods
     pwaServiceSpy.requestNotificationPermission.and.returnValue(Promise.resolve(true));
     pwaServiceSpy.installPWA.and.returnValue(Promise.resolve(true));
-    pwaServiceSpy.checkNotificationSupport.and.returnValue(Promise.resolve({
-      supported: true,
-      permission: 'granted',
-      serviceWorkerReady: true,
-      mobile: false
-    }));
 
     // Mock PWA service observables
     pwaServiceSpy.isInstallable$ = of(false);

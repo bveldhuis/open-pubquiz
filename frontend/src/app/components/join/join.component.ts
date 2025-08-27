@@ -282,26 +282,10 @@ export class JoinComponent implements OnInit, OnDestroy {
           navigator.vibrate([100, 50, 100]);
         }
 
-        // PWA notification - handle gracefully on mobile
-        try {
-          // Check notification support first
-          const notificationSupport = await this.pwaService.checkNotificationSupport();
-          console.log('Notification support check:', notificationSupport);
-          
-          if (notificationSupport.supported && notificationSupport.permission === 'granted') {
-            console.log('Attempting to show notification...');
-            await this.pwaService.showNotification('Joined Quiz Session!', {
-              body: `Welcome to session ${cleanSessionCode}. Good luck!`
-            });
-            console.log('Notification shown successfully');
-          } else if (notificationSupport.mobile) {
-            // On mobile, don't show notification if not supported or permission denied
-            console.log('Skipping notification on mobile device - not supported or permission denied');
-          }
-        } catch (notificationError) {
-          // Silently handle notification errors - they shouldn't break the join flow
-          console.warn('Notification failed, but continuing with join process:', notificationError);
-        }
+        // PWA notification
+        await this.pwaService.showNotification('Joined Quiz Session!', {
+          body: `Welcome to session ${cleanSessionCode}. Good luck!`
+        });
 
         // Brief delay for success animation
         setTimeout(() => {
