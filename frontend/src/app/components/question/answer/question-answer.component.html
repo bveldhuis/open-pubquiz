@@ -28,6 +28,7 @@
       [isAnswerSubmitted]="isAnswerSubmitted"
       [timeRemaining]="timeRemaining"
       [questionType]="question.type"
+      [hasUnlimitedTime]="question && (question.time_limit === null || question.time_limit === undefined)"
       (submitAnswer)="onSubmitAnswer()">
     </app-answer-controls>
   </div>

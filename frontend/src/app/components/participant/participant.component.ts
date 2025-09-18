@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MatSnackBar } from '@angular/material/snack-bar';
+// MatSnackBar import removed - no notifications needed
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,9 +19,7 @@ import {
   scaleIn, 
   buttonPress,
   cardHover,
-  timerPulse,
-  successPop,
-  errorShake
+  timerPulse
 } from '../../utils/animations';
 
 import { Subscription, Subject } from 'rxjs';
@@ -46,9 +44,7 @@ import { takeUntil } from 'rxjs/operators';
     scaleIn,
     buttonPress,
     cardHover,
-    timerPulse,
-    successPop,
-    errorShake
+    timerPulse
   ]
 })
 export class ParticipantComponent implements OnInit, OnDestroy {
@@ -57,7 +53,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
   private quizManagementService = inject(QuizManagementService);
   private pwaService = inject(PWAService);
   private router = inject(Router);
-  private snackBar = inject(MatSnackBar);
+  // snackBar injection removed - no notifications needed
 
   private destroy$ = new Subject<void>();
   
@@ -80,7 +76,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
   buttonStates: Record<string, string> = {};
   cardStates: Record<string, string> = {};
   timerState = 'normal';
-  feedbackState = '';
+  // feedbackState removed - no notifications needed
   
   // Touch and accessibility
   isTouchDevice = false;
@@ -151,11 +147,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((connected: boolean) => {
         this.isConnected = connected;
-        if (connected) {
-          this.showSuccessFeedback('Connected to quiz session!');
-        } else {
-          this.showErrorFeedback('Connection lost. Attempting to reconnect...');
-        }
+        // Connection status handled silently - no notifications needed
       });
 
     this.socketService.on('question_started')
@@ -196,20 +188,12 @@ export class ParticipantComponent implements OnInit, OnDestroy {
         this.updateTimer(timerData.timeRemaining);
       });
 
-    // Listen for successful session join confirmation (for presenter)
-    this.socketService.teamJoinedSession$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((data: unknown) => {
-        console.log('Successfully joined session:', data);
-        this.showSuccessFeedback('Successfully joined the quiz session!');
-      });
-
     // Listen for team joined confirmation (sent to the participant)
     this.socketService.teamJoined$
       .pipe(takeUntil(this.destroy$))
       .subscribe((data: unknown) => {
         console.log('Team joined confirmation received:', data);
-        this.showSuccessFeedback('Successfully joined the quiz session!');
+        // Success feedback removed - view shows connection status
       });
   }
 
@@ -218,8 +202,16 @@ export class ParticipantComponent implements OnInit, OnDestroy {
     this.currentQuestion = question;
     this.isQuestionActive = true;
     this.answerSubmitted = false;
-    // Don't set timeRemaining here - it will come from the presenter's timer via socket
-    this.timerState = 'normal';
+    
+    // Handle questions without time limit
+    if (question.time_limit === null || question.time_limit === undefined) {
+      this.timeRemaining = 0; // No timer
+      this.timerState = 'unlimited';
+      console.log('Question has no time limit');
+    } else {
+      // Don't set timeRemaining here - it will come from the presenter's timer via socket
+      this.timerState = 'normal';
+    }
 
     // PWA notification for new question
     if (!document.hasFocus()) {
@@ -231,16 +223,14 @@ export class ParticipantComponent implements OnInit, OnDestroy {
       navigator.vibrate([100, 50, 100]);
     }
 
-    this.showInfoMessage(`New question: ${question.question_text.substring(0, 50)}...`);
+    // Info message removed - question is visible in the view
   }
 
   private handleQuestionEnded(): void {
     this.isQuestionActive = false;
     this.timeRemaining = 0; // Ensure timer shows 0 when question ends
     this.timerState = 'normal';
-    if (!this.answerSubmitted) {
-      this.showWarningMessage('Time\'s up! Question ended.');
-    }
+    // Warning message removed - question end is visible in the view
   }
 
   private async handleSessionEnded(leaderboard: LeaderboardTeam[]): Promise<void> {
@@ -260,7 +250,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
     // PWA notification for quiz end
     await this.pwaService.notifyQuizEnded(userPosition || undefined);
     
-    this.showSuccessFeedback('Quiz completed! Check your final position.');
+    // Success feedback removed - final position is visible in the view
   }
 
   private handleSessionEndedError(message: string): void {
@@ -269,8 +259,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
     // Clear the current session from localStorage
     this.authService.clearSession();
     
-    // Show error message
-    this.showErrorFeedback(message);
+    // Error feedback removed - error is visible in the view
     
     // Navigate back to join screen after a short delay
     setTimeout(() => {
@@ -280,6 +269,11 @@ export class ParticipantComponent implements OnInit, OnDestroy {
 
   private updateTimer(timeRemaining: number): void {
     this.timeRemaining = timeRemaining;
+    
+    // Don't update timer state or deactivate question if it has unlimited time
+    if (this.timerState === 'unlimited') {
+      return;
+    }
     
     // Update timer state for animations
     if (timeRemaining <= 10 && timeRemaining > 0) {
@@ -320,7 +314,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
       sessionCode: this.sessionCode,
       teamName: this.teamName
     });
-    this.showInfoMessage('Connecting to quiz session...');
+    // Removed "Connecting to quiz session..." alert - connection happens silently
   }
 
   // Enhanced user interactions with animations
@@ -337,7 +331,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
       answer: answerData
     });
     
-    this.showSuccessFeedback('Answer submitted successfully!');
+    // Success feedback removed - answer submission is visible in the view
     
     // Haptic feedback
     if (this.isTouchDevice && 'vibrate' in navigator) {
@@ -346,9 +340,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
   }
 
   onTimeUp(): void {
-    if (!this.answerSubmitted) {
-      this.showWarningMessage('Time\'s up!');
-    }
+    // Warning message removed - time up is visible in the view
   }
 
   onTimeChanged(timeRemaining: number): void {
@@ -365,7 +357,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
         this.buttonStates['reconnect'] = 'unpressed';
       }, 200);
     } catch {
-      this.showErrorFeedback('Failed to reconnect. Please try again.');
+      // Error feedback removed - reconnection status is visible in the view
       this.buttonStates['reconnect'] = 'unpressed';
     }
   }
@@ -385,44 +377,7 @@ export class ParticipantComponent implements OnInit, OnDestroy {
     }, 200);
   }
 
-  // Feedback methods with animations
-  private showSuccessFeedback(message: string): void {
-    this.feedbackState = 'success';
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      panelClass: ['success-snackbar']
-    });
-    
-    setTimeout(() => {
-      this.feedbackState = '';
-    }, 400);
-  }
-
-  private showErrorFeedback(message: string): void {
-    this.feedbackState = 'error';
-    this.snackBar.open(message, 'Close', {
-      duration: 5000,
-      panelClass: ['error-snackbar']
-    });
-    
-    setTimeout(() => {
-      this.feedbackState = '';
-    }, 600);
-  }
-
-  private showWarningMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
-      duration: 4000,
-      panelClass: ['warning-snackbar']
-    });
-  }
-
-  private showInfoMessage(message: string): void {
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      panelClass: ['info-snackbar']
-    });
-  }
+  // Feedback methods removed - notifications are redundant with view state
 
   // Touch event handlers
   @HostListener('touchstart', ['$event'])

@@ -16,6 +16,15 @@ import { LeaderboardUpdatedEvent, RoundStartedEvent, SessionEndedEvent, SessionE
 export class SocketService {
   private socket: Socket | null = null;
   private connected = false;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 100;
+  private reconnectDelay = 1000; // Start with 1 second
+  private maxReconnectDelay = 30000; // Max 30 seconds
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private isReconnecting = false;
+  private lastSessionData: JoinSessionData | null = null;
+  private lastRoomData: string | null = null;
+  private visibilityChangeHandler: (() => void) | null = null;
 
   // Event subjects
   private teamJoinedSubject = new Subject<TeamJoinedEvent>();
@@ -52,6 +61,11 @@ export class SocketService {
       return;
     }
 
+    this.setupVisibilityChangeHandler();
+    this.performConnection();
+  }
+
+  private performConnection(): void {
     // For Socket.IO, we need to connect to the base server URL
     // In production, use the same origin as the frontend
     // In development, use the base server URL (without /api)
@@ -59,19 +73,47 @@ export class SocketService {
     
     console.log('🔌 Connecting to Socket.IO server at:', socketUrl);
     this.socket = io(socketUrl, {
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      timeout: 20000,
+      forceNew: true,
+      // Enhanced configuration for iOS Safari compatibility
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000
     });
 
     this.socket.on('connect', () => {
       console.log('🔌 Connected to Socket.IO server');
       this.connected = true;
+      this.reconnectAttempts = 0;
+      this.reconnectDelay = 1000;
+      this.isReconnecting = false;
       this.connectionStatusSubject.next(true);
+      
+      // Rejoin session/room if we have previous data
+      this.rejoinSessionIfNeeded();
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('🔌 Disconnected from Socket.IO server');
+    this.socket.on('disconnect', (reason: string) => {
+      console.log('🔌 Disconnected from Socket.IO server, reason:', reason);
       this.connected = false;
       this.connectionStatusSubject.next(false);
+      
+      // Only attempt reconnection if not manually disconnected
+      if (reason !== 'io client disconnect' && !this.isReconnecting) {
+        this.scheduleReconnection();
+      }
+    });
+
+    this.socket.on('connect_error', (error: Error) => {
+      console.error('🔌 Connection error:', error);
+      this.connected = false;
+      this.connectionStatusSubject.next(false);
+      
+      if (!this.isReconnecting) {
+        this.scheduleReconnection();
+      }
     });
 
     this.socket.on('team_joined', (data: TeamJoinedEvent) => {
@@ -134,19 +176,113 @@ export class SocketService {
       console.error('🚫 Session ended error:', data);
       this.sessionEndedErrorSubject.next(data);
     });
+
+    // Handle ping/pong for connection health (iOS Safari compatibility)
+    this.socket.on('ping', () => {
+      console.log('🏓 Received ping from server');
+      this.socket?.emit('pong');
+    });
+
+    this.socket.on('pong', () => {
+      console.log('🏓 Received pong from server');
+    });
+  }
+
+  private setupVisibilityChangeHandler(): void {
+    if (this.visibilityChangeHandler) {
+      return; // Already set up
+    }
+
+    this.visibilityChangeHandler = () => {
+      if (document.visibilityState === 'visible' && !this.connected) {
+        console.log('📱 Page became visible, attempting to reconnect...');
+        this.forceReconnect();
+      }
+    };
+
+    document.addEventListener('visibilitychange', this.visibilityChangeHandler);
+  }
+
+  private scheduleReconnection(): void {
+    if (this.isReconnecting || this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.log('🔄 Max reconnection attempts reached or already reconnecting');
+      return;
+    }
+
+    this.isReconnecting = true;
+    this.reconnectAttempts++;
+
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), this.maxReconnectDelay);
+    
+    console.log(`🔄 Scheduling reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
+
+    this.reconnectTimer = setTimeout(() => {
+      this.performConnection();
+    }, delay);
+  }
+
+  private forceReconnect(): void {
+    console.log('🔄 Force reconnecting...');
+    this.reconnectAttempts = 0;
+    this.reconnectDelay = 1000;
+    this.isReconnecting = false;
+    
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+
+    this.performConnection();
+  }
+
+  private rejoinSessionIfNeeded(): void {
+    if (this.lastSessionData) {
+      console.log('🔄 Rejoining session after reconnection:', this.lastSessionData);
+      setTimeout(() => {
+        this.joinSession(this.lastSessionData!);
+      }, 100);
+    } else if (this.lastRoomData) {
+      console.log('🔄 Rejoining room after reconnection:', this.lastRoomData);
+      setTimeout(() => {
+        this.joinRoom(this.lastRoomData!);
+      }, 100);
+    }
   }
 
   disconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    if (this.visibilityChangeHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+      this.visibilityChangeHandler = null;
+    }
+
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
       this.connected = false;
     }
+
+    // Clear stored session data
+    this.lastSessionData = null;
+    this.lastRoomData = null;
+    this.reconnectAttempts = 0;
+    this.isReconnecting = false;
   }
 
   joinSession(data: JoinSessionData): void {
     if (this.socket) {
       console.log('🔗 Joining session:', data);
+      this.lastSessionData = data; // Store for reconnection
+      this.lastRoomData = null; // Clear room data
       this.socket.emit('join_session', data);
     }
   }
@@ -154,6 +290,8 @@ export class SocketService {
   joinRoom(sessionCode: string): void {
     if (this.socket) {
       console.log('🔗 Joining room:', sessionCode);
+      this.lastRoomData = sessionCode; // Store for reconnection
+      this.lastSessionData = null; // Clear session data
       this.socket.emit('join_room', { sessionCode });
     }
   }

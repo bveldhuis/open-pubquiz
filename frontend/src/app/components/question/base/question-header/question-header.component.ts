@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter  } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
 import { QuestionTimerComponent } from '../question-timer/question-timer.component';
 import { Question } from '../../../../models/question.model';
 import { QuestionUtils } from '../../../../utils';
@@ -9,6 +10,7 @@ import { QuestionUtils } from '../../../../utils';
     styleUrls: ['./question-header.component.scss'],
     standalone: true,
     imports: [
+        MatIconModule,
         QuestionTimerComponent
     ]
 })

@@ -21,13 +21,22 @@
 
   @if (showTimer) {
     <div class="timer-section">
-      <app-question-timer
-        [timeRemaining]="timeRemaining"
-        [totalTime]="totalTime"
-        [showProgress]="false"
-        (timeUp)="timeUp.emit()"
-        (timeChanged)="timeChanged.emit($event)">
-      </app-question-timer>
+      @if (timeRemaining > 0) {
+        <app-question-timer
+          [timeRemaining]="timeRemaining"
+          [totalTime]="totalTime"
+          [showProgress]="false"
+          (timeUp)="timeUp.emit()"
+          (timeChanged)="timeChanged.emit($event)">
+        </app-question-timer>
+      } @else {
+        <div class="unlimited-timer">
+          <div class="timer-display unlimited">
+            <mat-icon>all_inclusive</mat-icon>
+            <span>No time limit</span>
+          </div>
+        </div>
+      }
     </div>
   }
 </div>

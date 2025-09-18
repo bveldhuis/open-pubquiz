@@ -108,7 +108,7 @@
     }
 
     <!-- Question Display -->
-    @if (isQuestionActive && currentQuestion && !sessionEnded && timeRemaining > 0) {
+    @if (isQuestionActive && currentQuestion && !sessionEnded) {
       <section 
         class="question-section"
         [@cardHover]="cardStates['question']"
@@ -118,16 +118,25 @@
         [attr.aria-live]="'assertive'">
         
         <!-- Timer Display -->
-        <div class="timer-container" [attr.aria-label]="'Time remaining: ' + timeRemaining + ' seconds'">
-          <div 
-            class="timer"
-            [@timerPulse]="timerState"
-            [class.warning]="timerState === 'warning'"
-            [class.danger]="timerState === 'danger'">
-            <mat-icon aria-hidden="true">timer</mat-icon>
-            <span class="timer-text">{{ timeRemaining }}s</span>
+        @if (timeRemaining > 0) {
+          <div class="timer-container" [attr.aria-label]="'Time remaining: ' + timeRemaining + ' seconds'">
+            <div 
+              class="timer"
+              [@timerPulse]="timerState"
+              [class.warning]="timerState === 'warning'"
+              [class.danger]="timerState === 'danger'">
+              <mat-icon aria-hidden="true">timer</mat-icon>
+              <span class="timer-text">{{ timeRemaining }}s</span>
+            </div>
           </div>
-        </div>
+        } @else {
+          <div class="timer-container" [attr.aria-label]="'No time limit'">
+            <div class="timer unlimited">
+              <mat-icon aria-hidden="true">all_inclusive</mat-icon>
+              <span class="timer-text">No time limit</span>
+            </div>
+          </div>
+        }
 
         <!-- Question Component -->
         <app-question-answer
@@ -144,21 +153,7 @@
       </section>
     }
 
-    <!-- Feedback Animation Container -->
-    @if (feedbackState) {
-      <div class="feedback-container">
-        @if (feedbackState === 'success') {
-          <div class="feedback-animation success" @successPop>
-            <mat-icon>check_circle</mat-icon>
-          </div>
-        }
-        @if (feedbackState === 'error') {
-          <div class="feedback-animation error" @errorShake>
-            <mat-icon>error</mat-icon>
-          </div>
-        }
-      </div>
-    }
+    <!-- Feedback Animation Container removed - notifications are redundant with view state -->
   </main>
 
   <!-- Quick Actions FAB -->

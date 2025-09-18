@@ -179,7 +179,7 @@
                    [canStart]="false"
                    [hasAnswers]="currentQuestionHasAnswers"
                    [timeRemaining]="timeRemaining"
-                   [totalTime]="currentQuestion.time_limit || 60"
+                   [totalTime]="currentQuestion.time_limit || 0"
                    [showControls]="!showReview"
                    [isLastQuestion]="currentQuestionIndex === questions.length - 1"
                    (startQuestion)="startQuestion()"

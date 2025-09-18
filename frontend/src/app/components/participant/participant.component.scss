@@ -477,6 +477,15 @@
   font-weight: bold;
   transition: all 0.3s ease;
   
+  &.unlimited {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    
+    mat-icon {
+      color: #7b1fa2;
+    }
+  }
+  
   @media (min-width: 768px) {
     padding: 16px 32px;
     font-size: 1.4rem;

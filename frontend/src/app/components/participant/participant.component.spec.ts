@@ -20,7 +20,6 @@ describe('ParticipantComponent', () => {
   let mockSocketService: jasmine.SpyObj<SocketService>;
   let mockPwaService: jasmine.SpyObj<PWAService>;
   let mockRouter: jasmine.SpyObj<Router>;
-  let mockMatSnackBar: jasmine.SpyObj<MatSnackBar>;
 
   const mockQuestion: Question = {
     id: '1',
@@ -117,7 +116,6 @@ describe('ParticipantComponent', () => {
     mockSocketService = TestBed.inject(SocketService) as jasmine.SpyObj<SocketService>;
     mockPwaService = TestBed.inject(PWAService) as jasmine.SpyObj<PWAService>;
     mockRouter = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    mockMatSnackBar = TestBed.inject(MatSnackBar) as jasmine.SpyObj<MatSnackBar>;
   });
 
   it('should create', () => {
@@ -229,7 +227,7 @@ describe('ParticipantComponent', () => {
     await component.onAnswerSubmitted(null);
     
     expect(component.answerSubmitted).toBe(true);
-    expect(mockMatSnackBar.open).toHaveBeenCalled();
+    // Note: MatSnackBar notifications were removed as they were redundant
   });
 
   it('should reconnect to session', async () => {
@@ -303,16 +301,7 @@ describe('ParticipantComponent', () => {
     expect(component.leaveSession).toHaveBeenCalled();
   });
 
-  it('should manage feedback state', () => {
-    component.feedbackState = 'success';
-    expect(component.feedbackState).toBe('success');
-    
-    component.feedbackState = 'error';
-    expect(component.feedbackState).toBe('error');
-    
-    component.feedbackState = '';
-    expect(component.feedbackState).toBe('');
-  });
+  // Feedback state test removed - feedbackState property no longer exists
 
   it('should clean up on destroy', () => {
     spyOn(component['destroy$'], 'next');

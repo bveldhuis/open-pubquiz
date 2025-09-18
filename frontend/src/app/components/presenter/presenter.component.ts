@@ -15,7 +15,7 @@ import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
 import { QuestionDisplayComponent } from '../question/display/question-display/question-display.component';
 import { SessionConfigComponent } from '../session-config/session-config.component';
 import { QrCodeComponent } from '../qr-code/qr-code.component';
-import { AnswerReviewComponent } from '../answer-review/answer-review.component';
+import { AnswerReviewComponent } from '../answer-review/answer-review.component'
 import { QuizService } from '../../services/quiz.service';
 import { QuizManagementService } from '../../services/quiz-management.service';
 import { PWAService } from '../../services/pwa.service';
@@ -221,9 +221,8 @@ export class PresenterComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((connected: boolean) => {
         this.isConnected = connected;
-        if (connected) {
-          this.showSuccessFeedback('Connected to quiz server');
-        } else {
+        // Removed frequent connection alerts - only show disconnection warnings
+        if (!connected) {
           this.showErrorFeedback('Disconnected from quiz server');
         }
       });
@@ -260,7 +259,9 @@ export class PresenterComponent implements OnInit, OnDestroy {
       .subscribe((data: unknown) => {
         this.handleSessionError(data as { message?: string });
       });
+
   }
+
 
   private async handleTeamJoined(data: { teamId: string; teamName: string }): Promise<void> {
     console.log('Presenter handling team joined with data:', data);
@@ -455,15 +456,23 @@ export class PresenterComponent implements OnInit, OnDestroy {
     
     try {
       this.isQuestionActive = true;
-      this.timeRemaining = this.currentQuestion.time_limit || 30;
-      this.startTimer();
+      
+      // Handle NULL time limit - no timer for unlimited questions
+      if (this.currentQuestion.time_limit === null || this.currentQuestion.time_limit === undefined) {
+        this.timeRemaining = 0; // No timer
+        console.log('Starting question without time limit');
+      } else {
+        this.timeRemaining = this.currentQuestion.time_limit;
+        this.startTimer();
+        console.log(`Starting question with ${this.timeRemaining} second timer`);
+      }
       
       // Reset submission counters for new question
       this.submissionsReceived = 0;
       this.currentAnswers = [];
       this.currentQuestionHasAnswers = false;
       
-      // Send initial timer value immediately
+      // Send initial timer value immediately (0 for unlimited questions)
       if (this.currentSession?.code) {
         this.socketService.emit('timer_update', {
           sessionCode: this.currentSession.code,
@@ -601,6 +610,13 @@ export class PresenterComponent implements OnInit, OnDestroy {
   // Timer management
   private startTimer(): void {
     this.stopTimer();
+    
+    // Don't start timer if timeRemaining is 0 (unlimited question)
+    if (this.timeRemaining <= 0) {
+      console.log('No timer started - question has no time limit');
+      return;
+    }
+    
     this.timerSubscription = interval(1000).subscribe(() => {
       if (this.timeRemaining > 0) {
         this.timeRemaining--;

@@ -1,4 +1,4 @@
-import { Injectable, isDevMode } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 interface BeforeInstallPromptEvent extends Event {
