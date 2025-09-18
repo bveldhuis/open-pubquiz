@@ -36,7 +36,12 @@ const io = new Server(server, {
   cors: {
     origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
     methods: ['GET', 'POST']
-  }
+  },
+  // Enhanced configuration for iOS Safari compatibility
+  pingTimeout: 60000, // 60 seconds
+  pingInterval: 25000, // 25 seconds
+  transports: ['websocket', 'polling'],
+  allowEIO3: true // Allow Engine.IO v3 clients
 });
 
 // Make Socket.IO instance available to routes

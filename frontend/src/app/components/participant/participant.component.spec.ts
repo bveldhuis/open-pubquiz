@@ -303,16 +303,7 @@ describe('ParticipantComponent', () => {
     expect(component.leaveSession).toHaveBeenCalled();
   });
 
-  it('should manage feedback state', () => {
-    component.feedbackState = 'success';
-    expect(component.feedbackState).toBe('success');
-    
-    component.feedbackState = 'error';
-    expect(component.feedbackState).toBe('error');
-    
-    component.feedbackState = '';
-    expect(component.feedbackState).toBe('');
-  });
+  // Feedback state test removed - feedbackState property no longer exists
 
   it('should clean up on destroy', () => {
     spyOn(component['destroy$'], 'next');

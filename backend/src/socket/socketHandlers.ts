@@ -33,8 +33,32 @@ export function setupSocketHandlers(io: Server) {
   const questionService = serviceFactory.createQuestionService(sessionService);
   const answerService = serviceFactory.createAnswerService(questionService, teamService);
   
+  // Set up heartbeat mechanism for iOS Safari compatibility
+  io.engine.on('connection_error', (err) => {
+    console.log('🔌 Connection error:', err.req, err.code, err.message, err.context);
+  });
+
   io.on('connection', (socket: Socket) => {
     console.log(`🔌 Client connected: ${socket.id}`);
+
+    // Handle ping/pong for connection health
+    socket.on('ping', () => {
+      socket.emit('pong');
+    });
+
+    // Send periodic pings to keep connection alive (especially for iOS Safari)
+    const pingInterval = setInterval(() => {
+      if (socket.connected) {
+        socket.emit('ping');
+      } else {
+        clearInterval(pingInterval);
+      }
+    }, 30000); // Ping every 30 seconds
+
+    // Clean up interval on disconnect
+    socket.on('disconnect', () => {
+      clearInterval(pingInterval);
+    });
 
     // Join room (for presenter)
     socket.on('join_room', async (data: { sessionCode: string }) => {
@@ -93,6 +117,39 @@ export function setupSocketHandlers(io: Server) {
           teamName: teamName,
           sessionStatus: session.status
         });
+
+        // Check if there's an active question and send it to the reconnecting participant
+        if (session.current_question_id) {
+          try {
+            console.log(`❓ Sending active question ${session.current_question_id} to reconnecting team ${teamName}`);
+            const activeQuestion = await questionService.getQuestionById(session.current_question_id);
+            
+            if (activeQuestion) {
+              socket.emit('question_started', {
+                question: activeQuestion,
+                timeLimit: activeQuestion.time_limit || 0 // Send 0 for NULL time limits
+              });
+              console.log(`✅ Active question sent to reconnecting team ${teamName}`);
+              
+              // Get current timer status from presenter socket
+              const roomSockets = await io.in(sessionCode).fetchSockets();
+              const presenterSocket = roomSockets.find(s => s.data.sessionCode === sessionCode && s.data.currentTimer !== undefined);
+              
+              if (presenterSocket && presenterSocket.data.currentTimer !== undefined) {
+                const currentTimer = presenterSocket.data.currentTimer;
+                console.log(`⏰ Sending current timer status (${currentTimer}s) to reconnecting team ${teamName}`);
+                socket.emit('timer-update', { timeRemaining: currentTimer });
+              } else if (activeQuestion.time_limit === null || activeQuestion.time_limit === undefined) {
+                console.log(`⏰ Sending unlimited timer status to reconnecting team ${teamName}`);
+                socket.emit('timer-update', { timeRemaining: 0 });
+              } else {
+                console.log(`⏰ No active timer found for reconnecting team ${teamName}`);
+              }
+            }
+          } catch (error) {
+            console.error('Error sending active question to reconnecting participant:', error);
+          }
+        }
 
         // Notify presenter about team joining (both new and existing teams)
         // Check if there are any sockets in the room (presenters)
@@ -166,6 +223,9 @@ export function setupSocketHandlers(io: Server) {
       try {
         const { sessionCode, timeRemaining } = data;
         console.log(`⏰ Timer update: ${timeRemaining}s remaining in session ${sessionCode}`);
+        
+        // Store current timer status in socket data for reconnecting participants
+        socket.data.currentTimer = timeRemaining;
         
         // Broadcast timer update to all participants in the session
         socket.to(sessionCode).emit('timer-update', { timeRemaining });

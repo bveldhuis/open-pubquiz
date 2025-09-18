@@ -18,6 +18,7 @@ export class AnswerControlsComponent {
   @Input() isAnswerSubmitted = false;
   @Input() timeRemaining = 0;
   @Input() questionType = '';
+  @Input() hasUnlimitedTime = false;
   
   @Output() submitAnswer = new EventEmitter<void>();
 

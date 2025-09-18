@@ -38,7 +38,7 @@
     </div>
   }
 
-  @if (isActive && timeRemaining === 0) {
+  @if (isActive && timeRemaining === 0 && !hasUnlimitedTime) {
     <div class="time-up">
       <mat-icon>timer_off</mat-icon>
       <span>Time's up! Your answer has been automatically submitted.</span>
