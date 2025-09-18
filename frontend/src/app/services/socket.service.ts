@@ -1,7 +1,6 @@
 import { Injectable  } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { Subject, BehaviorSubject, Observable, timer } from 'rxjs';
-import { takeUntil, retry, delay, switchMap } from 'rxjs/operators';
+import { Subject, BehaviorSubject, Observable } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { JoinSessionData } from '../models/join-session-data.model';
@@ -21,7 +20,7 @@ export class SocketService {
   private maxReconnectAttempts = 100;
   private reconnectDelay = 1000; // Start with 1 second
   private maxReconnectDelay = 30000; // Max 30 seconds
-  private reconnectTimer: any = null;
+  private reconnectTimer: NodeJS.Timeout | null = null;
   private isReconnecting = false;
   private lastSessionData: JoinSessionData | null = null;
   private lastRoomData: string | null = null;

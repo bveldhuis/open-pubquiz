@@ -229,7 +229,7 @@ describe('ParticipantComponent', () => {
     await component.onAnswerSubmitted(null);
     
     expect(component.answerSubmitted).toBe(true);
-    expect(mockMatSnackBar.open).toHaveBeenCalled();
+    // Note: MatSnackBar notifications were removed as they were redundant
   });
 
   it('should reconnect to session', async () => {
