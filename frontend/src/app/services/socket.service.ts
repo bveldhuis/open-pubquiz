@@ -26,6 +26,13 @@ export class SocketService {
   private lastRoomData: string | null = null;
   private visibilityChangeHandler: (() => void) | null = null;
 
+  // Heartbeat / health check (presenter reconnect support)
+  private healthCheckTimer: NodeJS.Timeout | null = null;
+  private readonly HEARTBEAT_INTERVAL_MS = 30_000; // 30 seconds
+
+  // Queue presenter actions while disconnected
+  private pendingPresenterActions: PresenterAction[] = []; 
+
   // Event subjects
   private teamJoinedSubject = new Subject<TeamJoinedEvent>();
   private teamJoinedSessionSubject = new Subject<TeamJoinedSessionEvent>();
@@ -63,6 +70,8 @@ export class SocketService {
 
     this.setupVisibilityChangeHandler();
     this.performConnection();
+    // Ensure health checks run even while disconnected so we attempt periodic reconnects
+    this.startHealthCheck();
   }
 
   private performConnection(): void {
@@ -93,12 +102,18 @@ export class SocketService {
       
       // Rejoin session/room if we have previous data
       this.rejoinSessionIfNeeded();
+
+      // Start health checks and flush any queued presenter actions
+      this.startHealthCheck();
+      this.flushPendingPresenterActions();
     });
 
     this.socket.on('disconnect', (reason: string) => {
       console.log('🔌 Disconnected from Socket.IO server, reason:', reason);
       this.connected = false;
       this.connectionStatusSubject.next(false);
+
+      // Keep health checks running so we can detect the disconnected state and force reconnects every HEARTBEAT_INTERVAL_MS
       
       // Only attempt reconnection if not manually disconnected
       if (reason !== 'io client disconnect' && !this.isReconnecting) {
@@ -110,6 +125,8 @@ export class SocketService {
       console.error('🔌 Connection error:', error);
       this.connected = false;
       this.connectionStatusSubject.next(false);
+
+      // Keep health checks running to allow periodic reconnect attempts
       
       if (!this.isReconnecting) {
         this.scheduleReconnection();
@@ -186,6 +203,11 @@ export class SocketService {
     this.socket.on('pong', () => {
       console.log('🏓 Received pong from server');
     });
+
+    // Optional server health response for our heartbeat check
+    this.socket.on('health_ok', () => {
+      console.log('💚 Server health OK');
+    });
   }
 
   private setupVisibilityChangeHandler(): void {
@@ -226,18 +248,53 @@ export class SocketService {
     this.reconnectAttempts = 0;
     this.reconnectDelay = 1000;
     this.isReconnecting = false;
-    
+
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
 
     if (this.socket) {
-      this.socket.disconnect();
+      try { this.socket.disconnect(); } catch (err) { console.warn('Failed to disconnect socket during forceReconnect', err); }
       this.socket = null;
     }
 
     this.performConnection();
+  }
+
+  private startHealthCheck(): void {
+    if (this.healthCheckTimer) {
+      return; // already running
+    }
+    this.healthCheckTimer = setInterval(() => {
+      try {
+        if (this.socket && this.connected && this.socket.connected) {
+          // emit a lightweight health check; server can reply with 'health_ok' or rely on socket.io ping/pong
+          try { this.socket.emit('health_check'); } catch (e) { console.warn('Health check emit failed', e); }
+        } else {
+          console.log('💤 Health check detected disconnected socket -> forcing reconnect');
+          this.forceReconnect();
+        }
+      } catch (e) {
+        console.error('Health check error', e);
+      }
+    }, this.HEARTBEAT_INTERVAL_MS);
+  }
+
+  private stopHealthCheck(): void {
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer);
+      this.healthCheckTimer = null;
+    }
+  }
+
+  private flushPendingPresenterActions(): void {
+    if (!this.socket || !this.connected || !this.pendingPresenterActions.length) return;
+    console.log(`🔁 Flushing ${this.pendingPresenterActions.length} pending presenter actions`);
+    while (this.pendingPresenterActions.length) {
+      const a = this.pendingPresenterActions.shift()!;
+      try { this.socket.emit('presenter_action', a); } catch (e) { console.error('Failed to flush presenter action', e); }
+    }
   }
 
   private rejoinSessionIfNeeded(): void {
@@ -304,11 +361,16 @@ export class SocketService {
   }
 
   presenterAction(data: PresenterAction): void {
-    if (this.socket) {
+    if (this.socket && this.connected) {
       console.log('🎮 Presenter action:', data);
-      this.socket.emit('presenter_action', data);
+      try { this.socket.emit('presenter_action', data); } catch (e) { console.error('Failed to emit presenter_action', e); }
     } else {
-      console.error('❌ Socket not connected, cannot send presenter action');
+      console.warn('🔒 Socket not connected, queuing presenter action');
+      this.pendingPresenterActions.push(data);
+      // proactively try to reconnect
+      if (!this.isReconnecting) {
+        this.scheduleReconnection();
+      }
     }
   }
 
