@@ -255,7 +255,7 @@ export class SocketService {
     }
 
     if (this.socket) {
-      try { this.socket.disconnect(); } catch (e) {}
+      try { this.socket.disconnect(); } catch (err) { console.warn('Failed to disconnect socket during forceReconnect', err); }
       this.socket = null;
     }
 
