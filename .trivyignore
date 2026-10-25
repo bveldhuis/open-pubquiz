@@ -1,0 +1,6 @@
+# Accepted risk, reviewed 2026-10-25. Expires so it gets looked at again.
+# xlsx 0.18.5 is only a transitive dependency of node-nlp (@nlpjs/xtables).
+# The backend uses node-nlp for text matching and never reads spreadsheets,
+# so the vulnerable code is not reachable. The fixed xlsx is not published on npm.
+CVE-2023-30533 exp:2027-01-31
+CVE-2024-22363 exp:2027-01-31
