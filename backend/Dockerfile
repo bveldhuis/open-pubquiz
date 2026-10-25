@@ -27,7 +27,9 @@ RUN adduser -S nodejs -u 1001
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# npm is only needed to install; remove it so its bundled packages are not in the runtime image
+RUN npm ci --only=production && npm cache clean --force && \
+    rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 # Copy built application
 COPY --from=builder /app/dist ./dist

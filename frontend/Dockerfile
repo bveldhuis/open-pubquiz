@@ -18,6 +18,9 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine AS production
 
+# Pick up Alpine security fixes released after the base image was built
+RUN apk upgrade --no-cache
+
 # Copy built application
 COPY --from=builder /app/dist/pubquiz-frontend /usr/share/nginx/html
 
